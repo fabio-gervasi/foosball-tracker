@@ -1,6 +1,7 @@
 import { Hono } from 'npm:hono';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as kv from './kv_store.tsx';
-import { 
+import {
   API_PREFIX
 } from './server-constants.tsx';
 import { validateUserAuth } from './auth-helpers.tsx';
@@ -13,7 +14,7 @@ export function createDebugRoutes(supabase: any) {
     console.log('Health check endpoint called');
     const authHeader = c.req.header('Authorization');
     console.log('Auth header present:', !!authHeader);
-    
+
     // Test service role connection
     let serviceRoleStatus = 'not tested';
     try {
@@ -26,7 +27,7 @@ export function createDebugRoutes(supabase: any) {
     } catch (testError) {
       serviceRoleStatus = `exception: ${testError.message}`;
     }
-    
+
     // Test KV store connection
     let kvStatus = 'not tested';
     try {
@@ -35,9 +36,9 @@ export function createDebugRoutes(supabase: any) {
     } catch (kvError) {
       kvStatus = `error: ${kvError.message}`;
     }
-    
-    return c.json({ 
-      status: 'ok', 
+
+    return c.json({
+      status: 'ok',
       timestamp: new Date().toISOString(),
       server: 'foosball-tracker',
       env: {
@@ -56,21 +57,21 @@ export function createDebugRoutes(supabase: any) {
   app.get('/debug/users', async (c) => {
     try {
       console.log('=== Debug users endpoint called ===');
-      
+
       // Get all username mappings
       const allUserKeys = await kv.getByPrefix('user:username:');
       const usernames = allUserKeys.map(item => ({
         username: item.key.replace('user:username:', ''),
         userId: item.value
       }));
-      
+
       // Also get all email mappings for comparison
       const allEmailKeys = await kv.getByPrefix('user:email:');
       const emails = allEmailKeys.map(item => ({
         email: item.key.replace('user:email:', ''),
         userId: item.value
       }));
-      
+
       return c.json({
         server: 'foosball-tracker-debug-users',
         totalUsernames: usernames.length,
@@ -91,7 +92,7 @@ export function createDebugRoutes(supabase: any) {
   app.get('/debug/matches', async (c) => {
     try {
       console.log('=== Debug matches endpoint called ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -120,7 +121,7 @@ export function createDebugRoutes(supabase: any) {
       if (userProfile.currentGroup) {
         const groupPrefix = `match:${userProfile.currentGroup}:`;
         const groupMatches = await kv.getByPrefix(groupPrefix);
-        
+
         // Log raw data for debugging
         groupMatches.forEach((item, index) => {
           console.log(`Raw match ${index + 1}:`, {
@@ -130,7 +131,7 @@ export function createDebugRoutes(supabase: any) {
             value: item.value
           });
         });
-        
+
         results.groupMatches = groupMatches.map(item => ({
           key: item.key,
           matchType: item.value?.matchType,
@@ -178,10 +179,10 @@ export function createDebugRoutes(supabase: any) {
   app.post('/debug/user-lookup', async (c) => {
     try {
       console.log('=== User lookup request ===');
-      
+
       const { identifier } = await c.req.json();
       console.log('Looking up user for identifier:', identifier);
-      
+
       if (!identifier) {
         return c.json({ error: 'Username or email required' }, 400);
       }
@@ -189,7 +190,7 @@ export function createDebugRoutes(supabase: any) {
       // Find the user by username or email
       let userId = null;
       let userProfile = null;
-      
+
       // Try username lookup first
       userId = await kv.get(`user:username:${identifier}`);
       if (userId) {
@@ -201,27 +202,27 @@ export function createDebugRoutes(supabase: any) {
           console.log('Found user by email');
         }
       }
-      
+
       if (!userId) {
         console.log('User not found for lookup:', identifier);
         return c.json({ error: 'No account found with that username or email address' }, 404);
       }
-      
+
       // Get user profile
       userProfile = await kv.get(`user:${userId}`);
       if (!userProfile || !userProfile.email) {
         console.log('User profile not found or no email associated with account');
         return c.json({ error: 'Account found but no email address on file' }, 400);
       }
-      
+
       console.log('User lookup successful, email found:', userProfile.email);
-      
+
       return c.json({
         email: userProfile.email,
         userId: userProfile.id,
         username: userProfile.username
       });
-      
+
     } catch (error) {
       console.error('=== User lookup error ===', error);
       return c.json({ error: 'Internal server error during user lookup' }, 500);
@@ -234,10 +235,10 @@ export function createDebugRoutes(supabase: any) {
   app.get('/debug/password-reset-tokens', async (c) => {
     try {
       console.log('=== Debug password reset tokens ===');
-      
+
       // Get all password reset tokens
       const resetTokens = await kv.getByPrefix('password_reset:');
-      
+
       const tokenInfo = resetTokens.map(item => ({
         key: item.key,
         hasValue: !!item.value,
@@ -264,17 +265,17 @@ export function createDebugRoutes(supabase: any) {
   app.post('/debug/test-email-config', async (c) => {
     try {
       console.log('=== Testing email configuration ===');
-      
+
       const { testEmail } = await c.req.json();
-      
+
       if (!testEmail) {
         return c.json({ error: 'Test email required' }, 400);
       }
-      
+
       // Test with anon key client (this is what password reset uses)
       const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
       if (!anonKey) {
-        return c.json({ 
+        return c.json({
           error: 'SUPABASE_ANON_KEY not configured',
           config: {
             supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
@@ -283,14 +284,14 @@ export function createDebugRoutes(supabase: any) {
           }
         }, 503);
       }
-      
+
       const clientSupabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
         anonKey
       );
-      
+
       console.log('Testing password reset email with test address:', testEmail);
-      
+
       // Try to send a password reset email to the test address
       const { data, error: resetError } = await clientSupabase.auth.resetPasswordForEmail(
         testEmail,
@@ -298,10 +299,10 @@ export function createDebugRoutes(supabase: any) {
           redirectTo: 'https://test.example.com/callback' // Use a dummy redirect URL for testing
         }
       );
-      
+
       if (resetError) {
         console.error('Email test failed:', resetError);
-        
+
         return c.json({
           success: false,
           error: resetError.message,
@@ -314,9 +315,9 @@ export function createDebugRoutes(supabase: any) {
           }
         });
       }
-      
+
       console.log('Email test successful');
-      
+
       return c.json({
         success: true,
         message: 'Email configuration appears to be working',
@@ -327,12 +328,12 @@ export function createDebugRoutes(supabase: any) {
           anonKey: !!anonKey
         }
       });
-      
+
     } catch (error) {
       console.error('Email config test error:', error);
-      return c.json({ 
+      return c.json({
         success: false,
-        error: 'Test failed', 
+        error: 'Test failed',
         details: error.message,
         config: {
           supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
@@ -341,7 +342,7 @@ export function createDebugRoutes(supabase: any) {
         }
       }, 500);
     }
-    
+
     function getDiagnosis(error: any) {
       if (error.message?.includes('SMTP')) {
         return 'SMTP server not configured in Supabase project settings. Go to Authentication > Settings > SMTP Settings in Supabase dashboard.';
@@ -361,24 +362,24 @@ export function createDebugRoutes(supabase: any) {
   app.post('/debug/cleanup-orphaned-users', async (c) => {
     try {
       console.log('=== Cleanup orphaned users ===');
-      
+
       // Get all username mappings
       const allUserKeys = await kv.getByPrefix('user:username:');
       let orphanedUsers = [];
       let validUsers = [];
-      
+
       for (const userKey of allUserKeys) {
         const username = userKey.key.replace('user:username:', '');
         const userId = userKey.value;
-        
+
         try {
           // Check if user exists in Supabase auth
           const { data: authUser, error } = await supabase.auth.admin.getUserById(userId);
-          
+
           if (error || !authUser) {
             console.log(`Orphaned user found: ${username} (${userId})`);
             orphanedUsers.push({ username, userId, reason: error?.message || 'User not found in auth' });
-            
+
             // Clean up the orphaned user data
             await kv.del(`user:username:${username}`);
             const userProfile = await kv.get(`user:${userId}`);
@@ -395,7 +396,7 @@ export function createDebugRoutes(supabase: any) {
           console.error(`Error checking user ${username}:`, checkError);
         }
       }
-      
+
       return c.json({
         message: 'Cleanup completed',
         orphanedUsersRemoved: orphanedUsers.length,
