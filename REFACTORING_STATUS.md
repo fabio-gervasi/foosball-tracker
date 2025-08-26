@@ -4,7 +4,7 @@
 
 ### REQ-0.1: Security Hardening
 - [x] REQ-0.1.1: Environment Variables Migration
-- [ ] REQ-0.1.2: Remove Sensitive Logging
+- [x] REQ-0.1.2: Remove Sensitive Logging
 - [ ] REQ-0.1.3: Remove Client-Side Secrets
 
 ### REQ-0.2: Critical Bug Fixes

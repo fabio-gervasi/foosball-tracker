@@ -16,6 +16,7 @@ import { FoosballIcon } from './components/FoosballIcon';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
 
 import { supabase, apiRequest } from './utils/supabase/client';
+import { logger } from './utils/logger';
 import foosballIcon from './assets/foosball-icon.png';
 
 export default function App() {
@@ -52,10 +53,10 @@ export default function App() {
         // Ignore if subscription is no longer active
         if (!isSubscriptionActive) return;
 
-        console.log('=== Auth state change ===', event);
+        logger.authEvent(`Auth state change: ${event}`);
 
         if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing app state...');
+          logger.authEvent('User signed out');
           setIsLoggedIn(false);
           setCurrentUser(null);
           setCurrentGroup(null);
@@ -64,18 +65,18 @@ export default function App() {
           setUsers([]);
           setMatches([]);
         } else if (event === 'SIGNED_IN' && session?.access_token) {
-          console.log('User signed in via auth state change...');
+          logger.authEvent('User signed in via auth state change');
           // Use functional updates to avoid stale closures
           setAccessToken(prevToken => {
             if (prevToken !== session.access_token) {
-              console.log('New access token detected, updating...');
+              logger.sessionEvent('created', session.user?.id);
               setIsLoggedIn(prev => prev || true);
               return session.access_token;
             }
             return prevToken;
           });
         } else if (event === 'TOKEN_REFRESHED' && session?.access_token) {
-          console.log('Token refreshed, updating access token...');
+          logger.sessionEvent('refreshed', session.user?.id);
           setAccessToken(prevToken => {
             if (prevToken !== session.access_token) {
               return session.access_token;
@@ -130,16 +131,18 @@ export default function App() {
 
   const checkPasswordResetCallback = async () => {
     try {
-      console.log('=== Checking for password reset callback ===');
-      console.log('Current URL:', window.location.href);
-      console.log('Current pathname:', window.location.pathname);
+      logger.debug('Checking for password reset callback', {
+        pathname: window.location.pathname,
+        hasHash: !!window.location.hash,
+        hasSearch: !!window.location.search
+      });
 
       // Check if we're on the password reset callback path
       const isPasswordResetCallback = window.location.pathname.includes('/password-reset-callback') ||
                                      window.location.pathname.includes('/auth/confirm');
 
       if (isPasswordResetCallback) {
-        console.log('Password reset callback path detected');
+        logger.info('Password reset callback path detected');
 
         // Check for hash-based parameters (Supabase auth callback)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -154,10 +157,8 @@ export default function App() {
         const type = hashParams.get('type') || urlParams.get('type');
         const tokenHash = urlParams.get('token_hash');
 
-        console.log('Callback params:', {
-          error,
-          errorDescription,
-          errorCode,
+        logger.debug('Callback params received', {
+          hasError: !!error,
           hasAccessToken: !!accessToken,
           hasRefreshToken: !!refreshToken,
           hasTokenHash: !!tokenHash,
@@ -166,8 +167,7 @@ export default function App() {
 
         // If we have an error in the callback
         if (error) {
-          console.log('Password reset callback error:', error);
-          console.log('Error description:', errorDescription);
+          logger.error('Password reset callback error', { error, errorDescription });
 
           let errorMsg = 'Password reset link is invalid or expired. Please request a new password reset.';
 
@@ -184,7 +184,7 @@ export default function App() {
 
         // Handle PKCE flow with token_hash (new Supabase format)
         if (tokenHash && type === 'recovery') {
-          console.log('PKCE recovery token hash detected');
+          logger.info('PKCE recovery token hash detected');
 
           try {
             // Verify the OTP with Supabase
@@ -194,17 +194,17 @@ export default function App() {
             });
 
             if (verifyError) {
-              console.error('Failed to verify recovery token hash:', verifyError);
+              logger.error('Failed to verify recovery token hash', verifyError);
               throw verifyError;
             }
 
-            console.log('Recovery token verified successfully');
+            logger.info('Recovery token verified successfully');
 
             // Get the session after verification
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
             if (sessionError || !session) {
-              console.error('Failed to get session after verification:', sessionError);
+              logger.error('Failed to get session after verification', sessionError);
               throw sessionError || new Error('No session after verification');
             }
 
@@ -222,13 +222,13 @@ export default function App() {
             });
 
             if (updateError) {
-              console.error('Failed to update password:', updateError);
+              logger.error('Failed to update password', updateError);
               setError('Failed to update password. Please try again.');
               window.history.replaceState({}, document.title, '/');
               return;
             }
 
-            console.log('Password updated successfully');
+            logger.info('Password updated successfully');
             alert('Password updated successfully! You can now log in with your new password.');
             setError('');
 
@@ -238,7 +238,7 @@ export default function App() {
             return;
 
           } catch (tokenError) {
-            console.error('Error verifying recovery token:', tokenError);
+            logger.error('Error verifying recovery token', tokenError);
             setError('There was an issue with the password reset link. Please request a new password reset.');
             window.history.replaceState({}, document.title, '/');
             return;
@@ -247,7 +247,7 @@ export default function App() {
 
         // Handle implicit flow with access_token and refresh_token
         if (accessToken && refreshToken && type === 'recovery') {
-          console.log('Implicit recovery session detected');
+          logger.info('Implicit recovery session detected');
 
           try {
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
@@ -256,11 +256,11 @@ export default function App() {
             });
 
             if (sessionError) {
-              console.error('Failed to set recovery session:', sessionError);
+              logger.error('Failed to set recovery session', sessionError);
               throw sessionError;
             }
 
-            console.log('Recovery session set successfully');
+            logger.info('Recovery session set successfully');
 
             // Prompt user to set new password
             const newPassword = prompt('Please enter your new password (minimum 6 characters):');
@@ -277,14 +277,14 @@ export default function App() {
             });
 
             if (updateError) {
-              console.error('Failed to update password:', updateError);
+              logger.error('Failed to update password', updateError);
               setError('Failed to update password. Please try again.');
               await supabase.auth.signOut();
               window.history.replaceState({}, document.title, '/');
               return;
             }
 
-            console.log('Password updated successfully');
+            logger.info('Password updated successfully');
             alert('Password updated successfully! You can now log in with your new password.');
             setError('');
 
@@ -294,7 +294,7 @@ export default function App() {
             return;
 
           } catch (sessionError) {
-            console.error('Error handling recovery session:', sessionError);
+            logger.error('Error handling recovery session', sessionError);
             setError('There was an issue with the password reset link. Please request a new password reset.');
             window.history.replaceState({}, document.title, '/');
             return;
@@ -302,16 +302,16 @@ export default function App() {
         }
 
         // If we're on the callback path but don't have valid parameters
-        console.log('On callback path but no valid parameters found');
+        logger.warn('On callback path but no valid parameters found');
         setError('Password reset link appears to be incomplete. Please request a new password reset.');
         window.history.replaceState({}, document.title, '/');
         return;
       }
 
-      console.log('No password reset callback detected');
+      logger.debug('No password reset callback detected');
 
     } catch (error) {
-      console.error('Error checking password reset callback:', error);
+      logger.error('Error checking password reset callback', error);
       setError('An error occurred while processing the password reset. Please try again.');
     } finally {
       setIsLoading(false);
@@ -320,19 +320,17 @@ export default function App() {
 
   const checkSession = async () => {
     try {
-      console.log('=== Checking existing session ===');
+      logger.debug('Checking existing session');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError) {
-        console.error('Session retrieval error:', sessionError);
+        logger.error('Session retrieval error', sessionError);
         setIsLoading(false);
         return;
       }
 
       if (session?.access_token) {
-        console.log('Found existing session, validating with server...');
-        console.log('Session user ID:', session.user?.id);
-        console.log('Token expires at:', new Date(session.expires_at * 1000).toISOString());
+        logger.sessionEvent('validated', session.user?.id);
 
         try {
           // Validate session with our server
@@ -342,27 +340,30 @@ export default function App() {
             },
           });
 
-          console.log('Session validated successfully, user:', response.user.name || response.user.username);
+          logger.info('Session validated successfully', {
+            userName: response.user.name || response.user.username,
+            hasGroup: !!response.user.currentGroup
+          });
           setCurrentUser(response.user);
           setAccessToken(session.access_token);
           setIsLoggedIn(true);
 
           // Don't load group data here - let the main useEffect handle data loading
-          console.log('User validation complete, group:', response.user.currentGroup || 'none');
+          logger.debug('User validation complete');
         } catch (validationError) {
-          console.error('Session validation failed:', validationError.message);
+          logger.error('Session validation failed', validationError);
 
           // Check if this is a token expiration issue - but only try refresh ONCE
           if (validationError.message.includes('expired') || validationError.message.includes('JWT')) {
-            console.log('Token appears expired or invalid, attempting ONE refresh...');
+            logger.info('Token appears expired or invalid, attempting refresh');
             try {
               const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
               if (refreshError || !refreshData.session) {
-                console.error('Session refresh failed:', refreshError?.message);
+                logger.error('Session refresh failed', refreshError);
                 throw refreshError || new Error('Session refresh failed');
               }
 
-              console.log('Session refreshed successfully, retrying validation ONCE...');
+              logger.sessionEvent('refreshed');
               // Only set the token if it's actually different to avoid loops
               if (refreshData.session.access_token !== accessToken) {
                 setAccessToken(refreshData.session.access_token);
@@ -371,19 +372,19 @@ export default function App() {
               }
               return;
             } catch (refreshError) {
-              console.error('Session refresh and retry failed:', refreshError.message);
+              logger.error('Session refresh and retry failed', refreshError);
             }
           }
 
           // Session is invalid and couldn't be refreshed, clear it
-          console.log('Clearing invalid session...');
+          logger.info('Clearing invalid session');
           await supabase.auth.signOut();
         }
       } else {
-        console.log('No existing session found');
+        logger.debug('No existing session found');
       }
     } catch (error) {
-      console.error('Session check error:', error.message);
+      logger.error('Session check error', error);
     } finally {
       setIsLoading(false);
     }
@@ -398,14 +399,14 @@ export default function App() {
       });
       setCurrentGroup(groupResponse.group);
     } catch (error) {
-      console.error('Failed to load current group:', error);
+      logger.error('Failed to load current group', error);
     }
   };
 
   const loadAppData = async () => {
     // Prevent overlapping requests
     if (loadingRef.current) {
-      console.log('Data loading already in progress, skipping...');
+      logger.debug('Data loading already in progress, skipping');
       return;
     }
 
@@ -439,21 +440,21 @@ export default function App() {
       if (userResponse.status === 'fulfilled') {
         setCurrentUser(userResponse.value.user);
       } else {
-        console.error('Failed to refresh user data:', userResponse.reason);
+        logger.error('Failed to refresh user data', userResponse.reason);
       }
 
       // Handle group data
       if (groupResponse.status === 'fulfilled') {
         setCurrentGroup(groupResponse.value.group);
       } else {
-        console.error('Failed to refresh group data:', groupResponse.reason);
+        logger.error('Failed to refresh group data', groupResponse.reason);
       }
 
       // Handle users data
       if (usersResponse.status === 'fulfilled') {
         setUsers(usersResponse.value.users || []);
       } else {
-        console.error('Failed to load users:', usersResponse.reason);
+        logger.error('Failed to load users', usersResponse.reason);
         setUsers([]);
       }
 
@@ -461,33 +462,33 @@ export default function App() {
       if (matchesResponse.status === 'fulfilled') {
         setMatches(matchesResponse.value.matches || []);
       } else {
-        console.error('Failed to load matches:', matchesResponse.reason);
+        logger.error('Failed to load matches', matchesResponse.reason);
         setMatches([]);
       }
 
     } catch (error) {
-      console.error('Failed to load app data:', error.message);
+      logger.error('Failed to load app data', error);
 
       // Handle authentication errors specifically
       if (error.message.includes('Invalid or expired token') || error.message.includes('JWT') || error.message.includes('Authentication')) {
-        console.log('Authentication error detected, attempting session refresh...');
+        logger.info('Authentication error detected, attempting session refresh');
         try {
           // Try to refresh the session - but prevent multiple simultaneous refreshes
           if (loadingRef.current) {
-            console.log('Already refreshing, skipping duplicate refresh attempt');
+            logger.debug('Already refreshing, skipping duplicate refresh attempt');
             return;
           }
 
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
           if (refreshError || !refreshData.session?.access_token) {
-            console.error('Session refresh failed:', refreshError?.message);
-            console.log('Logging out user due to authentication failure');
+            logger.error('Session refresh failed', refreshError);
+            logger.info('Logging out user due to authentication failure');
             handleLogout();
             return;
           }
 
-          console.log('Session refreshed, updating token...');
+          logger.sessionEvent('refreshed');
           // Only update if token actually changed to prevent loops
           if (refreshData.session.access_token !== accessToken) {
             setAccessToken(refreshData.session.access_token);
@@ -495,8 +496,8 @@ export default function App() {
           return;
 
         } catch (refreshError) {
-          console.error('Session refresh failed:', refreshError.message);
-          console.log('Logging out user due to refresh failure');
+          logger.error('Session refresh failed', refreshError);
+          logger.info('Logging out user due to refresh failure');
           handleLogout();
           return;
         }
@@ -534,18 +535,18 @@ export default function App() {
     const [userResponse, groupResponse, usersResponse, matchesResponse] = await Promise.allSettled(requests);
 
     // Handle user data
-    if (userResponse.status === 'fulfilled') {
-      setCurrentUser(userResponse.value.user);
-    } else {
-      console.error('Failed to refresh user data with token:', userResponse.reason);
-    }
+          if (userResponse.status === 'fulfilled') {
+        setCurrentUser(userResponse.value.user);
+      } else {
+        logger.error('Failed to refresh user data with token', userResponse.reason);
+      }
 
     // Handle group data
-    if (groupResponse.status === 'fulfilled') {
-      setCurrentGroup(groupResponse.value.group);
-    } else {
-      console.error('Failed to refresh group data with token:', groupResponse.reason);
-    }
+          if (groupResponse.status === 'fulfilled') {
+        setCurrentGroup(groupResponse.value.group);
+      } else {
+        logger.error('Failed to refresh group data with token', groupResponse.reason);
+      }
 
     // Handle users and matches
     if (usersResponse.status === 'fulfilled') {
@@ -591,7 +592,7 @@ export default function App() {
       setCurrentUser(userResponse.user);
       // The useEffect will automatically trigger loadAppData when currentUser updates
     } catch (error) {
-      console.error('Failed to refresh user data after group selection:', error);
+      logger.error('Failed to refresh user data after group selection', error);
       setError('Failed to load group data. Please try refreshing the page.');
     } finally {
       loadingRef.current = false;
@@ -618,7 +619,7 @@ export default function App() {
 
       // The useEffect will automatically trigger loadAppData when currentUser updates
     } catch (error) {
-      console.error('Failed to refresh data after group change:', error);
+      logger.error('Failed to refresh data after group change', error);
       setError('Failed to load group data. Please try refreshing the page.');
     } finally {
       loadingRef.current = false;
@@ -629,7 +630,7 @@ export default function App() {
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error', error);
     } finally {
       setIsLoggedIn(false);
       setCurrentUser(null);
@@ -715,7 +716,7 @@ export default function App() {
 
       return response;
     } catch (error) {
-      console.error('Failed to record match:', error);
+      logger.error('Failed to record match', error);
       throw error;
     }
   };
@@ -743,19 +744,19 @@ export default function App() {
         });
         setUsers(usersResponse.users || []);
       } catch (error) {
-        console.error('Failed to refresh users after profile update:', error);
+        logger.error('Failed to refresh users after profile update', error);
       }
 
       return response.user;
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      logger.error('Failed to update profile', error);
       throw error;
     }
   };
 
   const handleGroupDeleted = async () => {
     try {
-      console.log('Group deleted, refreshing user data...');
+      logger.info('Group deleted, refreshing user data');
 
       // Refresh user data to get updated group status
       const userResponse = await apiRequest('/user', {
@@ -774,8 +775,9 @@ export default function App() {
 
       // User will now be redirected to group selection via the normal flow
     } catch (error) {
-      console.error('Failed to refresh user data after group deletion:', error);
+      logger.error('Failed to refresh user data after group deletion', error);
       // If we can't refresh user data, just force a logout
+      logger.info('Forcing logout due to group deletion error');
       handleLogout();
     }
   };
