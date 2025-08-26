@@ -17,13 +17,14 @@ export function Navigation({ currentView, onViewChange, currentUser }: Navigatio
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-screen sm:w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl bg-white border-t border-gray-200 z-50">
-      <div className="flex w-screen sm:w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           const isAddMatch = item.id === 'match';
-          
+
           return (
             <button
               key={item.id}
@@ -43,6 +44,7 @@ export function Navigation({ currentView, onViewChange, currentUser }: Navigatio
             </button>
           );
         })}
+        </div>
       </div>
     </nav>
   );

@@ -3,6 +3,7 @@ import { User, Lock, Mail, Server, AlertCircle } from 'lucide-react';
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import foosballIcon from "../assets/foosball-icon.png";
 import { apiRequest, supabase } from "../utils/supabase/client";
+import { useAuth } from "../contexts/AuthContext";
 import {
   validateUsername,
   validateEmail,
@@ -11,6 +12,7 @@ import {
 } from "../utils/login-helpers";
 
 export function Login({ onLogin }) {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -144,7 +146,7 @@ export function Login({ onLogin }) {
             },
           });
 
-          onLogin(response.user, data.session.access_token);
+          await login(response.user, data.session.access_token);
         } else {
           // Username login: use server endpoint that handles username-to-email conversion
           const response = await apiRequest("/signin", {
@@ -156,7 +158,7 @@ export function Login({ onLogin }) {
           });
 
           // The server response includes both user profile and session token
-          onLogin(response.user, response.session.access_token);
+          await login(response.user, response.session.access_token);
         }
       } else {
         // Step 1: Create account via our server
@@ -181,7 +183,7 @@ export function Login({ onLogin }) {
           throw signInError;
         }
 
-        onLogin(response.user, data.session.access_token);
+        await login(response.user, data.session.access_token);
       }
     } catch (error) {
       const friendlyError = transformErrorMessage(error.message, !isLogin);

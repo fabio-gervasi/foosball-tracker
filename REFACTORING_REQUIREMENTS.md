@@ -951,6 +951,279 @@ describe('AuthProvider', () => {
 - [ ] Performance monitoring added
 - [ ] Bundle size optimized
 
+## PHASE 4: GROUP MANAGEMENT IMPROVEMENTS (Week 4-5)
+
+### REQ-4.1: Multi-Group Management Issues Resolution
+**Priority**: High
+**Estimated Effort**: 20 hours
+**Dependencies**: REQ-2.1, REQ-2.2
+
+#### Current Issues Identified
+
+##### REQ-4.1.1: Group Dropdown Limitation
+**Problem**: Users can only see one group in the dropdown and cannot switch between groups
+**Root Cause**: The `loadUserGroups()` function in Profile.tsx may not be loading all user groups correctly, or the group switching UI is not displaying multiple groups properly
+
+**Current Implementation Analysis**:
+```typescript
+// In Profile.tsx - loadUserGroups()
+const response = await apiRequest('/groups/user-groups', {
+  headers: { Authorization: `Bearer ${accessToken}` }
+});
+setUserGroups(response.groups || []);
+```
+
+**Issues**:
+- `/groups/user-groups` endpoint may not be returning all user groups
+- Group dropdown UI might be filtering or limiting display
+- User groups array structure may not match expected format
+
+**Acceptance Criteria**:
+- [ ] All user groups displayed in dropdown
+- [ ] Group switching functionality works bidirectionally
+- [ ] UI clearly shows current vs available groups
+- [ ] Loading states for group switching
+
+##### REQ-4.1.2: Group Creation Navigation Lock
+**Problem**: After creating a new group, users cannot navigate back to previous groups without leaving/deleting the new group
+**Root Cause**: Group creation process may not properly maintain user's group membership list or the switching mechanism is broken
+
+**Current Implementation Analysis**:
+```typescript
+// In group-routes.tsx - Create group
+userProfile.currentGroup = groupCode;
+userProfile.groups = userProfile.groups || [];
+userProfile.groups.push({
+  code: groupCode,
+  name,
+  joinedAt: new Date().toISOString(),
+  role: 'admin'
+});
+```
+
+**Issues**:
+- Group creation may overwrite previous group memberships
+- User profile groups array may not be properly maintained
+- Group switching logic may not handle newly created groups correctly
+
+**Acceptance Criteria**:
+- [ ] Creating new group preserves existing group memberships
+- [ ] Users can switch back to previous groups after creation
+- [ ] Group membership persistence across sessions
+- [ ] Proper group role management (admin/member)
+
+##### REQ-4.1.3: Cross-Group Statistics Contamination
+**Problem**: When creating a new group, rankings still show wins/losses from other groups instead of being isolated per group
+**Root Cause**: User statistics (wins, losses, ELO) are stored globally on user profile instead of being group-specific
+
+**Current Implementation Analysis**:
+```typescript
+// In user profile structure
+user: {
+  wins: number,        // Global across all groups ❌
+  losses: number,      // Global across all groups ❌
+  elo: number,         // Global across all groups ❌
+  singlesWins: number, // Global across all groups ❌
+  // ... other global stats
+}
+```
+
+**Issues**:
+- Statistics are stored at user level, not per group
+- Match calculations aggregate across all groups
+- Leaderboard and rankings show cross-group contamination
+- No group-specific ELO or statistics tracking
+
+**Acceptance Criteria**:
+- [ ] Group-specific statistics storage
+- [ ] Isolated ELO ratings per group
+- [ ] Match history filtered by current group
+- [ ] Leaderboard shows only current group stats
+- [ ] Statistics reset when switching groups
+
+#### Implementation Strategy
+
+##### Phase 4.1: Data Model Restructuring (8 hours)
+
+**REQ-4.1.1-A: Group-Specific User Statistics**
+```typescript
+// New user profile structure
+interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  currentGroup: string;
+  groups: GroupMembership[];
+
+  // Group-specific stats
+  groupStats: {
+    [groupCode: string]: {
+      wins: number;
+      losses: number;
+      elo: number;
+      singlesWins: number;
+      singlesLosses: number;
+      doublesWins: number;
+      doublesLosses: number;
+      singlesElo: number;
+      doublesElo: number;
+      joinedAt: string;
+      lastActiveAt: string;
+    }
+  };
+
+  // Legacy global stats (deprecated)
+  wins?: number;
+  losses?: number;
+  elo?: number;
+}
+
+interface GroupMembership {
+  code: string;
+  name: string;
+  role: 'admin' | 'member';
+  joinedAt: string;
+  isActive: boolean;
+}
+```
+
+**Implementation Steps**:
+1. Create data migration script for existing users
+2. Update user profile creation to initialize group stats
+3. Modify match result processing to update group-specific stats
+4. Update all statistics calculations to use group-specific data
+
+**Acceptance Criteria**:
+- [ ] New user profile structure implemented
+- [ ] Data migration script for existing users
+- [ ] Group-specific statistics properly isolated
+- [ ] Legacy compatibility maintained during transition
+
+##### Phase 4.2: Group Management API Improvements (6 hours)
+
+**REQ-4.1.2-A: Enhanced Group Endpoints**
+```typescript
+// New/Updated API endpoints needed:
+// GET /groups/user-groups - Fix to return ALL user groups
+// POST /groups/switch - Enhance with proper validation
+// GET /groups/{code}/stats - Group-specific statistics
+// POST /groups/{code}/leave - Allow leaving groups
+// DELETE /groups/{code} - Admin can delete empty groups
+```
+
+**Implementation Steps**:
+1. Fix `/groups/user-groups` to return complete group list
+2. Enhance group switching validation and error handling
+3. Add group leave functionality
+4. Implement group deletion for admins
+5. Add group-specific statistics endpoints
+
+**Acceptance Criteria**:
+- [ ] All user groups returned in API calls
+- [ ] Group switching works between any user groups
+- [ ] Users can leave groups (with confirmation)
+- [ ] Admins can delete empty groups
+- [ ] Proper error handling and validation
+
+##### Phase 4.3: UI/UX Improvements (6 hours)
+
+**REQ-4.1.3-A: Enhanced Group Management Interface**
+```typescript
+// Profile.tsx improvements needed:
+// - Multi-group dropdown with all available groups
+// - Clear current group indication
+// - Group leave/delete functionality
+// - Loading states for all group operations
+// - Confirmation dialogs for destructive actions
+```
+
+**Implementation Steps**:
+1. Redesign group selector dropdown
+2. Add group management actions (leave/delete)
+3. Implement proper loading and error states
+4. Add confirmation dialogs for destructive actions
+5. Update group switching UX flow
+
+**Acceptance Criteria**:
+- [ ] All user groups visible in dropdown
+- [ ] Clear visual indication of current group
+- [ ] Group leave/delete functionality
+- [ ] Proper loading states and error handling
+- [ ] User-friendly confirmation dialogs
+
+#### Testing Requirements
+
+**Unit Tests**:
+- [ ] Group-specific statistics calculations
+- [ ] Group switching logic
+- [ ] Data migration functions
+- [ ] API endpoint validation
+
+**Integration Tests**:
+- [ ] Multi-group user workflows
+- [ ] Group creation and switching flow
+- [ ] Statistics isolation between groups
+- [ ] Group management permissions
+
+**User Acceptance Tests**:
+- [ ] Create group → switch back to original group
+- [ ] Verify statistics are isolated per group
+- [ ] Test group dropdown shows all user groups
+- [ ] Confirm group leave/delete functionality
+
+#### Migration Strategy
+
+**Phase 1: Data Migration (Non-breaking)**
+1. Add new group-specific statistics fields
+2. Migrate existing user data to new structure
+3. Maintain backward compatibility
+
+**Phase 2: API Updates (Backward Compatible)**
+1. Update endpoints to support new data structure
+2. Add new group management endpoints
+3. Maintain legacy endpoint compatibility
+
+**Phase 3: UI Updates (User-Visible)**
+1. Update Profile component group management
+2. Update statistics displays to use group-specific data
+3. Update leaderboard to show group-specific rankings
+
+**Phase 4: Cleanup (Breaking Changes)**
+1. Remove legacy global statistics fields
+2. Remove backward compatibility code
+3. Update documentation
+
+#### Risk Assessment
+
+**High Risk**:
+- **Data Migration**: Risk of losing existing user statistics
+  - *Mitigation*: Comprehensive backup, gradual rollout, rollback plan
+
+- **Group Isolation**: Risk of breaking existing group functionality
+  - *Mitigation*: Extensive testing, feature flags, staged deployment
+
+**Medium Risk**:
+- **Performance Impact**: Group-specific queries may be slower
+  - *Mitigation*: Database indexing, query optimization, caching
+
+- **User Confusion**: New group management UX may confuse users
+  - *Mitigation*: Clear documentation, gradual UX changes, user feedback
+
+#### Success Metrics
+
+**Functional Metrics**:
+- [ ] Users can see all their groups in dropdown
+- [ ] Group switching works bidirectionally
+- [ ] New group creation doesn't lock users
+- [ ] Statistics are properly isolated per group
+- [ ] Group leave/delete functionality works
+
+**Technical Metrics**:
+- [ ] Zero data loss during migration
+- [ ] <500ms response time for group operations
+- [ ] 100% backward compatibility during transition
+- [ ] All existing tests pass after changes
+
 ## Implementation Timeline
 
 ### Week 1: Security & Critical Refactoring
@@ -973,6 +1246,12 @@ describe('AuthProvider', () => {
 **Days 1-2**: REQ-3.7 (Testing framework)
 **Days 3-4**: REQ-3.8 (Performance optimization)
 **Day 5**: Final testing and documentation
+
+### Week 4-5: Group Management Improvements (Critical Issues)
+**Days 1-2**: REQ-4.1.1-A (Data model restructuring for group-specific stats)
+**Days 2-3**: REQ-4.1.2-A (Enhanced group management APIs)
+**Days 4-5**: REQ-4.1.3-A (UI/UX improvements for multi-group management)
+**Week 5**: Testing, migration, and deployment of group improvements
 
 ## Testing Requirements
 
