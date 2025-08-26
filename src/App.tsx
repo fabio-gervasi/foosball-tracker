@@ -789,19 +789,12 @@ export default function App() {
         <div className="text-center max-w-md mx-auto">
           <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-6">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-              {currentGroup?.icon ? (
-                <ImageWithFallback
-                  src={currentGroup.icon}
-                  alt="Group Logo"
-                  className="w-14 h-14 md:w-18 md:h-18 object-cover rounded-full"
-                />
-              ) : (
-                <ImageWithFallback
-                  src={foosballIcon}
-                  alt="Foosball Logo"
-                  className="w-14 h-14 md:w-18 md:h-18 object-cover rounded-full"
-                />
-              )}
+              <ImageWithFallback
+                src={currentGroup?.icon || foosballIcon}
+                alt={`${currentGroup?.name || "Foosball"} Logo`}
+                className="w-14 h-14 md:w-18 md:h-18 object-cover rounded-full"
+                fallbackSrc={foosballIcon}
+              />
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl text-gray-800">Foosball Tracker</h1>
           </div>
@@ -891,19 +884,12 @@ export default function App() {
             {/* Logo */}
             <div className="flex items-center space-x-3 md:space-x-4">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-                {currentGroup?.icon ? (
-                  <ImageWithFallback
-                    src={foosballIcon}
-                    alt="Foosball Logo"
-                    className="w-9 h-9 md:w-11 md:h-11 object-cover rounded-full"
-                  />
-                ) : (
-                  <ImageWithFallback
-                    src={foosballIcon}
-                    alt="Foosball Logo"
-                    className="w-9 h-9 md:w-11 md:h-11 object-cover rounded-full"
-                  />
-                )}
+                <ImageWithFallback
+                  src={currentGroup?.icon || foosballIcon}
+                  alt={`${currentGroup?.name || "Foosball"} Logo`}
+                  className="w-9 h-9 md:w-11 md:h-11 object-cover rounded-full"
+                  fallbackSrc={foosballIcon}
+                />
               </div>
               <div>
                 <h1 className="text-xl md:text-2xl lg:text-3xl text-white">Foosball Tracker</h1>
