@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Trophy, Users, Building2 } from 'lucide-react';
 import { apiRequest } from '../utils/supabase/client';
+import { logger } from '../utils/logger';
 import { MatchManagement } from './admin/MatchManagement';
 import { UserManagement } from './admin/UserManagement';
 import { GroupManagement } from './admin/GroupManagement';
@@ -14,13 +15,13 @@ interface AdminPanelProps {
   onGroupDeleted?: () => void;
 }
 
-export function AdminPanel({ 
-  currentUser, 
-  accessToken, 
-  group, 
-  users, 
-  onDataChange, 
-  onGroupDeleted 
+export function AdminPanel({
+  currentUser,
+  accessToken,
+  group,
+  users,
+  onDataChange,
+  onGroupDeleted
 }: AdminPanelProps) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,11 +29,11 @@ export function AdminPanel({
   const [activeTab, setActiveTab] = useState<'matches' | 'users' | 'group'>('matches');
 
   // Debug logging for users prop
-  console.log('=== AdminPanel Debug ===');
-  console.log('Users prop length:', users?.length || 0);
-  console.log('Users data:', users);
-  console.log('Current user:', currentUser?.name);
-  console.log('Group:', group?.name);
+  logger.debug('AdminPanel initialized', {
+    usersCount: users?.length || 0,
+    currentUserName: currentUser?.name,
+    groupName: group?.name
+  });
 
   useEffect(() => {
     loadAdminData();
@@ -42,18 +43,18 @@ export function AdminPanel({
     try {
       setError('');
       setLoading(true);
-      
-      console.log('Loading admin matches...');
+
+      logger.info('Loading admin matches');
       const matchesResponse = await apiRequest('/admin/matches', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      
+
       setMatches(matchesResponse.matches || []);
-      console.log('Admin matches loaded:', matchesResponse.matches?.length || 0);
+      logger.info('Admin matches loaded', { matchCount: matchesResponse.matches?.length || 0 });
     } catch (error) {
-      console.error('Failed to load admin data:', error);
+      logger.error('Failed to load admin data', error);
       setError('Failed to load admin data: ' + error.message);
     } finally {
       setLoading(false);
@@ -130,7 +131,7 @@ export function AdminPanel({
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
           <p className="text-sm">{error}</p>
-          <button 
+          <button
             onClick={() => setError('')}
             className="text-red-500 hover:text-red-700 text-xs mt-1"
           >

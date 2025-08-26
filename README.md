@@ -18,7 +18,11 @@ Before running the application, you need to configure your environment variables
    - Copy your Project Reference ID to `VITE_SUPABASE_PROJECT_ID`
    - Copy your anon/public key to `VITE_SUPABASE_ANON_KEY`
 
-3. Save the `.env` file
+3. (Optional) Set a custom admin secret:
+   - Add `ADMIN_SECRET=your-custom-secret` to your `.env` file
+   - If not set, defaults to `foosball-admin-2024`
+
+4. Save the `.env` file
 
 **Important**: The application will fail to start if these environment variables are not properly configured.
 

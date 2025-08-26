@@ -1,0 +1,9 @@
+# Copy this content to create your .env file
+# File: .env (create this file in your project root)
+
+# Supabase Configuration (Required)
+VITE_SUPABASE_PROJECT_ID=your_project_id_here
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Admin Secret (Optional - has fallback)
+ADMIN_SECRET=foosball-admin-2024
