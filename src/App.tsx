@@ -16,6 +16,7 @@ import { FoosballIcon } from './components/FoosballIcon';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
 
 import { supabase, apiRequest } from './utils/supabase/client';
+import foosballIcon from './assets/foosball-icon.png';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,14 +46,14 @@ export default function App() {
   // Listen for auth state changes - FIXED: Remove dependencies to prevent listener recreation
   useEffect(() => {
     let isSubscriptionActive = true;
-    
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Ignore if subscription is no longer active
         if (!isSubscriptionActive) return;
-        
+
         console.log('=== Auth state change ===', event);
-        
+
         if (event === 'SIGNED_OUT') {
           console.log('User signed out, clearing app state...');
           setIsLoggedIn(false);
@@ -113,7 +114,7 @@ export default function App() {
   // Load data when user logs in and has a group - FIXED: Removed isLoadingData dependency
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    
+
     if (isLoggedIn && accessToken && currentUser?.currentGroup && !loadingRef.current) {
       // Debounce data loading to prevent rapid-fire calls
       timeoutId = setTimeout(() => {
@@ -121,7 +122,7 @@ export default function App() {
         loadAppData().finally(() => setIsLoadingData(false));
       }, 200); // 200ms debounce for better stability
     }
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -132,18 +133,18 @@ export default function App() {
       console.log('=== Checking for password reset callback ===');
       console.log('Current URL:', window.location.href);
       console.log('Current pathname:', window.location.pathname);
-      
+
       // Check if we're on the password reset callback path
-      const isPasswordResetCallback = window.location.pathname.includes('/password-reset-callback') || 
+      const isPasswordResetCallback = window.location.pathname.includes('/password-reset-callback') ||
                                      window.location.pathname.includes('/auth/confirm');
-      
+
       if (isPasswordResetCallback) {
         console.log('Password reset callback path detected');
-        
+
         // Check for hash-based parameters (Supabase auth callback)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const urlParams = new URLSearchParams(window.location.search);
-        
+
         // Check both hash and query parameters
         const error = hashParams.get('error') || urlParams.get('error');
         const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
@@ -167,15 +168,15 @@ export default function App() {
         if (error) {
           console.log('Password reset callback error:', error);
           console.log('Error description:', errorDescription);
-          
+
           let errorMsg = 'Password reset link is invalid or expired. Please request a new password reset.';
-          
+
           if (errorCode === 'otp_expired') {
             errorMsg = 'The password reset link has expired. Please request a new password reset.';
           } else if (error === 'access_denied') {
             errorMsg = 'The password reset link is invalid. Please request a new password reset.';
           }
-          
+
           setError(errorMsg);
           window.history.replaceState({}, document.title, '/');
           return;
@@ -184,29 +185,29 @@ export default function App() {
         // Handle PKCE flow with token_hash (new Supabase format)
         if (tokenHash && type === 'recovery') {
           console.log('PKCE recovery token hash detected');
-          
+
           try {
             // Verify the OTP with Supabase
             const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
               token_hash: tokenHash,
               type: 'recovery',
             });
-            
+
             if (verifyError) {
               console.error('Failed to verify recovery token hash:', verifyError);
               throw verifyError;
             }
-            
+
             console.log('Recovery token verified successfully');
-            
+
             // Get the session after verification
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            
+
             if (sessionError || !session) {
               console.error('Failed to get session after verification:', sessionError);
               throw sessionError || new Error('No session after verification');
             }
-            
+
             // Prompt user to set new password
             const newPassword = prompt('Please enter your new password (minimum 6 characters):');
             if (!newPassword || newPassword.length < 6) {
@@ -214,28 +215,28 @@ export default function App() {
               window.history.replaceState({}, document.title, '/');
               return;
             }
-            
+
             // Update the password
-            const { error: updateError } = await supabase.auth.updateUser({ 
-              password: newPassword 
+            const { error: updateError } = await supabase.auth.updateUser({
+              password: newPassword
             });
-            
+
             if (updateError) {
               console.error('Failed to update password:', updateError);
               setError('Failed to update password. Please try again.');
               window.history.replaceState({}, document.title, '/');
               return;
             }
-            
+
             console.log('Password updated successfully');
             alert('Password updated successfully! You can now log in with your new password.');
             setError('');
-            
+
             // Sign out after password reset
             await supabase.auth.signOut();
             window.history.replaceState({}, document.title, '/');
             return;
-            
+
           } catch (tokenError) {
             console.error('Error verifying recovery token:', tokenError);
             setError('There was an issue with the password reset link. Please request a new password reset.');
@@ -247,20 +248,20 @@ export default function App() {
         // Handle implicit flow with access_token and refresh_token
         if (accessToken && refreshToken && type === 'recovery') {
           console.log('Implicit recovery session detected');
-          
+
           try {
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
             });
-            
+
             if (sessionError) {
               console.error('Failed to set recovery session:', sessionError);
               throw sessionError;
             }
-            
+
             console.log('Recovery session set successfully');
-            
+
             // Prompt user to set new password
             const newPassword = prompt('Please enter your new password (minimum 6 characters):');
             if (!newPassword || newPassword.length < 6) {
@@ -269,12 +270,12 @@ export default function App() {
               window.history.replaceState({}, document.title, '/');
               return;
             }
-            
+
             // Update the password
-            const { error: updateError } = await supabase.auth.updateUser({ 
-              password: newPassword 
+            const { error: updateError } = await supabase.auth.updateUser({
+              password: newPassword
             });
-            
+
             if (updateError) {
               console.error('Failed to update password:', updateError);
               setError('Failed to update password. Please try again.');
@@ -282,16 +283,16 @@ export default function App() {
               window.history.replaceState({}, document.title, '/');
               return;
             }
-            
+
             console.log('Password updated successfully');
             alert('Password updated successfully! You can now log in with your new password.');
             setError('');
-            
+
             // Sign out after password reset
             await supabase.auth.signOut();
             window.history.replaceState({}, document.title, '/');
             return;
-            
+
           } catch (sessionError) {
             console.error('Error handling recovery session:', sessionError);
             setError('There was an issue with the password reset link. Please request a new password reset.');
@@ -308,7 +309,7 @@ export default function App() {
       }
 
       console.log('No password reset callback detected');
-      
+
     } catch (error) {
       console.error('Error checking password reset callback:', error);
       setError('An error occurred while processing the password reset. Please try again.');
@@ -321,18 +322,18 @@ export default function App() {
     try {
       console.log('=== Checking existing session ===');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError) {
         console.error('Session retrieval error:', sessionError);
         setIsLoading(false);
         return;
       }
-      
+
       if (session?.access_token) {
         console.log('Found existing session, validating with server...');
         console.log('Session user ID:', session.user?.id);
         console.log('Token expires at:', new Date(session.expires_at * 1000).toISOString());
-        
+
         try {
           // Validate session with our server
           const response = await apiRequest('/user', {
@@ -340,7 +341,7 @@ export default function App() {
               Authorization: `Bearer ${session.access_token}`,
             },
           });
-          
+
           console.log('Session validated successfully, user:', response.user.name || response.user.username);
           setCurrentUser(response.user);
           setAccessToken(session.access_token);
@@ -350,7 +351,7 @@ export default function App() {
           console.log('User validation complete, group:', response.user.currentGroup || 'none');
         } catch (validationError) {
           console.error('Session validation failed:', validationError.message);
-          
+
           // Check if this is a token expiration issue - but only try refresh ONCE
           if (validationError.message.includes('expired') || validationError.message.includes('JWT')) {
             console.log('Token appears expired or invalid, attempting ONE refresh...');
@@ -360,7 +361,7 @@ export default function App() {
                 console.error('Session refresh failed:', refreshError?.message);
                 throw refreshError || new Error('Session refresh failed');
               }
-              
+
               console.log('Session refreshed successfully, retrying validation ONCE...');
               // Only set the token if it's actually different to avoid loops
               if (refreshData.session.access_token !== accessToken) {
@@ -373,7 +374,7 @@ export default function App() {
               console.error('Session refresh and retry failed:', refreshError.message);
             }
           }
-          
+
           // Session is invalid and couldn't be refreshed, clear it
           console.log('Clearing invalid session...');
           await supabase.auth.signOut();
@@ -407,15 +408,15 @@ export default function App() {
       console.log('Data loading already in progress, skipping...');
       return;
     }
-    
+
     try {
       loadingRef.current = true;
       setError('');
-      
+
       if (!accessToken) {
         throw new Error('No access token available');
       }
-      
+
       // Make all API calls in parallel for better performance
       const requests = [
         apiRequest('/user', {
@@ -431,23 +432,23 @@ export default function App() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }),
       ];
-      
+
       const [userResponse, groupResponse, usersResponse, matchesResponse] = await Promise.allSettled(requests);
-      
+
       // Handle user data
       if (userResponse.status === 'fulfilled') {
         setCurrentUser(userResponse.value.user);
       } else {
         console.error('Failed to refresh user data:', userResponse.reason);
       }
-      
+
       // Handle group data
       if (groupResponse.status === 'fulfilled') {
         setCurrentGroup(groupResponse.value.group);
       } else {
         console.error('Failed to refresh group data:', groupResponse.reason);
       }
-      
+
       // Handle users data
       if (usersResponse.status === 'fulfilled') {
         setUsers(usersResponse.value.users || []);
@@ -455,7 +456,7 @@ export default function App() {
         console.error('Failed to load users:', usersResponse.reason);
         setUsers([]);
       }
-      
+
       // Handle matches data
       if (matchesResponse.status === 'fulfilled') {
         setMatches(matchesResponse.value.matches || []);
@@ -463,10 +464,10 @@ export default function App() {
         console.error('Failed to load matches:', matchesResponse.reason);
         setMatches([]);
       }
-      
+
     } catch (error) {
       console.error('Failed to load app data:', error.message);
-      
+
       // Handle authentication errors specifically
       if (error.message.includes('Invalid or expired token') || error.message.includes('JWT') || error.message.includes('Authentication')) {
         console.log('Authentication error detected, attempting session refresh...');
@@ -476,23 +477,23 @@ export default function App() {
             console.log('Already refreshing, skipping duplicate refresh attempt');
             return;
           }
-          
+
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
+
           if (refreshError || !refreshData.session?.access_token) {
             console.error('Session refresh failed:', refreshError?.message);
             console.log('Logging out user due to authentication failure');
             handleLogout();
             return;
           }
-          
+
           console.log('Session refreshed, updating token...');
           // Only update if token actually changed to prevent loops
           if (refreshData.session.access_token !== accessToken) {
             setAccessToken(refreshData.session.access_token);
           }
           return;
-          
+
         } catch (refreshError) {
           console.error('Session refresh failed:', refreshError.message);
           console.log('Logging out user due to refresh failure');
@@ -500,7 +501,7 @@ export default function App() {
           return;
         }
       }
-      
+
       // For non-auth errors, provide more specific guidance
       if (error.message.includes('Internal server error while getting users')) {
         setError('Server is having issues loading user data. This may be temporary - try refreshing the page in a few moments.');
@@ -519,9 +520,9 @@ export default function App() {
     if (loadingRef.current) {
       return;
     }
-    
+
     loadingRef.current = true;
-    
+
     // Make all API calls in parallel for better performance
     const requests = [
       apiRequest('/user', { headers: { Authorization: `Bearer ${token}` } }),
@@ -529,36 +530,36 @@ export default function App() {
       apiRequest('/users', { headers: { Authorization: `Bearer ${token}` } }),
       apiRequest('/matches', { headers: { Authorization: `Bearer ${token}` } }),
     ];
-    
+
     const [userResponse, groupResponse, usersResponse, matchesResponse] = await Promise.allSettled(requests);
-    
+
     // Handle user data
     if (userResponse.status === 'fulfilled') {
       setCurrentUser(userResponse.value.user);
     } else {
       console.error('Failed to refresh user data with token:', userResponse.reason);
     }
-    
-    // Handle group data  
+
+    // Handle group data
     if (groupResponse.status === 'fulfilled') {
       setCurrentGroup(groupResponse.value.group);
     } else {
       console.error('Failed to refresh group data with token:', groupResponse.reason);
     }
-    
+
     // Handle users and matches
     if (usersResponse.status === 'fulfilled') {
       setUsers(usersResponse.value.users || []);
     } else {
       setUsers([]);
     }
-    
+
     if (matchesResponse.status === 'fulfilled') {
       setMatches(matchesResponse.value.matches || []);
     } else {
       setMatches([]);
     }
-    
+
     loadingRef.current = false;
   };
 
@@ -578,7 +579,7 @@ export default function App() {
     if (loadingRef.current) {
       return;
     }
-    
+
     try {
       loadingRef.current = true;
       // Only refresh user data - the main useEffect will handle full data loading
@@ -602,11 +603,11 @@ export default function App() {
     if (loadingRef.current) {
       return;
     }
-    
+
     try {
       loadingRef.current = true;
       setError('');
-      
+
       // Refresh user data first to get new current group
       const userResponse = await apiRequest('/user', {
         headers: {
@@ -614,7 +615,7 @@ export default function App() {
         },
       });
       setCurrentUser(userResponse.user);
-      
+
       // The useEffect will automatically trigger loadAppData when currentUser updates
     } catch (error) {
       console.error('Failed to refresh data after group change:', error);
@@ -645,7 +646,7 @@ export default function App() {
   const handleMatchSubmit = async (matchData) => {
     try {
       setError('');
-      
+
       // Handle both legacy 1v1 format and new format
       let requestData;
       if (matchData.player1Email && matchData.player2Email) {
@@ -655,7 +656,7 @@ export default function App() {
         // New format from updated MatchEntry component
         requestData = matchData;
       }
-      
+
       const response = await apiRequest('/matches', {
         method: 'POST',
         headers: {
@@ -663,55 +664,55 @@ export default function App() {
         },
         body: JSON.stringify(requestData),
       });
-      
+
       // Store the match result for confirmation screen
       setLastMatchResult(response);
-      
+
       // Optimized data reload - only reload what's necessary
       const currentUserIdentifier = currentUser.username || currentUser.email;
-      const userParticipated = matchData.player1Email === currentUserIdentifier || 
+      const userParticipated = matchData.player1Email === currentUserIdentifier ||
                              matchData.player2Email === currentUserIdentifier ||
                              matchData.team1Player1Email === currentUserIdentifier ||
                              matchData.team1Player2Email === currentUserIdentifier ||
                              matchData.team2Player1Email === currentUserIdentifier ||
                              matchData.team2Player2Email === currentUserIdentifier;
-      
+
       // Make parallel requests for faster loading
       const refreshPromises = [];
-      
+
       // Always refresh users (for leaderboard) and matches
       refreshPromises.push(
         apiRequest('/users', { headers: { Authorization: `Bearer ${accessToken}` } }),
         apiRequest('/matches', { headers: { Authorization: `Bearer ${accessToken}` } })
       );
-      
+
       // Only refresh user data if they participated
       if (userParticipated) {
         refreshPromises.push(
           apiRequest('/user', { headers: { Authorization: `Bearer ${accessToken}` } })
         );
       }
-      
+
       const results = await Promise.allSettled(refreshPromises);
-      
+
       // Handle users
       if (results[0].status === 'fulfilled') {
         setUsers(results[0].value.users || []);
       }
-      
-      // Handle matches  
+
+      // Handle matches
       if (results[1].status === 'fulfilled') {
         setMatches(results[1].value.matches || []);
       }
-      
+
       // Handle user data if requested
       if (userParticipated && results[2]?.status === 'fulfilled') {
         setCurrentUser(results[2].value.user);
       }
-      
+
       // Navigate to confirmation screen
       setCurrentView('matchConfirmation');
-      
+
       return response;
     } catch (error) {
       console.error('Failed to record match:', error);
@@ -722,7 +723,7 @@ export default function App() {
   const handleProfileUpdate = async (updatedProfile) => {
     try {
       setError('');
-      
+
       const response = await apiRequest('/profile', {
         method: 'PUT',
         headers: {
@@ -730,9 +731,9 @@ export default function App() {
         },
         body: JSON.stringify({ name: updatedProfile.name }),
       });
-      
+
       setCurrentUser(response.user);
-      
+
       // Only reload users for leaderboard update, not all data
       try {
         const usersResponse = await apiRequest('/users', {
@@ -744,7 +745,7 @@ export default function App() {
       } catch (error) {
         console.error('Failed to refresh users after profile update:', error);
       }
-      
+
       return response.user;
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -755,22 +756,22 @@ export default function App() {
   const handleGroupDeleted = async () => {
     try {
       console.log('Group deleted, refreshing user data...');
-      
+
       // Refresh user data to get updated group status
       const userResponse = await apiRequest('/user', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      
+
       // Update current user to reflect no group
       setCurrentUser(userResponse.user);
       setCurrentGroup(null);
-      
+
       // Clear app data
       setUsers([]);
       setMatches([]);
-      
+
       // User will now be redirected to group selection via the normal flow
     } catch (error) {
       console.error('Failed to refresh user data after group deletion:', error);
@@ -794,7 +795,7 @@ export default function App() {
                 />
               ) : (
                 <ImageWithFallback
-                  src="https://raw.githubusercontent.com/fabio-gervasi/foosball-tracker/main/foosball-icon.png"
+                  src={foosballIcon}
                   alt="Foosball Logo"
                   className="w-14 h-14 md:w-18 md:h-18 object-cover rounded-full"
                 />
@@ -846,24 +847,24 @@ export default function App() {
       case 'leaderboard':
         return <Leaderboard users={users} group={currentGroup} currentUser={currentUser} accessToken={accessToken} />;
       case 'history':
-        return <MatchHistory 
-          currentUser={currentUser} 
-          accessToken={accessToken} 
-          group={currentGroup} 
+        return <MatchHistory
+          currentUser={currentUser}
+          accessToken={accessToken}
+          group={currentGroup}
           users={users}
         />;
       case 'admin':
-        return <AdminPanel 
-          currentUser={currentUser} 
-          accessToken={accessToken} 
-          group={currentGroup} 
+        return <AdminPanel
+          currentUser={currentUser}
+          accessToken={accessToken}
+          group={currentGroup}
           users={users}
           onDataChange={loadAppData}
           onGroupDeleted={handleGroupDeleted}
         />;
       case 'playerProfile':
         return selectedPlayerId ? (
-          <PlayerProfile 
+          <PlayerProfile
             playerId={selectedPlayerId}
             currentUser={currentUser}
             group={currentGroup}
@@ -890,13 +891,13 @@ export default function App() {
               <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                 {currentGroup?.icon ? (
                   <ImageWithFallback
-                    src="https://raw.githubusercontent.com/fabio-gervasi/foosball-tracker/main/foosball-icon.png"
+                    src={foosballIcon}
                     alt="Foosball Logo"
                     className="w-9 h-9 md:w-11 md:h-11 object-cover rounded-full"
                   />
                 ) : (
                   <ImageWithFallback
-                    src="https://raw.githubusercontent.com/fabio-gervasi/foosball-tracker/main/foosball-icon.png"
+                    src={foosballIcon}
                     alt="Foosball Logo"
                     className="w-9 h-9 md:w-11 md:h-11 object-cover rounded-full"
                   />
@@ -926,7 +927,7 @@ export default function App() {
         {error && (
           <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 md:p-6">
             <p className="text-sm md:text-base">{error}</p>
-            <button 
+            <button
               onClick={() => setError('')}
               className="text-red-500 hover:text-red-700 text-xs md:text-sm mt-1"
             >

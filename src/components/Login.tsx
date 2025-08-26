@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { User, Lock, Mail, Server, AlertCircle } from 'lucide-react';
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import foosballIcon from "../assets/foosball-icon.png";
 import { apiRequest, supabase } from "../utils/supabase/client";
 import {
   validateUsername,
@@ -118,7 +119,7 @@ export function Login({ onLogin }) {
       if (isLogin) {
         // Check if input looks like an email or username
         const isEmailFormat = email.includes('@');
-        
+
         if (isEmailFormat) {
           // Step 1: Authenticate with Supabase directly for email
           const { data, error: authError } =
@@ -233,7 +234,7 @@ export function Login({ onLogin }) {
           <div className="flex flex-col items-center justify-center mb-8">
             <div className="bg-white rounded-full w-32 h-32 flex items-center justify-center shadow-xl overflow-hidden mb-6 border-4 border-blue-100">
               <ImageWithFallback
-                src="https://raw.githubusercontent.com/fabio-gervasi/foosball-tracker/main/foosball-icon.png"
+                src={foosballIcon}
                 alt="Foosball Logo"
                 className="w-28 h-28 object-cover rounded-full"
               />
@@ -352,8 +353,8 @@ export function Login({ onLogin }) {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder={
-                    isPasswordReset 
-                      ? "Enter your email address" 
+                    isPasswordReset
+                      ? "Enter your email address"
                       : (isLogin ? "Enter your username or email" : "Enter your email address")
                   }
                   disabled={isLoading}
@@ -419,16 +420,16 @@ export function Login({ onLogin }) {
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>
-                    {isPasswordReset 
-                      ? 'Sending Reset Email...' 
+                    {isPasswordReset
+                      ? 'Sending Reset Email...'
                       : (!isLogin ? 'Creating Account...' : 'Signing In...')
                     }
                   </span>
                 </>
               ) : (
                 <span>
-                  {isPasswordReset 
-                    ? 'Send Reset Email' 
+                  {isPasswordReset
+                    ? 'Send Reset Email'
                     : (!isLogin ? 'Create Account' : 'Sign In')
                   }
                 </span>
@@ -497,7 +498,7 @@ export function Login({ onLogin }) {
           {statusDisplay.icon}
           <span className={statusDisplay.className}>{statusDisplay.text}</span>
           {!serverStatus.isHealthy && !serverStatus.isLoading && (
-            <button 
+            <button
               onClick={checkServerHealth}
               className="text-blue-600 hover:text-blue-800 ml-2 underline"
             >
