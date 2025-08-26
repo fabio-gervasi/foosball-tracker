@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  History, 
-  Filter, 
-  Calendar, 
-  User, 
-  Users, 
-  Search, 
-  Trophy, 
-  Crown, 
-  TrendingUp, 
+import {
+  History,
+  Filter,
+  Calendar,
+  User,
+  Users,
+  Search,
+  Trophy,
+  Crown,
+  TrendingUp,
   TrendingDown,
   X,
   RefreshCw,
@@ -52,22 +52,22 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     try {
       setError('');
       setLoading(true);
-      
+
       console.log('=== Loading match history ===');
       console.log('Current user:', currentUser?.username || currentUser?.email);
       console.log('Current group:', currentUser?.currentGroup);
-      console.log('Access token present:', !!accessToken);
-      
+      // Checking access token for authentication
+
       const response = await apiRequest('/matches', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      
+
       console.log('Match history API response:', response);
       setMatches(response.matches || []);
       console.log('Match history loaded:', response.matches?.length || 0);
-      
+
       // If no matches found, let's call the debug endpoint
       if (!response.matches || response.matches.length === 0) {
         console.log('No matches found, calling debug endpoint...');
@@ -82,11 +82,11 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
           console.error('Debug endpoint failed:', debugError);
         }
       }
-      
+
     } catch (error) {
       console.error('Failed to load match history:', error);
       setError('Failed to load match history: ' + error.message);
-      
+
       // Try to get debug info even on error
       try {
         const debugResponse = await apiRequest('/debug/demo');
@@ -102,7 +102,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   // Helper function to check if current user participated in match
   const isCurrentUserInMatch = (match: any) => {
     const userIdentifier = currentUser.username || currentUser.email;
-    
+
     if (match.matchType === '2v2') {
       return (
         match.team1Player1Email === userIdentifier ||
@@ -128,7 +128,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
     // Filter by game type
     if (gameTypeFilter !== 'all') {
-      filtered = filtered.filter(match => 
+      filtered = filtered.filter(match =>
         gameTypeFilter === '1v1' ? (!match.matchType || match.matchType === '1v1') : match.matchType === '2v2'
       );
     }
@@ -188,39 +188,39 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   // Helper function to resolve player name from email/username identifier
   const resolvePlayerName = (identifier: string) => {
     if (!identifier) return 'Unknown';
-    
+
     // Check if it's a guest player
     if (identifier.startsWith('guest')) {
       const guestNumber = identifier.replace('guest', '');
       return `Guest ${guestNumber}`;
     }
-    
+
     // Find user by username first, then by email
     let user = users.find(u => u.username === identifier);
     if (!user) {
       user = users.find(u => u.email === identifier);
     }
-    
+
     return user?.name || user?.username || identifier;
   };
 
   // Helper function to get user avatar info from email/username identifier
   const getUserAvatarInfo = (identifier: string) => {
     if (!identifier) return { avatar: 'U', avatarUrl: null };
-    
+
     // Check if it's a guest player
     if (identifier.startsWith('guest')) {
       const guestNumber = identifier.replace('guest', '');
       return { avatar: 'G', avatarUrl: null };
     }
-    
+
     // Find user by username first, then by email
     let user = users.find(u => u.username === identifier);
     if (!user) {
       user = users.find(u => u.email === identifier);
     }
-    
-    return { 
+
+    return {
       avatar: user?.avatar || user?.name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || 'U',
       avatarUrl: user?.avatarUrl
     };
@@ -229,10 +229,10 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   // Helper function to get ELO change for a specific player
   const getPlayerEloChange = (match: any, playerIdentifier: string) => {
     if (!match.eloChanges) return null;
-    
+
     // Try to find ELO change by the specific identifier first
     const change = match.eloChanges[playerIdentifier];
-    
+
     return change ? change.change : null;
   };
 
@@ -243,11 +243,11 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       const team1Player2Name = resolvePlayerName(match.team1Player2Email);
       const team2Player1Name = resolvePlayerName(match.team2Player1Email);
       const team2Player2Name = resolvePlayerName(match.team2Player2Email);
-      
+
       const team1Names = `${team1Player1Name} & ${team1Player2Name}`;
       const team2Names = `${team2Player1Name} & ${team2Player2Name}`;
       const winnerNames = match.winningTeam === 'team1' ? team1Names : team2Names;
-      
+
       // Check for guest players
       const hasGuests = [
         match.team1Player1IsGuest,
@@ -255,7 +255,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         match.team2Player1IsGuest,
         match.team2Player2IsGuest
       ].some(Boolean);
-      
+
       const currentUserWon = (() => {
         const userIdentifier = currentUser.username || currentUser.email;
         return (
@@ -269,7 +269,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
           ))
         );
       })();
-      
+
       return {
         participants: `${team1Names} vs ${team2Names}`,
         winner: `${match.winningTeam === 'team1' ? 'Team 1' : 'Team 2'}: ${winnerNames}`,
@@ -283,15 +283,15 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       const player1Name = resolvePlayerName(match.player1Email);
       const player2Name = resolvePlayerName(match.player2Email);
       const winnerName = resolvePlayerName(match.winnerEmail);
-      
+
       // Check for guest players
       const hasGuests = match.player1IsGuest || match.player2IsGuest;
-      
+
       const currentUserWon = (() => {
         const userIdentifier = currentUser.username || currentUser.email;
         return match.winnerEmail === userIdentifier;
       })();
-      
+
       return {
         participants: `${player1Name} vs ${player2Name}`,
         winner: winnerName,
@@ -308,14 +308,14 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       const date = new Date(dateString);
       const today = new Date();
       const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-      
+
       if (date.toDateString() === today.toDateString()) {
         return 'Today';
       } else if (date.toDateString() === yesterday.toDateString()) {
         return 'Yesterday';
       } else {
-        return date.toLocaleDateString('en-US', { 
-          month: 'short', 
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
           day: 'numeric',
           year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
         });
@@ -525,7 +525,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
           <p className="text-sm">{error}</p>
-          <button 
+          <button
             onClick={() => setError('')}
             className="text-red-500 hover:text-red-700 text-xs mt-1"
           >
@@ -560,18 +560,18 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg text-gray-800">
-              {filteredMatches.length === matches.length 
+              {filteredMatches.length === matches.length
                 ? `All Matches (${filteredMatches.length})`
                 : `Filtered Matches (${filteredMatches.length} of ${matches.length})`
               }
             </h3>
           </div>
-          
+
           {filteredMatches.length === 0 ? (
             <div className="text-center py-8">
               <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">
-                {matches.length === 0 
+                {matches.length === 0
                   ? 'No matches found in this group yet.'
                   : 'No matches found with the current filters.'
                 }
@@ -589,7 +589,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
             <div className="space-y-4 p-4">
               {filteredMatches.map((match) => {
                 const matchDisplay = formatMatchDisplay(match);
-                
+
                 if (matchDisplay.type === '2v2') {
                   // Team-based layout for 2v2 matches
                   const team1Player1Info = getUserAvatarInfo(match.team1Player1Email);
@@ -627,8 +627,8 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                           </div>
                           {matchDisplay.isCurrentUserInvolved && (
                             <span className={`px-2 py-1 rounded-full text-xs ${
-                              matchDisplay.currentUserWon 
-                                ? 'bg-green-100 text-green-700' 
+                              matchDisplay.currentUserWon
+                                ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-700'
                             }`}>
                               {matchDisplay.currentUserWon ? 'Won' : 'Lost'}
@@ -640,22 +640,22 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                         <div className="space-y-3">
                           {/* Team 1 */}
                           <div className={`rounded-lg border-2 p-3 ${
-                            team1Won 
-                              ? 'border-green-300 bg-green-50' 
+                            team1Won
+                              ? 'border-green-300 bg-green-50'
                               : 'border-gray-200 bg-gray-50'
                           }`}>
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-xs font-medium text-gray-600">Team 1</span>
                               {team1Won && <Crown className="w-3 h-3 text-yellow-600" />}
                             </div>
-                            
+
                             {/* Team 1 - Avatars and Names */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 {/* Both avatars side by side */}
                                 <div className="flex space-x-1">
                                   <div className="w-8 h-8 bg-blue-100 rounded-full flex-shrink-0">
-                                    <Avatar 
+                                    <Avatar
                                       src={team1Player1Info.avatarUrl}
                                       fallback={team1Player1Info.avatar}
                                       className="w-full h-full rounded-full"
@@ -663,7 +663,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                     />
                                   </div>
                                   <div className="w-8 h-8 bg-blue-100 rounded-full flex-shrink-0">
-                                    <Avatar 
+                                    <Avatar
                                       src={team1Player2Info.avatarUrl}
                                       fallback={team1Player2Info.avatar}
                                       className="w-full h-full rounded-full"
@@ -712,22 +712,22 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
                           {/* Team 2 */}
                           <div className={`rounded-lg border-2 p-3 ${
-                            team2Won 
-                              ? 'border-green-300 bg-green-50' 
+                            team2Won
+                              ? 'border-green-300 bg-green-50'
                               : 'border-gray-200 bg-gray-50'
                           }`}>
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-xs font-medium text-gray-600">Team 2</span>
                               {team2Won && <Crown className="w-3 h-3 text-yellow-600" />}
                             </div>
-                            
+
                             {/* Team 2 - Avatars and Names */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 {/* Both avatars side by side */}
                                 <div className="flex space-x-1">
                                   <div className="w-8 h-8 bg-blue-100 rounded-full flex-shrink-0">
-                                    <Avatar 
+                                    <Avatar
                                       src={team2Player1Info.avatarUrl}
                                       fallback={team2Player1Info.avatar}
                                       className="w-full h-full rounded-full"
@@ -735,7 +735,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                     />
                                   </div>
                                   <div className="w-8 h-8 bg-blue-100 rounded-full flex-shrink-0">
-                                    <Avatar 
+                                    <Avatar
                                       src={team2Player2Info.avatarUrl}
                                       fallback={team2Player2Info.avatar}
                                       className="w-full h-full rounded-full"
@@ -792,7 +792,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   const player2Info = getUserAvatarInfo(match.player2Email);
                   const player1Name = resolvePlayerName(match.player1Email);
                   const player2Name = resolvePlayerName(match.player2Email);
-                  
+
                   return (
                     <div key={match.id} className={`${matchDisplay.isCurrentUserInvolved ? 'bg-blue-50' : 'bg-white'} rounded-xl border border-gray-200 hover:border-gray-300 transition-colors`}>
                       <div className="p-4">
@@ -815,8 +815,8 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                           </div>
                           {matchDisplay.isCurrentUserInvolved && (
                             <span className={`px-2 py-1 rounded-full text-xs ${
-                              matchDisplay.currentUserWon 
-                                ? 'bg-green-100 text-green-700' 
+                              matchDisplay.currentUserWon
+                                ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-700'
                             }`}>
                               {matchDisplay.currentUserWon ? 'Won' : 'Lost'}
@@ -830,7 +830,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                             {/* Player 1 */}
                             <div className="flex items-center space-x-2 flex-1">
                               <div className="w-10 h-10 bg-blue-100 rounded-full flex-shrink-0">
-                                <Avatar 
+                                <Avatar
                                   src={player1Info.avatarUrl}
                                   fallback={player1Info.avatar}
                                   className="w-full h-full rounded-full"
@@ -868,7 +868,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                             {/* Player 2 */}
                             <div className="flex items-center space-x-2 flex-1">
                               <div className="w-10 h-10 bg-blue-100 rounded-full flex-shrink-0">
-                                <Avatar 
+                                <Avatar
                                   src={player2Info.avatarUrl}
                                   fallback={player2Info.avatar}
                                   className="w-full h-full rounded-full"

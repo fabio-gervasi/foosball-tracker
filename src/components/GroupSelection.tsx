@@ -12,10 +12,10 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(propAccessToken || null);
-  
+
   // Create group form
   const [groupName, setGroupName] = useState('');
-  
+
   // Join group form
   const [groupCode, setGroupCode] = useState('');
 
@@ -29,17 +29,17 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
 
   const getAccessToken = async () => {
     try {
-      console.log('GroupSelection: Getting access token from session...');
+      // Getting access token from session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError) {
         console.error('GroupSelection: Session error:', sessionError);
         setError('Authentication error. Please refresh the page.');
         return;
       }
-      
+
       if (session?.access_token) {
-        console.log('GroupSelection: Access token found');
+        // Access token found
         setAccessToken(session.access_token);
       } else {
         console.error('GroupSelection: No access token in session');
@@ -55,7 +55,7 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    
+
     try {
       if (!groupName.trim()) {
         throw new Error('Please enter a group name');
@@ -70,14 +70,14 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
         }
       }
 
-      console.log('GroupSelection: Creating group with token:', accessToken ? 'present' : 'missing');
+      // Creating group with authentication
 
       await apiRequest('/groups', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name: groupName.trim()
         }),
       });
@@ -86,10 +86,10 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
       onGroupSelected();
     } catch (error) {
       console.error('GroupSelection: Create group error:', error);
-      
+
       // If it's an auth error, try to refresh the token
       if (error.message?.includes('Invalid or expired token') || error.message?.includes('Unauthorized')) {
-        console.log('GroupSelection: Auth error, trying to refresh token...');
+        // Auth error, trying to refresh token
         await getAccessToken();
         setError('Authentication expired. Please try again.');
       } else {
@@ -104,7 +104,7 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    
+
     try {
       if (!groupCode.trim()) {
         throw new Error('Please enter a group code');
@@ -119,14 +119,14 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
         }
       }
 
-      console.log('GroupSelection: Joining group with token:', accessToken ? 'present' : 'missing');
+      // Joining group with authentication
 
       await apiRequest('/groups/join', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           groupCode: groupCode.trim().toUpperCase()
         }),
       });
@@ -135,10 +135,10 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
       onGroupSelected();
     } catch (error) {
       console.error('GroupSelection: Join group error:', error);
-      
+
       // If it's an auth error, try to refresh the token
       if (error.message?.includes('Invalid or expired token') || error.message?.includes('Unauthorized')) {
-        console.log('GroupSelection: Auth error, trying to refresh token...');
+        // Auth error, trying to refresh token
         await getAccessToken();
         setError('Authentication expired. Please try again.');
       } else {
@@ -373,7 +373,7 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
         <div className="mt-8 bg-white bg-opacity-10 rounded-lg p-4">
           <h4 className="text-black mb-2">💡 What are groups?</h4>
           <p className="text-sm text-black">
-            Groups allow you to create private leaderboards and match tracking for your office, team, or friends. 
+            Groups allow you to create private leaderboards and match tracking for your office, team, or friends.
             Each group has its own stats and rankings!
           </p>
         </div>
