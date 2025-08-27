@@ -1,13 +1,14 @@
 import React from 'react';
-import { Home, User, Plus, BarChart3, Trophy, Shield, History } from 'lucide-react';
+import { Home, User, Plus, BarChart3, Trophy, History } from 'lucide-react';
 
 interface NavigationProps {
   currentView: string;
   onViewChange: (view: string) => void;
-  currentUser?: any;
+  currentUser?: any; // Keep for backward compatibility
 }
 
 export function Navigation({ currentView, onViewChange, currentUser }: NavigationProps) {
+  // Define navigation items (keeping original design - admin stays in profile)
   const navItems = [
     { id: 'dashboard', label: 'Home', icon: Home },
     { id: 'statistics', label: 'Stats', icon: BarChart3 },

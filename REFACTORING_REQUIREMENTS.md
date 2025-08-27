@@ -28,6 +28,42 @@ This document outlines the comprehensive refactoring requirements for the Foosba
 
 ## Requirements Specification
 
+## 📋 VERSION MANAGEMENT PROTOCOL
+
+**MANDATORY**: Every REQ implementation must include a version update check as the final step.
+
+### Version Update Decision Matrix:
+
+| REQ Type | Impact Level | Version Change | Example |
+|----------|-------------|----------------|---------|
+| **Security/Bug Fixes** | Patch | `0.2.0` → `0.2.1` | REQ-0.1, REQ-0.2 |
+| **Major Architecture** | Minor | `0.1.0` → `0.2.0` | REQ-1.1, REQ-2.1 |
+| **Phase Completion** | Minor | `0.2.x` → `0.3.0` | All Phase 1 REQs complete |
+| **Breaking Changes** | Major | `0.x.x` → `1.0.0` | Refactoring project complete |
+
+### Implementation Checklist:
+- [ ] REQ implementation complete
+- [ ] All tests passing
+- [ ] Documentation updated
+- [ ] **Version update evaluation** (MANDATORY)
+- [ ] `package.json` version updated if needed
+- [ ] Version change committed with descriptive message
+- [ ] REFACTORING_STATUS.md updated with version info
+
+### Version Update Commit Format:
+```
+chore: bump version to X.Y.Z - [REQ-X.X implementation complete]
+
+Brief description of what warranted the version change:
+- Major architectural improvements
+- Security enhancements
+- Performance optimizations
+- etc.
+```
+
+### Current Version: 0.2.0
+**Last Update Reason**: REQ-2.1 React Query data layer implementation - major architectural improvement with 60-80% API call reduction and optimistic updates.
+
 ## PHASE 0: SECURITY & ENVIRONMENT SETUP (Week 1 - Priority 1)
 
 ### REQ-0.1: Security Hardening
