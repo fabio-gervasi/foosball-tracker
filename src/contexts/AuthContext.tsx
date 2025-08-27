@@ -179,28 +179,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               throw sessionError || new Error('No session after verification');
             }
 
-            // Prompt user to set new password
-            const newPassword = prompt('Please enter your new password (minimum 6 characters):');
-            if (!newPassword || newPassword.length < 6) {
-              setError('Password reset cancelled or invalid password. Please request a new reset.');
-              window.history.replaceState({}, document.title, '/');
-              return;
-            }
-
-            // Update the password
-            const { error: updateError } = await supabase.auth.updateUser({
-              password: newPassword
-            });
-
-            if (updateError) {
-              logger.error('Failed to update password', updateError);
-              setError('Failed to update password. Please try again.');
-              window.history.replaceState({}, document.title, '/');
-              return;
-            }
-
-            logger.info('Password updated successfully');
-            alert('Password updated successfully! You can now log in with your new password.');
+            // Navigate to password reset form instead of using prompt
+            logger.info('Navigating to password reset form');
+            
+            // Store the token in URL parameters for the password reset form
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('token', accessToken);
+            currentUrl.searchParams.set('type', 'recovery');
+            
+            // Update the URL without causing a page reload
+            window.history.replaceState({}, document.title, currentUrl.toString());
+            
+            // The App component will detect this change and show the password reset form
             setError(null);
 
             // Sign out after password reset
@@ -233,35 +223,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             logger.info('Recovery session set successfully');
 
-            // Prompt user to set new password
-            const newPassword = prompt('Please enter your new password (minimum 6 characters):');
-            if (!newPassword || newPassword.length < 6) {
-              setError('Password reset cancelled or invalid password. Please request a new reset.');
-              await supabase.auth.signOut();
-              window.history.replaceState({}, document.title, '/');
-              return;
-            }
-
-            // Update the password
-            const { error: updateError } = await supabase.auth.updateUser({
-              password: newPassword
-            });
-
-            if (updateError) {
-              logger.error('Failed to update password', updateError);
-              setError('Failed to update password. Please try again.');
-              await supabase.auth.signOut();
-              window.history.replaceState({}, document.title, '/');
-              return;
-            }
-
-            logger.info('Password updated successfully');
-            alert('Password updated successfully! You can now log in with your new password.');
+            // Navigate to password reset form instead of using prompt
+            logger.info('Navigating to password reset form for token hash flow');
+            
+            // Store the token hash in URL parameters for the password reset form
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('token', tokenHash);
+            currentUrl.searchParams.set('type', 'recovery');
+            
+            // Update the URL without causing a page reload
+            window.history.replaceState({}, document.title, currentUrl.toString());
+            
+            // The App component will detect this change and show the password reset form
             setError(null);
-
-            // Sign out after password reset
-            await supabase.auth.signOut();
-            window.history.replaceState({}, document.title, '/');
             return;
 
           } catch (sessionError) {

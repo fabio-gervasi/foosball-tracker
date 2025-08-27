@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Login } from './components/Login';
 import { GroupSelection } from './components/GroupSelection';
 import { AppRouter } from './components/AppRouter';
 import { LoadingScreen } from './components/LoadingScreen';
+import { PasswordResetForm } from './components/auth/PasswordResetForm';
+import { DialogProvider } from './components/common/DialogProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 
@@ -10,6 +12,56 @@ import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 const AppContent: React.FC = () => {
   const { isLoggedIn, currentUser, accessToken, isLoading, error } = useAuth();
   const { handleGroupSelected } = useAppData();
+  const [currentRoute, setCurrentRoute] = useState('');
+
+  // Check URL for password reset route
+  useEffect(() => {
+    const checkRoute = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      
+      // Check for password reset token in URL
+      const token = searchParams.get('token') || hashParams.get('token') || searchParams.get('token_hash');
+      const type = searchParams.get('type') || hashParams.get('type');
+      
+      if (token && (type === 'recovery' || window.location.pathname.includes('password-reset'))) {
+        setCurrentRoute('password-reset');
+      } else {
+        setCurrentRoute('');
+      }
+    };
+
+    checkRoute();
+    
+    // Listen for URL changes
+    const handlePopState = () => checkRoute();
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Show password reset form if we're on the password reset route
+  if (currentRoute === 'password-reset') {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const token = searchParams.get('token') || hashParams.get('token') || searchParams.get('token_hash');
+    
+    return (
+      <PasswordResetForm
+        token={token || undefined}
+        onSuccess={() => {
+          // Navigate back to login after successful reset
+          window.history.replaceState({}, document.title, '/');
+          setCurrentRoute('');
+        }}
+        onCancel={() => {
+          // Navigate back to login on cancel
+          window.history.replaceState({}, document.title, '/');
+          setCurrentRoute('');
+        }}
+      />
+    );
+  }
 
   // Show loading screen during initial auth check
   if (isLoading) {
@@ -68,7 +120,9 @@ export default function App() {
   return (
     <AuthProvider>
       <AppDataProvider>
-        <AppContent />
+        <DialogProvider>
+          <AppContent />
+        </DialogProvider>
       </AppDataProvider>
     </AuthProvider>
   );

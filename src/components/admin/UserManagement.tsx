@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, Crown, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../utils/supabase/client';
+import { useDialogContext } from '../common/DialogProvider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ export function UserManagement({
   onDataChange, 
   onError 
 }: UserManagementProps) {
+  const { showSuccess, showError } = useDialogContext();
 
   const handleToggleAdminStatus = async (userId: string, currentAdminStatus: boolean) => {
     try {
@@ -43,7 +45,7 @@ export function UserManagement({
       });
       
       onDataChange(); // Refresh main app data
-      alert(`User admin status ${!currentAdminStatus ? 'granted' : 'revoked'} successfully!`);
+      await showSuccess(`User admin status ${!currentAdminStatus ? 'granted' : 'revoked'} successfully!`);
     } catch (error) {
       console.error('Failed to update admin status:', error);
       onError('Failed to update admin status: ' + error.message);
@@ -65,7 +67,7 @@ export function UserManagement({
       // Refresh main app data
       onDataChange();
       
-      alert('User deleted successfully!');
+      await showSuccess('User deleted successfully!');
     } catch (error) {
       console.error('Failed to delete user:', error);
       onError('Failed to delete user: ' + error.message);

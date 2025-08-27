@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Calendar, User, ArrowLeft, Trash2, CheckCircle, Users } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
+import { useDialogContext } from './common/DialogProvider';
 
 interface MatchConfirmationProps {
   matchResult: {
@@ -45,9 +46,18 @@ interface MatchConfirmationProps {
 export function MatchConfirmation({ matchResult, currentUser, accessToken, onBack, onDataChange }: MatchConfirmationProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const { showConfirmDialog } = useDialogContext();
 
   const handleDeleteMatch = async () => {
-    if (!confirm('Are you sure you want to delete this match? This action cannot be undone.')) {
+    const confirmed = await showConfirmDialog({
+      title: 'Delete Match',
+      description: 'Are you sure you want to delete this match? This action cannot be undone.',
+      variant: 'destructive',
+      confirmText: 'Delete Match',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) {
       return;
     }
 

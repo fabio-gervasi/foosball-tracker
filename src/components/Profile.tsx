@@ -7,6 +7,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { logger } from '../utils/logger';
 import { useUserGroupsQuery } from '../hooks/useQueries';
 import { useGroupSwitchMutation, useJoinGroupMutation, useCreateGroupMutation } from '../hooks/useMutations';
+import { useDialogContext } from './common/DialogProvider';
 
 
 interface ProfileProps {
@@ -28,6 +29,7 @@ const emailToUsername = (email: string): string => {
 
 export function Profile({ user, group, accessToken, onUpdateProfile, onDataChange, onGroupChanged }: ProfileProps) {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const { showSuccess, showError, showConfirmDialog } = useDialogContext();
   const [avatarError, setAvatarError] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +108,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       }
     } catch (error) {
       logger.error('Failed to switch group', error);
-      alert('Failed to switch group. Please try again.');
+      await showError('Failed to switch group. Please try again.');
     } finally {
       setIsSwitchingGroup(false);
     }
@@ -209,15 +211,30 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
     setShowCreateGroup(false);
   };
 
-  const handleLeaveGroup = () => {
-    if (confirm('Are you sure you want to leave this group? You will lose all your match history and stats.')) {
+  const handleLeaveGroup = async () => {
+    const confirmed = await showConfirmDialog({
+      title: 'Leave Group',
+      description: 'Are you sure you want to leave this group? You will lose all your match history and stats.',
+      variant: 'destructive',
+      confirmText: 'Leave Group',
+      cancelText: 'Cancel'
+    });
+
+    if (confirmed) {
       // This would require a new API endpoint - for now just show a message
-      alert('Group leaving feature coming soon! For now, please contact your admin.');
+      await showError('Group leaving feature coming soon! For now, please contact your admin.');
     }
   };
 
   const handleLogout = async () => {
-    if (confirm('Are you sure you want to logout?')) {
+    const confirmed = await showConfirmDialog({
+      title: 'Logout',
+      description: 'Are you sure you want to logout?',
+      confirmText: 'Logout',
+      cancelText: 'Cancel'
+    });
+
+    if (confirmed) {
       try {
         await supabase.auth.signOut();
       } catch (error) {
@@ -284,7 +301,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       }
 
       setPreviewUrl(null);
-      alert('Profile picture updated successfully!');
+      await showSuccess('Profile picture updated successfully!');
     } catch (error) {
       logger.error('Avatar upload error', error);
       setAvatarError(error.message || 'Failed to upload image');
@@ -297,7 +314,15 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
   const handleDeleteAvatar = async () => {
     if (!user.avatarUrl) return;
 
-    if (!confirm('Are you sure you want to delete your profile picture?')) return;
+    const confirmed = await showConfirmDialog({
+      title: 'Delete Profile Picture',
+      description: 'Are you sure you want to delete your profile picture?',
+      variant: 'destructive',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
 
     setIsUploadingAvatar(true);
     setAvatarError('');
@@ -315,7 +340,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
         onDataChange();
       }
 
-      alert('Profile picture deleted successfully!');
+      await showSuccess('Profile picture deleted successfully!');
     } catch (error) {
       logger.error('Avatar delete error', error);
       setAvatarError(error.message || 'Failed to delete image');
