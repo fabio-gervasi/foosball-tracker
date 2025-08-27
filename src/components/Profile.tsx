@@ -5,6 +5,8 @@ import { projectId } from '../utils/supabase/info';
 import { Avatar } from './Avatar';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { logger } from '../utils/logger';
+import { useUserGroupsQuery } from '../hooks/useQueries';
+import { useGroupSwitchMutation, useJoinGroupMutation, useCreateGroupMutation } from '../hooks/useMutations';
 
 
 interface ProfileProps {
@@ -41,8 +43,17 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Multi-group state
-  const [userGroups, setUserGroups] = useState([]);
+  // Multi-group state with React Query
+  const {
+    data: userGroups = [],
+    isLoading: isLoadingGroups,
+    refetch: loadUserGroups
+  } = useUserGroupsQuery(accessToken);
+
+  const groupSwitchMutation = useGroupSwitchMutation(accessToken);
+  const joinGroupMutation = useJoinGroupMutation(accessToken);
+  const createGroupMutation = useCreateGroupMutation(accessToken);
+
   const [showGroupSelector, setShowGroupSelector] = useState(false);
   const [showJoinGroup, setShowJoinGroup] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -59,14 +70,10 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
   const [isJoiningGroup, setIsJoiningGroup] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [isSwitchingGroup, setIsSwitchingGroup] = useState(false);
-  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
 
 
 
-  // Load user's groups on component mount
-  useEffect(() => {
-    loadUserGroups();
-  }, []);
+  // React Query automatically loads user groups, no manual loading needed
 
   // Close group selector when clicking outside
   useEffect(() => {
@@ -82,35 +89,14 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
     };
   }, [showGroupSelector]);
 
-  const loadUserGroups = async () => {
-    setIsLoadingGroups(true);
-    try {
-      const response = await apiRequest('/groups/user-groups', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      setUserGroups(response.groups || []);
-    } catch (error) {
-      logger.error('Failed to load user groups', error);
-    } finally {
-      setIsLoadingGroups(false);
-    }
-  };
+  // loadUserGroups is now handled by React Query hook
 
   const handleSwitchGroup = async (groupCode: string) => {
     if (groupCode === user.currentGroup) return;
 
     setIsSwitchingGroup(true);
     try {
-      await apiRequest('/groups/switch', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ groupCode }),
-      });
+      await groupSwitchMutation.mutateAsync({ groupCode });
 
       setShowGroupSelector(false);
 
@@ -139,23 +125,14 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
     setIsJoiningGroup(true);
 
     try {
-      const response = await apiRequest('/groups/join', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          groupCode: joinGroupForm.groupCode,
-          setAsCurrent: false // Don't automatically switch to the new group
-        }),
+      const response = await joinGroupMutation.mutateAsync({
+        code: joinGroupForm.groupCode
       });
 
       setJoinGroupSuccess(response.isNewMember ? 'Successfully joined group!' : 'You are already a member of this group');
       setJoinGroupForm({ groupCode: '' });
 
-      // Reload user groups
-      await loadUserGroups();
+      // React Query will automatically refetch user groups
 
       // Close modal after 2 seconds
       setTimeout(() => {
@@ -189,22 +166,15 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
     setIsCreatingGroup(true);
 
     try {
-      const response = await apiRequest('/groups', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: createGroupForm.name
-        }),
+      const response = await createGroupMutation.mutateAsync({
+        name: createGroupForm.name,
+        code: createGroupForm.code || '' // Use provided code or let server generate
       });
 
       setCreateGroupSuccess(`Successfully created group! Code: ${response.group.code}`);
       setCreateGroupForm({ name: '' });
 
-      // Reload user groups and notify parent of group change
-      await loadUserGroups();
+      // React Query will automatically refetch user groups
 
       // Notify parent component to reload data since user switched to new group
       if (onGroupChanged) {
