@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
+import { handleApiError } from '../utils/errorHandler';
 import { queryKeys, User } from './useQueries';
 import { Match, Group } from '../contexts/AppDataContext';
 
@@ -98,7 +99,8 @@ export const useSubmitMatchMutation = (accessToken: string | null): UseMutationR
         queryClient.setQueryData(queryKeys.users(), context.previousUsers);
       }
 
-      logger.error('Failed to submit match', error);
+      const processedError = handleApiError(error, { matchData });
+      logger.error('Failed to submit match', processedError);
     },
     onSuccess: (data, matchData) => {
       logger.info('Match submitted successfully');
@@ -167,7 +169,8 @@ export const useUpdateProfileMutation = (accessToken: string | null): UseMutatio
         queryClient.setQueryData(queryKeys.user(), context.previousUser);
       }
 
-      logger.error('Failed to update profile', error);
+      const processedError = handleApiError(error, { profileData });
+      logger.error('Failed to update profile', processedError);
     },
     onSuccess: (data, profileData) => {
       logger.info('Profile updated successfully');
@@ -215,7 +218,8 @@ export const useGroupSwitchMutation = (accessToken: string | null): UseMutationR
       queryClient.invalidateQueries({ queryKey: queryKeys.matches() });
     },
     onError: (error, groupData) => {
-      logger.error('Failed to switch group', error);
+      const processedError = handleApiError(error, { groupData });
+      logger.error('Failed to switch group', processedError);
     },
   });
 };
@@ -254,7 +258,8 @@ export const useCreateGroupMutation = (accessToken: string | null): UseMutationR
       queryClient.invalidateQueries({ queryKey: queryKeys.user() });
     },
     onError: (error, groupData) => {
-      logger.error('Failed to create group', error);
+      const processedError = handleApiError(error, { groupData });
+      logger.error('Failed to create group', processedError);
     },
   });
 };
@@ -295,7 +300,8 @@ export const useJoinGroupMutation = (accessToken: string | null): UseMutationRes
       queryClient.invalidateQueries({ queryKey: queryKeys.matches() });
     },
     onError: (error, groupData) => {
-      logger.error('Failed to join group', error);
+      const processedError = handleApiError(error, { groupData });
+      logger.error('Failed to join group', processedError);
     },
   });
 };
