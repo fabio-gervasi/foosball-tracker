@@ -3,10 +3,11 @@ import { Trophy, Calendar, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../utils/supabase/client';
 import { useDialogContext } from '../common/DialogProvider';
 import { formatMatchDisplay } from '../../utils/admin-format-helpers';
+import type { Match, User } from '../../types';
 
 interface MatchManagementProps {
-  matches: any[];
-  users: any[];
+  matches: Match[];
+  users: User[];
   accessToken: string;
   loading: boolean;
   onDataChange: () => void;
@@ -14,14 +15,14 @@ interface MatchManagementProps {
   onLoadAdminData: () => void;
 }
 
-export function MatchManagement({ 
-  matches, 
-  users, 
-  accessToken, 
-  loading, 
-  onDataChange, 
+export function MatchManagement({
+  matches,
+  users,
+  accessToken,
+  loading,
+  onDataChange,
   onError,
-  onLoadAdminData 
+  onLoadAdminData
 }: MatchManagementProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const { showSuccess, showError } = useDialogContext();
@@ -29,7 +30,7 @@ export function MatchManagement({
   const handleDeleteMatch = async (matchId: string) => {
     try {
       onError('');
-      
+
       console.log('Deleting match:', matchId);
       await apiRequest(`/admin/matches/${matchId}`, {
         method: 'DELETE',
@@ -37,12 +38,12 @@ export function MatchManagement({
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      
+
       // Reload data
       await onLoadAdminData();
       onDataChange(); // Refresh main app data
       setDeleteConfirm(null);
-      
+
       await showSuccess('Match deleted successfully!');
     } catch (error) {
       console.error('Failed to delete match:', error);
@@ -66,7 +67,7 @@ export function MatchManagement({
           <Trophy className="w-5 h-5 mr-2 text-purple-600" />
           Match Management
         </h3>
-        
+
         {matches.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">No matches found in this group.</p>
@@ -75,15 +76,15 @@ export function MatchManagement({
           <div className="space-y-3">
             {matches.filter(match => match && match.id).map((match) => {
               const matchDisplay = formatMatchDisplay(match, users);
-              
+
               return (
                 <div key={match.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className={`px-2 py-1 rounded text-xs ${
-                          matchDisplay.type === '2v2' 
-                            ? 'bg-blue-100 text-blue-800' 
+                          matchDisplay.type === '2v2'
+                            ? 'bg-blue-100 text-blue-800'
                             : 'bg-green-100 text-green-800'
                         }`}>
                           {matchDisplay.type}
@@ -93,14 +94,14 @@ export function MatchManagement({
                           {match.date || 'Unknown date'}
                         </span>
                       </div>
-                      
+
                       <p className="text-sm text-gray-700 mb-1">
                         <strong>Players:</strong> {matchDisplay.participants}
                       </p>
                       <p className="text-sm text-gray-700 mb-2">
                         <strong>Winner:</strong> {matchDisplay.winner}
                       </p>
-                      
+
                       {match.eloChanges && (
                         <div className="text-xs text-gray-600">
                           <strong>ELO Changes:</strong>{' '}
@@ -112,7 +113,7 @@ export function MatchManagement({
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="ml-4">
                       {deleteConfirm === match.id ? (
                         <div className="flex flex-col space-y-2">

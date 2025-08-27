@@ -2,33 +2,15 @@ import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
 import { handleApiError } from '../utils/errorHandler';
-import { queryKeys, User } from './useQueries';
-import { Match, Group } from '../contexts/AppDataContext';
-
-// Mutation interfaces
-interface MatchSubmissionData {
-  matchType: '1v1' | '2v2';
-  player1Email?: string;
-  player2Email?: string;
-  team1Player1Email?: string;
-  team1Player2Email?: string;
-  team2Player1Email?: string;
-  team2Player2Email?: string;
-  score1: number;
-  score2: number;
-  [key: string]: any; // Allow additional fields for flexibility
-}
-
-interface ProfileUpdateData {
-  name?: string;
-  username?: string;
-  avatar?: string;
-  [key: string]: any; // Allow additional fields
-}
-
-interface GroupSwitchData {
-  groupCode: string;
-}
+import { queryKeys } from './useQueries';
+import type {
+  User,
+  Match,
+  Group,
+  MatchSubmissionData,
+  ProfileUpdateData,
+  GroupSwitchData
+} from '../types';
 
 /**
  * Hook for submitting matches with optimistic updates

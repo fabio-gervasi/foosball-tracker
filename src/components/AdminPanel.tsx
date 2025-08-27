@@ -5,12 +5,13 @@ import { logger } from '../utils/logger';
 import { MatchManagement } from './admin/MatchManagement';
 import { UserManagement } from './admin/UserManagement';
 import { GroupManagement } from './admin/GroupManagement';
+import type { User, Group, Match } from '../types';
 
 interface AdminPanelProps {
-  currentUser: any;
+  currentUser: User;
   accessToken: string;
-  group: any;
-  users: any[];
+  group: Group | null;
+  users: User[];
   onDataChange: () => void;
   onGroupDeleted?: () => void;
 }
@@ -23,7 +24,7 @@ export function AdminPanel({
   onDataChange,
   onGroupDeleted
 }: AdminPanelProps) {
-  const [matches, setMatches] = useState([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'matches' | 'users' | 'group'>('matches');

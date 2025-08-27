@@ -2,29 +2,12 @@ import React, { useState } from 'react';
 import { Trophy, TrendingUp, Users, User } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import type { User as UserType, Group } from '../types';
 
 interface LeaderboardProps {
-  users: Array<{ 
-    id: string; 
-    name: string; 
-    username?: string;
-    email: string; 
-    wins: number; 
-    losses: number; 
-    elo: number; 
-    singlesWins: number; 
-    singlesLosses: number; 
-    doublesWins: number; 
-    doublesLosses: number; 
-    singlesElo: number; 
-    doublesElo: number; 
-    avatar: string;
-    avatarUrl?: string; 
-    currentGroup: string;
-    isAdmin: boolean;
-  }>;
-  group: { code: string; name: string; createdAt: string; memberCount: number } | null;
-  currentUser?: { id: string; name: string; username?: string; email: string; currentGroup: string };
+  users: UserType[];
+  group: Group | null;
+  currentUser?: UserType;
   accessToken?: string;
 }
 
@@ -37,11 +20,11 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
       const aWins = gameMode === 'singles' ? (a.singlesWins || 0) : (a.doublesWins || 0);
       const aLosses = gameMode === 'singles' ? (a.singlesLosses || 0) : (a.doublesLosses || 0);
       const aElo = gameMode === 'singles' ? (a.singlesElo || 1200) : (a.doublesElo || 1200);
-      
+
       const bWins = gameMode === 'singles' ? (b.singlesWins || 0) : (b.doublesWins || 0);
       const bLosses = gameMode === 'singles' ? (b.singlesLosses || 0) : (b.doublesLosses || 0);
       const bElo = gameMode === 'singles' ? (b.singlesElo || 1200) : (b.doublesElo || 1200);
-      
+
       switch (sortBy) {
         case 'elo':
           return bElo - aElo;
@@ -123,7 +106,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
       {/* Game Mode and Sorting Controls */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="text-lg text-gray-800 mb-3">Game Mode & Sorting</h3>
-        
+
         {/* Game Mode Selection */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
@@ -209,7 +192,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg text-gray-800">Complete Rankings</h3>
         </div>
-        
+
         <div className="divide-y divide-gray-200">
           {sortedUsers.map((user, index) => {
             const rank = index + 1;
@@ -218,7 +201,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
             const elo = gameMode === 'singles' ? (user.singlesElo || 1200) : (user.doublesElo || 1200);
             const totalGames = wins + losses;
             const winRate = totalGames > 0 ? (wins / totalGames * 100).toFixed(1) : '0';
-            
+
             return (
               <div key={user.id} className="p-4">
                 <div className="flex items-center space-x-4">
@@ -229,7 +212,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
 
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-full bg-gray-100">
-                    <Avatar 
+                    <Avatar
                       src={user.avatarUrl}
                       fallback={user.avatar}
                       className="w-full h-full rounded-full"
@@ -241,8 +224,8 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
                   <div className="flex-1">
                     <button
                       onClick={() => {
-                        window.dispatchEvent(new CustomEvent('showPlayerProfile', { 
-                          detail: { playerId: user.id } 
+                        window.dispatchEvent(new CustomEvent('showPlayerProfile', {
+                          detail: { playerId: user.id }
                         }));
                       }}
                       className="text-left hover:underline transition-colors text-gray-800 hover:text-blue-600"
@@ -268,7 +251,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
                           ELO
                         </p>
                       </div>
-                      
+
                       <div className="text-center">
                         <p className="text-lg">{winRate}%</p>
                         <p className="text-xs text-gray-500">
@@ -289,14 +272,14 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
       {/* Group Stats */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="text-lg text-gray-800 mb-4">Group Statistics</h3>
-        
+
         <div className="grid grid-cols-2 gap-4 text-center">
           <div>
             <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
             <p className="text-2xl text-gray-800">{users.length}</p>
             <p className="text-sm text-gray-600">Active Players</p>
           </div>
-          
+
           <div>
             <TrendingUp className="w-8 h-8 text-green-600 mx-auto mb-2" />
             <p className="text-2xl text-gray-800">

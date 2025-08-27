@@ -8,13 +8,13 @@ import { logger } from '../utils/logger';
 import { useUserGroupsQuery } from '../hooks/useQueries';
 import { useGroupSwitchMutation, useJoinGroupMutation, useCreateGroupMutation } from '../hooks/useMutations';
 import { useDialogContext } from './common/DialogProvider';
-
+import type { User as UserType, Group, ProfileUpdateData } from '../types';
 
 interface ProfileProps {
-  user: { id: string; name: string; email: string; username?: string; wins: number; losses: number; elo: number; avatar: string; avatarUrl?: string; currentGroup: string; isAdmin?: boolean };
-  group: { code: string; name: string; createdAt: string; memberCount: number } | null;
+  user: UserType;
+  group: Group | null;
   accessToken: string;
-  onUpdateProfile: (updatedUser: { name: string }) => Promise<any>;
+  onUpdateProfile: (updatedUser: ProfileUpdateData) => Promise<any>;
   onDataChange?: () => void;
   onGroupChanged?: () => void;
 }

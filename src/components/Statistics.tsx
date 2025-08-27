@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Trophy, User, TrendingUp, Calendar, BarChart3, Users, Skull, Heart, Target, Zap, Award, Activity } from 'lucide-react';
 import { Avatar } from './Avatar';
+import type { User as UserType, Match, Group } from '../types';
 
 // Custom SVG chart component to avoid flickering issues with Recharts
 function EloChart({ data }: { data: Array<{ date: string; elo: number; formattedDate: string }> }) {
   const chartWidth = 300;
   const chartHeight = 120;
   const padding = { top: 20, right: 20, bottom: 30, left: 40 };
-  
+
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500">
@@ -76,9 +77,9 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
   }
 
   // Generate X-axis labels (show only first, middle, and last)
-  const xLabels = [];
+  const xLabels: React.ReactElement[] = [];
   const labelIndices = data.length === 1 ? [0] : data.length === 2 ? [0, 1] : [0, Math.floor(data.length / 2), data.length - 1];
-  
+
   labelIndices.forEach(index => {
     if (data[index]) {
       const x = scaleX(index);
@@ -102,7 +103,7 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
       <svg width={chartWidth} height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
         {/* Grid lines */}
         {gridLinesY}
-        
+
         {/* Y-axis */}
         <line
           x1={padding.left}
@@ -112,7 +113,7 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
           stroke="#6b7280"
           strokeWidth={1}
         />
-        
+
         {/* X-axis */}
         <line
           x1={padding.left}
@@ -122,7 +123,7 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
           stroke="#6b7280"
           strokeWidth={1}
         />
-        
+
         {/* ELO line */}
         <path
           d={pathData}
@@ -132,7 +133,7 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        
+
         {/* Data points */}
         {data.map((point, index) => (
           <circle
@@ -145,7 +146,7 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
             strokeWidth={1}
           />
         ))}
-        
+
         {/* Axis labels */}
         {yLabels}
         {xLabels}
@@ -155,63 +156,21 @@ function EloChart({ data }: { data: Array<{ date: string; elo: number; formatted
 }
 
 interface StatisticsProps {
-  user: { 
-    id: string; 
-    name: string; 
-    username?: string; 
-    email: string; 
-    wins: number; 
-    losses: number; 
-    elo: number; 
-    singlesElo?: number;
-    doublesElo?: number;
-    avatar: string; 
-    currentGroup: string 
-  };
-  matches: Array<{ 
-    id: string; 
-    matchType?: string;
-    // New format
-    player1?: { id: string; name: string; isGuest?: boolean };
-    player2?: { id: string; name: string; isGuest?: boolean };
-    winner?: { id: string; name: string; isGuest?: boolean };
-    team1?: { 
-      player1: { id: string; name: string; isGuest?: boolean };
-      player2: { id: string; name: string; isGuest?: boolean };
-    };
-    team2?: { 
-      player1: { id: string; name: string; isGuest?: boolean };
-      player2: { id: string; name: string; isGuest?: boolean };
-    };
-    winningTeam?: string;
-    // Legacy format support
-    player1Email?: string; 
-    player2Email?: string; 
-    team1Player1Email?: string;
-    team1Player2Email?: string;
-    team2Player1Email?: string;
-    team2Player2Email?: string;
-    date: string; 
-    winner?: string;
-    winnerEmail?: string; 
-    loserEmail?: string; 
-    eloChanges?: any; 
-    groupCode: string;
-    createdAt?: string;
-  }>;
-  group: { code: string; name: string; createdAt: string; memberCount: number } | null;
+  user: UserType;
+  matches: Match[];
+  group: Group | null;
 }
 
 export function Statistics({ user, matches, group }: StatisticsProps) {
   const [selectedMatchType, setSelectedMatchType] = useState<'all' | '1v1' | '2v2'>('all');
   const userIdentifier = user.username || user.email;
-  
+
   // Filter matches for this specific user (supports both new and legacy formats) - memoized
   const userMatches = useMemo(() => {
     return matches.filter(match => {
       // First filter by user participation
       let isUserInMatch = false;
-      
+
       // Handle 1v1 matches
       if (match.matchType === '1v1' || !match.matchType) {
         // New format
@@ -227,19 +186,19 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
       else if (match.matchType === '2v2') {
         // New format
         if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
-          isUserInMatch = match.team1.player1.id === user.id || 
+          isUserInMatch = match.team1.player1.id === user.id ||
                  match.team1.player2.id === user.id ||
-                 match.team2.player1.id === user.id || 
+                 match.team2.player1.id === user.id ||
                  match.team2.player2.id === user.id;
         } else {
           // Legacy format
-          isUserInMatch = match.team1Player1Email === userIdentifier || 
+          isUserInMatch = match.team1Player1Email === userIdentifier ||
                  match.team1Player2Email === userIdentifier ||
-                 match.team2Player1Email === userIdentifier || 
+                 match.team2Player1Email === userIdentifier ||
                  match.team2Player2Email === userIdentifier ||
-                 match.team1Player1Email === user.email || 
+                 match.team1Player1Email === user.email ||
                  match.team1Player2Email === user.email ||
-                 match.team2Player1Email === user.email || 
+                 match.team2Player1Email === user.email ||
                  match.team2Player2Email === user.email;
         }
       }
@@ -250,7 +209,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
       if (selectedMatchType === 'all') return true;
       if (selectedMatchType === '1v1') return match.matchType === '1v1' || !match.matchType;
       if (selectedMatchType === '2v2') return match.matchType === '2v2';
-      
+
       return false;
     });
   }, [matches, user.id, user.email, userIdentifier, selectedMatchType]);
@@ -304,7 +263,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   // Win streak calculation - use reversed matches for chronological order
   let currentStreak = 0;
   let streakType = '';
-  
+
   const reversedMatches = [...userMatches].reverse();
   for (const match of reversedMatches) {
     const isWin = isMatchWinner(match);
@@ -326,7 +285,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   }
 
   const getMonthlyStats = () => {
-    const monthlyData = {};
+    const monthlyData: Record<string, { wins: number; losses: number }> = {};
     userMatches.forEach(match => {
       const month = match.date.substring(0, 7); // YYYY-MM
       if (!monthlyData[month]) {
@@ -369,7 +328,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const eloTimelineData = useMemo(() => {
     // Sort matches by date to get chronological order
     const sortedMatches = [...userMatches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
+
     if (sortedMatches.length === 0) {
       // No matches - show current ELO as a single point
       return [{
@@ -406,7 +365,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
 
     return timelineData;
   }, [userMatches, currentFilteredElo, user.email, user.id, userIdentifier]);
-  
+
   // Get highest and lowest ELO from timeline data
   const eloValues = eloTimelineData.map(point => point.elo);
   const highestElo = eloValues.length > 0 ? Math.max(...eloValues) : currentFilteredElo;
@@ -416,12 +375,12 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const rawOpponentStats = {};
   userMatches.forEach(match => {
     const opponents = [];
-    
+
     // Handle 1v1 matches
     if (match.matchType === '1v1' || !match.matchType) {
       let opponent = null;
       let opponentIdentifier = null;
-      
+
       // New format
       if (match.player1?.id && match.player2?.id) {
         opponent = match.player1.id === user.id ? match.player2 : match.player1;
@@ -432,7 +391,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         opponentIdentifier = isPlayer1 ? match.player2Email : match.player1Email;
         opponent = { name: isPlayer1 ? match.player2 : match.player1 };
       }
-      
+
       if (opponentIdentifier && opponent) {
         opponents.push({ identifier: opponentIdentifier, opponent });
       }
@@ -443,7 +402,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
       if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
         const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
         const enemyTeam = isInTeam1 ? match.team2 : match.team1;
-        
+
         opponents.push(
           { identifier: enemyTeam.player1.id, opponent: enemyTeam.player1 },
           { identifier: enemyTeam.player2.id, opponent: enemyTeam.player2 }
@@ -452,7 +411,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         // Legacy format - determine which team the user is on
         const isInTeam1 = match.team1Player1Email === userIdentifier || match.team1Player2Email === userIdentifier ||
                           match.team1Player1Email === user.email || match.team1Player2Email === user.email;
-        
+
         if (isInTeam1) {
           // User is in team1, opponents are team2
           opponents.push(
@@ -468,12 +427,12 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         }
       }
     }
-    
+
     // Process all opponents for this match
     opponents.forEach(({ identifier, opponent }) => {
       if (identifier && opponent) {
         const opponentName = opponent.name || identifier;
-        
+
         if (!rawOpponentStats[identifier]) {
           rawOpponentStats[identifier] = {
             name: opponentName,
@@ -482,7 +441,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             total: 0
           };
         }
-        
+
         rawOpponentStats[identifier].total++;
         if (isMatchWinner(match)) {
           rawOpponentStats[identifier].wins++;
@@ -497,7 +456,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const consolidatedOpponentStats = {};
   Object.values(rawOpponentStats).forEach(stats => {
     const normalizedName = stats.name.toLowerCase().trim();
-    
+
     if (!consolidatedOpponentStats[normalizedName]) {
       consolidatedOpponentStats[normalizedName] = {
         name: stats.name, // Keep original case
@@ -506,7 +465,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         total: 0
       };
     }
-    
+
     consolidatedOpponentStats[normalizedName].wins += stats.wins;
     consolidatedOpponentStats[normalizedName].losses += stats.losses;
     consolidatedOpponentStats[normalizedName].total += stats.total;
@@ -519,15 +478,15 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   // Calculate Most Feared Opponent (worst win rate against in ALL matches)
   const getMostFearedOpponent = () => {
     const rawAllOpponentStats = {};
-    
+
     userMatches.forEach(match => {
       const opponents = [];
-      
+
       // Handle 1v1 matches
       if (match.matchType === '1v1' || !match.matchType) {
         let opponent = null;
         let opponentIdentifier = null;
-        
+
         // New format
         if (match.player1?.id && match.player2?.id) {
           opponent = match.player1.id === user.id ? match.player2 : match.player1;
@@ -538,7 +497,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           opponentIdentifier = isPlayer1 ? match.player2Email : match.player1Email;
           opponent = { name: isPlayer1 ? match.player2 : match.player1 };
         }
-        
+
         if (opponentIdentifier && opponent) {
           opponents.push({ identifier: opponentIdentifier, opponent });
         }
@@ -549,7 +508,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
           const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
           const enemyTeam = isInTeam1 ? match.team2 : match.team1;
-          
+
           opponents.push(
             { identifier: enemyTeam.player1.id, opponent: enemyTeam.player1 },
             { identifier: enemyTeam.player2.id, opponent: enemyTeam.player2 }
@@ -558,7 +517,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           // Legacy format - determine which team the user is on
           const isInTeam1 = match.team1Player1Email === userIdentifier || match.team1Player2Email === userIdentifier ||
                             match.team1Player1Email === user.email || match.team1Player2Email === user.email;
-          
+
           if (isInTeam1) {
             // User is in team1, opponents are team2
             opponents.push(
@@ -574,12 +533,12 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           }
         }
       }
-      
+
       // Process all opponents for this match
       opponents.forEach(({ identifier, opponent }) => {
         if (identifier && opponent) {
           const opponentName = opponent.name || identifier;
-          
+
           if (!rawAllOpponentStats[identifier]) {
             rawAllOpponentStats[identifier] = {
               name: opponentName,
@@ -589,7 +548,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
               avatar: opponent.avatar || opponentName?.[0] || identifier[0]?.toUpperCase()
             };
           }
-          
+
           rawAllOpponentStats[identifier].total++;
           if (isMatchWinner(match)) {
             rawAllOpponentStats[identifier].wins++;
@@ -604,7 +563,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     const consolidatedAllOpponentStats = {};
     Object.values(rawAllOpponentStats).forEach(stats => {
       const normalizedName = stats.name.toLowerCase().trim();
-      
+
       if (!consolidatedAllOpponentStats[normalizedName]) {
         consolidatedAllOpponentStats[normalizedName] = {
           name: stats.name,
@@ -614,7 +573,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           avatar: stats.avatar
         };
       }
-      
+
       consolidatedAllOpponentStats[normalizedName].wins += stats.wins;
       consolidatedAllOpponentStats[normalizedName].losses += stats.losses;
       consolidatedAllOpponentStats[normalizedName].total += stats.total;
@@ -623,13 +582,13 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     // Find opponent with worst win rate (minimum 3 games)
     const qualifiedOpponents = Object.values(consolidatedAllOpponentStats).filter(opp => opp.total >= 3);
     if (qualifiedOpponents.length === 0) return null;
-    
+
     const mostFeared = qualifiedOpponents.reduce((worst, current) => {
       const currentWinRate = current.wins / current.total;
       const worstWinRate = worst.wins / worst.total;
       return currentWinRate < worstWinRate ? current : worst;
     });
-    
+
     return mostFeared.wins / mostFeared.total < 0.5 ? mostFeared : null; // Only show if win rate < 50%
   };
 
@@ -637,11 +596,11 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const getBestPartner = () => {
     const twoVsTwoMatches = userMatches.filter(match => match.matchType === '2v2');
     const rawPartnerStats = {};
-    
+
     twoVsTwoMatches.forEach(match => {
       let partner = null;
       let partnerIdentifier = null;
-      
+
       // New format
       if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
         const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
@@ -656,7 +615,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         // Legacy format
         const isInTeam1 = match.team1Player1Email === userIdentifier || match.team1Player2Email === userIdentifier ||
                           match.team1Player1Email === user.email || match.team1Player2Email === user.email;
-        
+
         if (isInTeam1) {
           const isPlayer1 = match.team1Player1Email === userIdentifier || match.team1Player1Email === user.email;
           partnerIdentifier = isPlayer1 ? match.team1Player2Email : match.team1Player1Email;
@@ -667,10 +626,10 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           partner = { name: isPlayer1 ? match.team2Player2Email : match.team2Player1Email };
         }
       }
-      
+
       if (partnerIdentifier && partner) {
         const partnerName = partner.name || partnerIdentifier;
-        
+
         if (!rawPartnerStats[partnerIdentifier]) {
           rawPartnerStats[partnerIdentifier] = {
             name: partnerName,
@@ -680,7 +639,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             avatar: partner.avatar || partnerName?.[0] || partnerIdentifier[0]?.toUpperCase()
           };
         }
-        
+
         rawPartnerStats[partnerIdentifier].total++;
         if (isMatchWinner(match)) {
           rawPartnerStats[partnerIdentifier].wins++;
@@ -694,7 +653,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     const consolidatedPartnerStats = {};
     Object.values(rawPartnerStats).forEach(stats => {
       const normalizedName = stats.name.toLowerCase().trim();
-      
+
       if (!consolidatedPartnerStats[normalizedName]) {
         consolidatedPartnerStats[normalizedName] = {
           name: stats.name,
@@ -704,7 +663,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           avatar: stats.avatar
         };
       }
-      
+
       consolidatedPartnerStats[normalizedName].wins += stats.wins;
       consolidatedPartnerStats[normalizedName].losses += stats.losses;
       consolidatedPartnerStats[normalizedName].total += stats.total;
@@ -713,13 +672,13 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     // Find partner with best win rate (minimum 3 games)
     const qualifiedPartners = Object.values(consolidatedPartnerStats).filter(partner => partner.total >= 3);
     if (qualifiedPartners.length === 0) return null;
-    
+
     const bestPartner = qualifiedPartners.reduce((best, current) => {
       const currentWinRate = current.wins / current.total;
       const bestWinRate = best.wins / best.total;
       return currentWinRate > bestWinRate ? current : best;
     });
-    
+
     return bestPartner.wins / bestPartner.total > 0.5 ? bestPartner : null; // Only show if win rate > 50%
   };
 
@@ -742,19 +701,19 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     else if (match.matchType === '2v2') {
       // New format
       if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
-        return match.team1.player1.id === user.id || 
+        return match.team1.player1.id === user.id ||
                match.team1.player2.id === user.id ||
-               match.team2.player1.id === user.id || 
+               match.team2.player1.id === user.id ||
                match.team2.player2.id === user.id;
       }
       // Legacy format
-      return match.team1Player1Email === userIdentifier || 
+      return match.team1Player1Email === userIdentifier ||
              match.team1Player2Email === userIdentifier ||
-             match.team2Player1Email === userIdentifier || 
+             match.team2Player1Email === userIdentifier ||
              match.team2Player2Email === userIdentifier ||
-             match.team1Player1Email === user.email || 
+             match.team1Player1Email === user.email ||
              match.team1Player2Email === user.email ||
-             match.team2Player1Email === user.email || 
+             match.team2Player1Email === user.email ||
              match.team2Player2Email === user.email;
     }
     return false;
@@ -877,7 +836,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           <Target className="w-6 h-6 text-orange-600 mr-3" />
           <h3 className="text-lg text-orange-800">Performance Overview</h3>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white border border-orange-100 rounded-lg p-4">
             <div className="text-2xl text-orange-800">{actualWins}</div>
@@ -904,7 +863,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           <Zap className="w-6 h-6 text-violet-600 mr-3" />
           <h3 className="text-lg text-violet-800">Current Form</h3>
         </div>
-        
+
         <div className="space-y-4">
           {/* Recent Form */}
           <div>
@@ -914,8 +873,8 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
                 <div
                   key={index}
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    result === 'W' 
-                      ? 'bg-green-500 text-white' 
+                    result === 'W'
+                      ? 'bg-green-500 text-white'
                       : 'bg-red-500 text-white'
                   }`}
                 >
@@ -932,8 +891,8 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             <h4 className="text-violet-700 text-sm mb-2">Current Streak</h4>
             <div className="flex items-center space-x-2">
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                streakType === 'W' 
-                  ? 'bg-green-500 text-white' 
+                streakType === 'W'
+                  ? 'bg-green-500 text-white'
                   : streakType === 'L'
                   ? 'bg-red-500 text-white'
                   : 'bg-gray-200 text-gray-700'
@@ -951,7 +910,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           <TrendingUp className="w-6 h-6 text-teal-600 mr-3" />
           <h3 className="text-lg text-teal-800">ELO Progress</h3>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-white border border-teal-100 rounded-lg p-4">
             <div className="text-2xl text-teal-800">{currentFilteredElo}</div>
@@ -1007,10 +966,10 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
               <Heart className="w-6 h-6 text-green-600 mr-3" />
               <h3 className="text-lg text-green-800">Best Partner</h3>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-white border border-green-200 rounded-full flex items-center justify-center overflow-hidden">
-                <Avatar 
+                <Avatar
                   src={null}
                   fallback={bestPartner.avatar}
                   className="w-full h-full rounded-full"
@@ -1037,10 +996,10 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
               <Skull className="w-6 h-6 text-gray-600 mr-3" />
               <h3 className="text-lg text-gray-800">Most Feared Opponent</h3>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                <Avatar 
+                <Avatar
                   src={null}
                   fallback={mostFearedOpponent.avatar}
                   className="w-full h-full rounded-full"
@@ -1084,7 +1043,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           <Award className="w-6 h-6 text-blue-600 mr-3" />
           <h3 className="text-lg text-gray-800">Head-to-Head Records</h3>
         </div>
-        
+
         <div className="space-y-3">
           {opponentList.length > 0 ? opponentList.map((opponent, index) => (
             <div key={index} className="bg-white border border-gray-100 rounded-lg p-3 flex items-center justify-between">
@@ -1122,13 +1081,13 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           <Calendar className="w-6 h-6 text-amber-600 mr-3" />
           <h3 className="text-lg text-amber-800">Monthly Performance</h3>
         </div>
-        
+
         <div className="space-y-3">
           {monthlyStats.length > 0 ? monthlyStats.map(([month, stats]) => {
             const monthTotal = stats.wins + stats.losses;
             const monthWinRate = monthTotal > 0 ? (stats.wins / monthTotal * 100).toFixed(1) : '0';
             const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-            
+
             return (
               <div key={month} className="bg-white border border-amber-100 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">

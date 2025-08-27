@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Users, Trophy, Save, User, UserCheck } from 'lucide-react';
+import type { User, MatchSubmissionData } from '../types';
 
 interface MatchEntryProps {
-  users: Array<{ id: string; name: string; username?: string; email: string; wins: number; losses: number; singlesWins?: number; singlesLosses?: number; doublesWins?: number; doublesLosses?: number; avatar: string }>;
-  onMatchSubmit: (matchData: any) => Promise<any>;
+  users: User[];
+  onMatchSubmit: (matchData: MatchSubmissionData) => Promise<any>;
 }
 
 // Guest players for the dropdowns
@@ -17,26 +18,26 @@ const GUEST_PLAYERS = [
 export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
   const [matchType, setMatchType] = useState<'1v1' | '2v2'>('1v1');
   const [seriesType, setSeriesType] = useState<'bo1' | 'bo3'>('bo1');
-  
+
   // 1v1 state
   const [player1Id, setPlayer1Id] = useState('');
   const [player2Id, setPlayer2Id] = useState('');
   const [winnerId, setWinnerId] = useState('');
-  
+
   // 2v2 state
   const [team1Player1, setTeam1Player1] = useState('');
   const [team1Player2, setTeam1Player2] = useState('');
   const [team2Player1, setTeam2Player1] = useState('');
   const [team2Player2, setTeam2Player2] = useState('');
   const [winningTeam, setWinningTeam] = useState<1 | 2 | null>(null);
-  
 
-  
+
+
   // Best of 3 state
   const [game1Winner, setGame1Winner] = useState<string | null>(null);
   const [game2Winner, setGame2Winner] = useState<string | null>(null);
   const [game3Winner, setGame3Winner] = useState<string | null>(null);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -75,16 +76,16 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
   // Helper functions for Best of 3
   const getOverallWinner = () => {
     if (seriesType === 'bo1') return null;
-    
+
     const games = [game1Winner, game2Winner, game3Winner].filter(w => w !== null);
     if (games.length < 2) return null;
-    
+
     const player1Wins = games.filter(w => w === (matchType === '1v1' ? player1Id : 'team1')).length;
     const player2Wins = games.filter(w => w === (matchType === '1v1' ? player2Id : 'team2')).length;
-    
+
     if (player1Wins >= 2) return matchType === '1v1' ? player1Id : 'team1';
     if (player2Wins >= 2) return matchType === '1v1' ? player2Id : 'team2';
-    
+
     return null;
   };
 
@@ -95,11 +96,11 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
 
   const getSeriesScore = () => {
     if (seriesType === 'bo1') return null;
-    
+
     const games = [game1Winner, game2Winner, game3Winner];
     const player1Wins = games.filter(w => w === (matchType === '1v1' ? player1Id : 'team1')).length;
     const player2Wins = games.filter(w => w === (matchType === '1v1' ? player2Id : 'team2')).length;
-    
+
     return { player1Wins, player2Wins };
   };
 
@@ -123,13 +124,13 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (matchType === '1v1') {
       if (!player1Id || !player2Id) {
         setError('Please select both players');
         return;
       }
-      
+
       if (player1Id === player2Id) {
         setError('Please select different players');
         return;
@@ -155,11 +156,11 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
       }
 
       setIsSubmitting(true);
-      
+
       try {
         const player1Identifier = getPlayerIdentifier(player1Id);
         const player2Identifier = getPlayerIdentifier(player2Id);
-        
+
         let matchData = {
           matchType: '1v1',
           seriesType,
@@ -181,7 +182,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           const overallWinner = getOverallWinner();
           const winnerIdentifier = getPlayerIdentifier(overallWinner);
           const seriesScore = getSeriesScore();
-          
+
           matchData = {
             ...matchData,
             winnerEmail: winnerIdentifier,
@@ -192,13 +193,13 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
               game3Winner ? (game3Winner === player1Id ? 'player1' : 'player2') : null
             ].filter(g => g !== null),
             seriesScore: `${seriesScore.player1Wins}-${seriesScore.player2Wins}`,
-            isSweep: (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) || 
+            isSweep: (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) ||
                      (seriesScore.player2Wins === 2 && seriesScore.player1Wins === 0)
           };
         }
-        
+
         await onMatchSubmit(matchData);
-        
+
         resetForm();
       } catch (error) {
         console.error('Match submission error:', error);
@@ -209,12 +210,12 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
     } else {
       // 2v2 validation
       const allPlayers = [team1Player1, team1Player2, team2Player1, team2Player2];
-      
+
       if (allPlayers.some(p => !p)) {
         setError('Please select all 4 players');
         return;
       }
-      
+
       if (new Set(allPlayers).size !== 4) {
         setError('All players must be different');
         return;
@@ -236,7 +237,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
       }
 
       setIsSubmitting(true);
-      
+
       try {
         let matchData = {
           matchType: '2v2',
@@ -260,7 +261,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           // Best of 3 data
           const overallWinner = getOverallWinner();
           const seriesScore = getSeriesScore();
-          
+
           matchData = {
             ...matchData,
             winningTeam: overallWinner,
@@ -270,13 +271,13 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
               game3Winner
             ].filter(g => g !== null),
             seriesScore: `${seriesScore.player1Wins}-${seriesScore.player2Wins}`,
-            isSweep: (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) || 
+            isSweep: (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) ||
                      (seriesScore.player2Wins === 2 && seriesScore.player1Wins === 0)
           };
         }
-        
+
         await onMatchSubmit(matchData);
-        
+
         resetForm();
       } catch (error) {
         console.error('Match submission error:', error);
@@ -318,7 +319,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
               <span className="text-xs text-gray-500">One vs One</span>
             </div>
           </button>
-          
+
           <button
             type="button"
             onClick={() => handleMatchTypeChange('2v2')}
@@ -356,7 +357,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
               <span className="text-xs text-gray-500">Single Game</span>
             </div>
           </button>
-          
+
           <button
             type="button"
             onClick={() => handleSeriesTypeChange('bo3')}
@@ -373,7 +374,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             </div>
           </button>
         </div>
-        
+
         {seriesType === 'bo3' && (
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center space-x-2">
@@ -384,7 +385,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             </div>
           </div>
         )}
-        
+
         {matchType === '2v2' && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
@@ -402,7 +403,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           /* 1v1 Player Selection */
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <h3 className="text-lg text-gray-800 mb-4">Select Players</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 text-sm mb-2">Player 1</label>
@@ -459,7 +460,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           /* 2v2 Team Selection */
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <h3 className="text-lg text-gray-800 mb-4">Select Teams</h3>
-            
+
             <div className="space-y-6">
               {/* Team 1 */}
               <div>
@@ -481,14 +482,14 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                     >
                       <option value="">Select Player</option>
                       <optgroup label="Players">
-                        {users.filter(user => 
+                        {users.filter(user =>
                           ![team1Player2, team2Player1, team2Player2].includes(user.id)
                         ).map(user => (
                           <option key={user.id} value={user.id}>{user.username || user.name}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Guests">
-                        {GUEST_PLAYERS.filter(guest => 
+                        {GUEST_PLAYERS.filter(guest =>
                           ![team1Player2, team2Player1, team2Player2].includes(guest.id)
                         ).map(guest => (
                           <option key={guest.id} value={guest.id}>{guest.name}</option>
@@ -509,14 +510,14 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                     >
                       <option value="">Select Player</option>
                       <optgroup label="Players">
-                        {users.filter(user => 
+                        {users.filter(user =>
                           ![team1Player1, team2Player1, team2Player2].includes(user.id)
                         ).map(user => (
                           <option key={user.id} value={user.id}>{user.username || user.name}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Guests">
-                        {GUEST_PLAYERS.filter(guest => 
+                        {GUEST_PLAYERS.filter(guest =>
                           ![team1Player1, team2Player1, team2Player2].includes(guest.id)
                         ).map(guest => (
                           <option key={guest.id} value={guest.id}>{guest.name}</option>
@@ -547,14 +548,14 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                     >
                       <option value="">Select Player</option>
                       <optgroup label="Players">
-                        {users.filter(user => 
+                        {users.filter(user =>
                           ![team1Player1, team1Player2, team2Player2].includes(user.id)
                         ).map(user => (
                           <option key={user.id} value={user.id}>{user.username || user.name}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Guests">
-                        {GUEST_PLAYERS.filter(guest => 
+                        {GUEST_PLAYERS.filter(guest =>
                           ![team1Player1, team1Player2, team2Player2].includes(guest.id)
                         ).map(guest => (
                           <option key={guest.id} value={guest.id}>{guest.name}</option>
@@ -575,14 +576,14 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                     >
                       <option value="">Select Player</option>
                       <optgroup label="Players">
-                        {users.filter(user => 
+                        {users.filter(user =>
                           ![team1Player1, team1Player2, team2Player1].includes(user.id)
                         ).map(user => (
                           <option key={user.id} value={user.id}>{user.username || user.name}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Guests">
-                        {GUEST_PLAYERS.filter(guest => 
+                        {GUEST_PLAYERS.filter(guest =>
                           ![team1Player1, team1Player2, team2Player1].includes(guest.id)
                         ).map(guest => (
                           <option key={guest.id} value={guest.id}>{guest.name}</option>
@@ -615,17 +616,17 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                   <div className="flex items-center space-x-2 bg-green-50 text-green-800 px-3 py-2 rounded-lg mb-4">
                     <Trophy className="w-4 h-4" />
                     <span className="text-sm">
-                      Series Complete! {matchType === '1v1' 
-                        ? getPlayerName(getOverallWinner()) 
+                      Series Complete! {matchType === '1v1'
+                        ? getPlayerName(getOverallWinner())
                         : `Team ${getOverallWinner() === 'team1' ? '1' : '2'}`} wins {getSeriesScore().player1Wins}-{getSeriesScore().player2Wins}
-                      {getSeriesScore().player1Wins === 2 && getSeriesScore().player2Wins === 0 ? ' (2-0 Sweep - 1.2x ELO!)' : 
+                      {getSeriesScore().player1Wins === 2 && getSeriesScore().player2Wins === 0 ? ' (2-0 Sweep - 1.2x ELO!)' :
                        getSeriesScore().player2Wins === 2 && getSeriesScore().player1Wins === 0 ? ' (2-0 Sweep - 1.2x ELO!)' : ''}
                     </span>
                   </div>
                 )}
               </div>
             )}
-            
+
             {seriesType === 'bo1' ? (
               // Best of 1 - Single winner selection
               <div className="grid grid-cols-2 gap-4">
