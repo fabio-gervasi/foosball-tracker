@@ -1,6 +1,6 @@
 import React from 'react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import foosballIcon from '../assets/foosball-icon.png';
+import { ImageWithFallback } from '../figma/ImageWithFallback';
+import foosballIcon from '../../assets/foosball-icon.png';
 
 interface Group {
   id: string;

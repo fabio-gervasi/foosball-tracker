@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { User, Lock, Mail, Server, AlertCircle } from 'lucide-react';
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import foosballIcon from "../assets/foosball-icon.png";
-import { apiRequest, supabase } from "../utils/supabase/client";
-import { useAuth } from "../contexts/AuthContext";
-import { useDialogContext } from "./common/DialogProvider";
+import { ImageWithFallback } from "../figma/ImageWithFallback";
+import foosballIcon from "../../assets/foosball-icon.png";
+import { apiRequest, supabase } from "../../utils/supabase/client";
+import { useAuth } from "../../contexts/AuthContext";
+import { useDialogContext } from "../common/DialogProvider";
 import {
   validateUsername,
   validateEmail,
   checkServerStatus,
   transformErrorMessage,
-} from "../utils/login-helpers";
+} from "../../utils/login-helpers";
 
 export function Login({ onLogin }) {
   const { login } = useAuth();

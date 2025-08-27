@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Trophy, TrendingUp, Users, User } from 'lucide-react';
-import { Avatar } from './Avatar';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import type { User as UserType, Group } from '../types';
+import { Avatar } from '../Avatar';
+import { ImageWithFallback } from '../figma/ImageWithFallback';
+import type { User as UserType, Group } from '../../types';
 
 interface LeaderboardProps {
   users: UserType[];

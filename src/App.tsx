@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Login } from './components/Login';
+import { Login } from './components/auth/Login';
 import { GroupSelection } from './components/GroupSelection';
 import { AppRouter } from './components/AppRouter';
-import { LoadingScreen } from './components/LoadingScreen';
+import { LoadingScreen } from './components/common/LoadingScreen';
 import { PasswordResetForm } from './components/auth/PasswordResetForm';
 import { DialogProvider } from './components/common/DialogProvider';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppDataProvider, useAppData } from './contexts/AppDataContext';
 
@@ -19,11 +20,11 @@ const AppContent: React.FC = () => {
     const checkRoute = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      
+
       // Check for password reset token in URL
       const token = searchParams.get('token') || hashParams.get('token') || searchParams.get('token_hash');
       const type = searchParams.get('type') || hashParams.get('type');
-      
+
       if (token && (type === 'recovery' || window.location.pathname.includes('password-reset'))) {
         setCurrentRoute('password-reset');
       } else {
@@ -32,11 +33,11 @@ const AppContent: React.FC = () => {
     };
 
     checkRoute();
-    
+
     // Listen for URL changes
     const handlePopState = () => checkRoute();
     window.addEventListener('popstate', handlePopState);
-    
+
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -45,7 +46,7 @@ const AppContent: React.FC = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const token = searchParams.get('token') || hashParams.get('token') || searchParams.get('token_hash');
-    
+
     return (
       <PasswordResetForm
         token={token || undefined}
@@ -118,12 +119,14 @@ const AppContent: React.FC = () => {
 // Root App Component (provides contexts)
 export default function App() {
   return (
-    <AuthProvider>
-      <AppDataProvider>
-        <DialogProvider>
-          <AppContent />
-        </DialogProvider>
-      </AppDataProvider>
-    </AuthProvider>
+    <ErrorBoundary level="page" showErrorDetails={import.meta.env.DEV}>
+      <AuthProvider>
+        <AppDataProvider>
+          <DialogProvider>
+            <AppContent />
+          </DialogProvider>
+        </AppDataProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Target, TrendingUp, Calendar, RefreshCw, Users, Code, History, BarChart3 } from 'lucide-react';
-import { Avatar } from './Avatar';
-import { logger } from '../utils/logger';
-import type { User, Match, Group } from '../types';
+import { Avatar } from '../Avatar';
+import { logger } from '../../utils/logger';
+import type { User, Match, Group } from '../../types';
 
 interface DashboardProps {
   user: User;

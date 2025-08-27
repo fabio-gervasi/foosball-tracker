@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Trophy, User, TrendingUp, Calendar, BarChart3, Users, Skull, Heart, Target, Zap, Award, Activity } from 'lucide-react';
-import { Avatar } from './Avatar';
-import type { User as UserType, Match, Group } from '../types';
+import { Avatar } from '../Avatar';
+import type { User as UserType, Match, Group } from '../../types';
 
 // Custom SVG chart component to avoid flickering issues with Recharts
 function EloChart({ data }: { data: Array<{ date: string; elo: number; formattedDate: string }> }) {
