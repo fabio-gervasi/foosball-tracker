@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Package files
+package-lock.json
+*.tgz
+*.tar.gz
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# Editor directories
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+
+# Config files that should not be formatted
+*.config.js
+*.config.ts
+vite.config.ts
+tailwind.config.js
+postcss.config.js
