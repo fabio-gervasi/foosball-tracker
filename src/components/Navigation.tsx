@@ -1,33 +1,21 @@
 import React from 'react';
-import { Home, User, Plus, BarChart3, Trophy, Shield, History } from 'lucide-react';
-import { useAuth, usePermissions } from '../hooks';
+import { Home, User, Plus, BarChart3, Trophy, History } from 'lucide-react';
 
 interface NavigationProps {
   currentView: string;
   onViewChange: (view: string) => void;
+  currentUser?: any; // Keep for backward compatibility
 }
 
-export function Navigation({ currentView, onViewChange }: NavigationProps) {
-  // Use custom hooks instead of prop drilling
-  const { currentUser } = useAuth();
-  const { canSubmitMatches, canViewAdminPanel } = usePermissions();
-  // Define navigation items with permission-based filtering
-  const allNavItems = [
-    { id: 'dashboard', label: 'Home', icon: Home, requiresAuth: true },
-    { id: 'statistics', label: 'Stats', icon: BarChart3, requiresAuth: true },
-    { id: 'match', label: 'Add', icon: Plus, requiresAuth: true, requiresPermission: 'submit_matches' },
-    { id: 'leaderboard', label: 'Rankings', icon: Trophy, requiresAuth: true },
-    { id: 'history', label: 'History', icon: History, requiresAuth: true },
-    { id: 'admin', label: 'Admin', icon: Shield, requiresAuth: true, requiresPermission: 'view_admin_panel' },
+export function Navigation({ currentView, onViewChange, currentUser }: NavigationProps) {
+  // Define navigation items (keeping original design - admin stays in profile)
+  const navItems = [
+    { id: 'dashboard', label: 'Home', icon: Home },
+    { id: 'statistics', label: 'Stats', icon: BarChart3 },
+    { id: 'match', label: 'Add', icon: Plus },
+    { id: 'leaderboard', label: 'Rankings', icon: Trophy },
+    { id: 'history', label: 'History', icon: History },
   ];
-
-  // Filter navigation items based on user permissions
-  const navItems = allNavItems.filter(item => {
-    if (item.requiresAuth && !currentUser) return false;
-    if (item.requiresPermission === 'submit_matches' && !canSubmitMatches) return false;
-    if (item.requiresPermission === 'view_admin_panel' && !canViewAdminPanel) return false;
-    return true;
-  });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
