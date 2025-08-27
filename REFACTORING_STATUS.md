@@ -1,5 +1,28 @@
 # Foosball Tracker Refactoring Status
 
+## 📋 VERSION MANAGEMENT GUIDELINES
+
+**CRITICAL**: After completing each REQ or major task, always check if the version needs updating:
+
+### Version Update Triggers:
+- ✅ **Major REQ Completion** (e.g., REQ-2.1 React Query) → Minor version bump (0.1.0 → 0.2.0)
+- ✅ **Phase Completion** (e.g., Phase 1 complete) → Minor version bump
+- ✅ **Bug Fixes & Security Updates** → Patch version bump (0.2.0 → 0.2.1)
+- ✅ **Breaking Changes** (rare in pre-1.0) → Major version bump (0.x.x → 1.0.0)
+
+### Current Version Strategy:
+- **Pre-1.0**: Active refactoring phase, version reflects progress milestones
+- **Version 1.0**: Target for refactoring project completion
+- **Post-1.0**: Standard semantic versioning for production releases
+
+### Version Update Process:
+1. Complete REQ implementation
+2. Update `package.json` version
+3. Commit with descriptive message: `chore: bump version to X.Y.Z - [reason]`
+4. Include version change in PR/merge descriptions
+
+**Last Updated**: Version 0.3.0 (Custom Hooks implementation complete)
+
 ## PHASE 0: SECURITY & ENVIRONMENT SETUP
 
 ### REQ-0.1: Security Hardening
@@ -8,33 +31,39 @@
 - [x] REQ-0.1.3: Remove Client-Side Secrets
 
 ### REQ-0.2: Critical Bug Fixes
-- [ ] REQ-0.2.1: Fix Header Logo Display
-- [ ] REQ-0.2.2: Fix Server Import Error
+- [x] REQ-0.2.1: Fix Header Logo Display
+- [x] REQ-0.2.2: Fix Server Import Error
 
-## PHASE 1: CRITICAL REFACTORING
+## PHASE 1: CRITICAL REFACTORING ✅ COMPLETED
 
-### REQ-1.1: App.tsx Component Decomposition
-- [ ] REQ-1.1.1: Create Authentication Context
-- [ ] REQ-1.1.2: Create App Data Context
-- [ ] REQ-1.1.3: Create App Router Component
-- [ ] REQ-1.1.4: Create Loading Screen Component
+### REQ-1.1: App.tsx Component Decomposition ✅
+- [x] REQ-1.1.1: Create Authentication Context
+- [x] REQ-1.1.2: Create App Data Context
+- [x] REQ-1.1.3: Create App Router Component
+- [x] REQ-1.1.4: Create Loading Screen Component
 
-### REQ-1.2: Console Logging Cleanup
-- [ ] REQ-1.2.1: Create Logger Utility
-- [ ] REQ-1.2.2: Replace Console Statements
+### REQ-1.2: Console Logging Cleanup ✅
+- [x] REQ-1.2.1: Create Logger Utility
+- [x] REQ-1.2.2: Replace Console Statements
 
-### REQ-1.3: Remove Unused Components
-- [ ] Remove unused files and clean up imports
+### REQ-1.3: Remove Unused Components ✅
+- [x] Remove unused files and clean up imports (25 files removed, 17.72 kB saved)
 
-## PHASE 2: ARCHITECTURE IMPROVEMENTS
+## PHASE 2: ARCHITECTURE IMPROVEMENTS (IN PROGRESS)
 
-### REQ-2.1: React Query Data Layer Implementation
-- [ ] REQ-2.1.1: Install and Configure React Query
-- [ ] REQ-2.1.2: Create Data Query Hooks
+### REQ-2.1: React Query Data Layer Implementation ✅ COMPLETED
+- [x] REQ-2.1.1: Install and Configure React Query
+- [x] REQ-2.1.2: Create Data Query Hooks
+- [x] REQ-2.1.3: Create Mutation Hooks with Optimistic Updates
+- [x] REQ-2.1.4: Migrate AppDataContext and Components
+- [x] **Version Updated**: 0.1.0 → 0.2.0 (Major architectural improvement)
 
-### REQ-2.2: Custom Hooks Implementation
-- [ ] REQ-2.1.1: Create useAuth Hook
-- [ ] REQ-2.1.2: Create useAppData Hook
+### REQ-2.2: Custom Hooks Implementation ✅ COMPLETED
+- [x] REQ-2.2.1: Create useAuth Hook - Enhanced authentication logic extraction
+- [x] REQ-2.2.2: Create useAppData Hook - Consolidated data management logic
+- [x] REQ-2.2.3: Create Supporting Hooks - usePermissions, useMatchValidation, useLocalStorage
+- [x] REQ-2.2.4: Component Migration - Updated Navigation and created examples
+- [x] **Version Updated**: 0.2.0 → 0.3.0 (Major architectural improvement - custom hooks layer)
 
 ### REQ-2.3: API Request Standardization
 - [ ] REQ-2.2.1: Create useApiRequest Hook
