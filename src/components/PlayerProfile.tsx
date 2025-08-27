@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Users, Shield, ArrowLeft, Trophy, TrendingUp, Award } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
+import { logger } from '../utils/logger';
 
 interface PlayerProfileProps {
   playerId: string;
@@ -95,7 +96,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
       setMatches(matchesResponse.matches || []);
 
     } catch (error) {
-      console.error('Failed to load player data:', error);
+      logger.error('Failed to load player data', error);
       setError('Failed to load player profile. Please try again.');
     } finally {
       setLoading(false);
@@ -150,13 +151,13 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
   // Check if this player participates in a match
   const playerParticipatesInMatch = (match: MatchData): boolean => {
     const playerIdentifier = player.username || player.email;
-    
+
     if (match.gameMode === 'singles') {
       return match.player1Email === playerIdentifier || match.player2Email === playerIdentifier;
     } else {
-      return match.team1Player1Email === playerIdentifier || 
+      return match.team1Player1Email === playerIdentifier ||
              match.team1Player2Email === playerIdentifier ||
-             match.team2Player1Email === playerIdentifier || 
+             match.team2Player1Email === playerIdentifier ||
              match.team2Player2Email === playerIdentifier;
     }
   };
@@ -164,7 +165,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
   // Determine if player won a match
   const didPlayerWin = (match: MatchData): boolean => {
     const playerIdentifier = player.username || player.email;
-    
+
     if (match.gameMode === 'singles') {
       if (match.player1Email === playerIdentifier) {
         return match.winner === 'player1';
@@ -197,14 +198,14 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
       {/* Profile Header */}
       <div className="text-center py-6">
         <div className="w-24 h-24 bg-blue-100 rounded-full mb-4 mx-auto">
-          <Avatar 
+          <Avatar
             src={player.avatarUrl}
             fallback={player.avatar}
             className="w-full h-full rounded-full"
             textClassName="text-3xl text-blue-600"
           />
         </div>
-        
+
         <h2 className="text-2xl text-gray-800">{player.username || player.name}</h2>
         <p className="text-gray-600 text-sm">@{player.username || emailToUsername(player.email)}</p>
         {player.isAdmin && (
@@ -220,28 +221,28 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg text-gray-800">Overall Performance</h3>
         </div>
-        
+
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Overall ELO Rating</span>
             <span className="text-purple-600">{player.elo || 1200}</span>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Total Wins</span>
             <span className="text-green-600">{player.wins}</span>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Total Losses</span>
             <span className="text-red-600">{player.losses}</span>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Overall Win Rate</span>
             <span className="text-blue-600">{winRate}%</span>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-gray-600">Total Games</span>
             <span className="text-gray-800">{player.wins + player.losses}</span>
@@ -254,7 +255,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
               <span>{winRate}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${winRate}%` }}
               ></div>
@@ -273,7 +274,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
               <h3 className="text-lg text-gray-800">Singles (1v1)</h3>
             </div>
           </div>
-          
+
           <div className="p-4 space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">ELO Rating</span>
@@ -298,7 +299,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
               <h3 className="text-lg text-gray-800">Doubles (2v2)</h3>
             </div>
           </div>
-          
+
           <div className="p-4 space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">ELO Rating</span>
@@ -322,11 +323,11 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg text-gray-800">Recent Matches</h3>
           </div>
-          
+
           <div className="divide-y divide-gray-200">
             {recentMatches.filter(playerParticipatesInMatch).map((match) => {
               const isWin = didPlayerWin(match);
-              
+
               return (
                 <div key={match.id} className="p-4">
                   <div className="flex items-center justify-between">
@@ -340,7 +341,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
                           <Award className="w-4 h-4 text-red-600" />
                         )}
                       </div>
-                      
+
                       <div>
                         <div className="flex items-center space-x-1">
                           {match.gameMode === 'singles' ? (
@@ -357,10 +358,10 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="text-right">
                       <p className="text-sm text-gray-800">
-                        {match.gameMode === 'singles' 
+                        {match.gameMode === 'singles'
                           ? `${match.player1Score}-${match.player2Score}`
                           : `${match.team1Score}-${match.team2Score}`
                         }
@@ -383,7 +384,7 @@ export function PlayerProfile({ playerId, currentUser, group, accessToken, onBac
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg text-gray-800">Group Information</h3>
           </div>
-          
+
           <div className="p-4">
             <div className="flex items-center space-x-3">
               <Users className="w-8 h-8 text-purple-600" />

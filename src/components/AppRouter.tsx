@@ -32,16 +32,16 @@ export const AppRouter: React.FC = () => {
     };
 
     const handlePlayerSelect = (event: any) => {
-      setSelectedPlayerId(event.detail);
+      setSelectedPlayerId(event.detail.playerId);
       setCurrentView('playerProfile');
     };
 
     window.addEventListener('navigate', handleNavigate);
-    window.addEventListener('selectPlayer', handlePlayerSelect);
+    window.addEventListener('showPlayerProfile', handlePlayerSelect);
 
     return () => {
       window.removeEventListener('navigate', handleNavigate);
-      window.removeEventListener('selectPlayer', handlePlayerSelect);
+      window.removeEventListener('showPlayerProfile', handlePlayerSelect);
     };
   }, []);
 
@@ -162,9 +162,9 @@ export const AppRouter: React.FC = () => {
         return selectedPlayerId ? (
           <PlayerProfile
             playerId={selectedPlayerId}
-            users={users}
-            matches={matches}
+            currentUser={currentUser}
             group={currentGroup}
+            accessToken={accessToken}
             onBack={() => setCurrentView('dashboard')}
           />
         ) : (
