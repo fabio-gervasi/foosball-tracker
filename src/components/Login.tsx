@@ -4,6 +4,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import foosballIcon from "../assets/foosball-icon.png";
 import { apiRequest, supabase } from "../utils/supabase/client";
 import { useAuth } from "../contexts/AuthContext";
+import { useDialogContext } from "./common/DialogProvider";
 import {
   validateUsername,
   validateEmail,
@@ -13,6 +14,7 @@ import {
 
 export function Login({ onLogin }) {
   const { login } = useAuth();
+  const { showSuccess } = useDialogContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -108,8 +110,8 @@ export function Login({ onLogin }) {
           throw resetError;
         }
 
-        alert(
-          "Password reset email sent! Please check your inbox and follow the instructions.",
+        await showSuccess(
+          "Password reset email sent! Please check your inbox and follow the instructions."
         );
 
         // Reset form and go back to login

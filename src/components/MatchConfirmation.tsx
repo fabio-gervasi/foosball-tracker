@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Calendar, User, ArrowLeft, Trash2, CheckCircle, Users } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
+import { useDialogContext } from './common/DialogProvider';
 
 interface MatchConfirmationProps {
   matchResult: {
@@ -45,9 +46,18 @@ interface MatchConfirmationProps {
 export function MatchConfirmation({ matchResult, currentUser, accessToken, onBack, onDataChange }: MatchConfirmationProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const { showConfirmDialog } = useDialogContext();
 
   const handleDeleteMatch = async () => {
-    if (!confirm('Are you sure you want to delete this match? This action cannot be undone.')) {
+    const confirmed = await showConfirmDialog({
+      title: 'Delete Match',
+      description: 'Are you sure you want to delete this match? This action cannot be undone.',
+      variant: 'destructive',
+      confirmText: 'Delete Match',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -88,14 +98,14 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
 
   const getMatchSummary = () => {
     const { match } = matchResult;
-    
+
     if (match.matchType === '1v1') {
       const winner = match.winner;
       const loser = match.player1?.id === winner?.id ? match.player2 : match.player1;
-      
+
       const winnerName = winner?.name || winner?.id || 'Unknown Player';
       const loserName = loser?.name || loser?.id || 'Unknown Player';
-      
+
       return {
         winningTeam: `${winnerName}${winner?.isGuest ? ' (Guest)' : ''}`,
         losingTeam: `${loserName}${loser?.isGuest ? ' (Guest)' : ''}`,
@@ -106,12 +116,12 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
       const isTeam1Winner = match.winningTeam === 'team1';
       const winningTeam = isTeam1Winner ? match.team1 : match.team2;
       const losingTeam = isTeam1Winner ? match.team2 : match.team1;
-      
+
       const winningPlayer1Name = winningTeam?.player1?.name || winningTeam?.player1?.id || 'Unknown';
       const winningPlayer2Name = winningTeam?.player2?.name || winningTeam?.player2?.id || 'Unknown';
       const losingPlayer1Name = losingTeam?.player1?.name || losingTeam?.player1?.id || 'Unknown';
       const losingPlayer2Name = losingTeam?.player2?.name || losingTeam?.player2?.id || 'Unknown';
-      
+
       return {
         winningTeam: `${winningPlayer1Name}${winningTeam?.player1?.isGuest ? ' (Guest)' : ''} & ${winningPlayer2Name}${winningTeam?.player2?.isGuest ? ' (Guest)' : ''}`,
         losingTeam: `${losingPlayer1Name}${losingTeam?.player1?.isGuest ? ' (Guest)' : ''} & ${losingPlayer2Name}${losingTeam?.player2?.isGuest ? ' (Guest)' : ''}`,
@@ -123,7 +133,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
   const getAllPlayers = () => {
     const { match } = matchResult;
     const players = [];
-    
+
     if (match.matchType === '1v1') {
       // Fallback to email-based player info if player objects don't exist
       if (match.player1) {
@@ -135,7 +145,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
           isGuest: match.player1IsGuest || false
         });
       }
-      
+
       if (match.player2) {
         players.push(match.player2);
       } else if (match.player2Email) {
@@ -156,7 +166,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
           isGuest: match.team1Player1IsGuest || false
         });
       }
-      
+
       if (match.team1?.player2) {
         players.push(match.team1.player2);
       } else if (match.team1Player2Email) {
@@ -166,7 +176,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
           isGuest: match.team1Player2IsGuest || false
         });
       }
-      
+
       if (match.team2?.player1) {
         players.push(match.team2.player1);
       } else if (match.team2Player1Email) {
@@ -176,7 +186,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
           isGuest: match.team2Player1IsGuest || false
         });
       }
-      
+
       if (match.team2?.player2) {
         players.push(match.team2.player2);
       } else if (match.team2Player2Email) {
@@ -187,7 +197,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
         });
       }
     }
-    
+
     return players;
   };
 
@@ -211,18 +221,18 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
           <div className="px-4 py-3 bg-gray-50 text-sm font-medium text-gray-700">Attribute</div>
           <div className="px-4 py-3 bg-gray-50 text-sm font-medium text-gray-700">Value</div>
         </div>
-        
+
         <div className="divide-y divide-gray-200">
           <div className="grid grid-cols-2 divide-x divide-gray-200">
             <div className="px-4 py-3 text-sm text-gray-900">Match ID:</div>
             <div className="px-4 py-3 text-sm text-gray-900">{matchResult.match.id.substring(0, 8)}</div>
           </div>
-          
+
           <div className="grid grid-cols-2 divide-x divide-gray-200">
             <div className="px-4 py-3 text-sm text-gray-900">Date:</div>
             <div className="px-4 py-3 text-sm text-gray-900">{formatDate(matchResult.match.date)}</div>
           </div>
-          
+
           <div className="grid grid-cols-2 divide-x divide-gray-200">
             <div className="px-4 py-3 text-sm text-gray-900">Winning Team:</div>
             <div className="px-4 py-3 text-sm text-gray-900">
@@ -230,7 +240,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
               {matchResult.match.isSweep && <span className="text-green-600 ml-2 font-medium">2-0 Sweep!</span>}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 divide-x divide-gray-200">
             <div className="px-4 py-3 text-sm text-gray-900">Losing Team:</div>
             <div className="px-4 py-3 text-sm text-gray-900">{matchSummary.losingTeam} (score: {matchSummary.score.split('-').reverse().join('-')})</div>
@@ -245,12 +255,12 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
           <div className="col-span-2 px-2 py-3 bg-gray-50 text-sm font-medium text-gray-700 text-center">Change</div>
           <div className="col-span-3 px-3 py-3 bg-gray-50 text-sm font-medium text-gray-700 text-center">New Rating</div>
         </div>
-        
+
         <div className="divide-y divide-gray-200">
           {allPlayers.map((player, index) => {
             // Find ELO change for this player - use simple email matching
             let eloChange = null;
-            
+
             // Get all possible emails for this player
             const playerEmails = [];
             if (matchResult.match.matchType === '1v1') {
@@ -263,7 +273,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
                 matchResult.match.team2Player2Email
               );
             }
-            
+
             // Find ELO change by matching player email/id
             for (const email of playerEmails) {
               if (email && matchResult.eloChanges[email]) {
@@ -274,7 +284,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
                 }
               }
             }
-            
+
             // If no direct match found, try by index (as fallback)
             if (!eloChange) {
               const allEloKeys = Object.keys(matchResult.eloChanges);
@@ -290,7 +300,7 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
               <div key={player.id} className="grid grid-cols-12 divide-x divide-gray-200">
                 <div className="col-span-7 px-4 py-3">
                   <div className="flex items-center space-x-2">
-                    <Avatar 
+                    <Avatar
                       fallback={player.name.charAt(0).toUpperCase()}
                       className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs flex-shrink-0"
                       textClassName="text-xs"
@@ -330,13 +340,13 @@ export function MatchConfirmation({ matchResult, currentUser, accessToken, onBac
         <p className="text-sm text-gray-600 text-center mb-4">
           If you need to make any corrections, you can delete the match by clicking the button below:
         </p>
-        
+
         {deleteError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800">{deleteError}</p>
           </div>
         )}
-        
+
         <div className="flex justify-center">
           <button
             onClick={handleDeleteMatch}

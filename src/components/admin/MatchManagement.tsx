@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Calendar, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../utils/supabase/client';
+import { useDialogContext } from '../common/DialogProvider';
 import { formatMatchDisplay } from '../../utils/admin-format-helpers';
 
 interface MatchManagementProps {
@@ -23,6 +24,7 @@ export function MatchManagement({
   onLoadAdminData 
 }: MatchManagementProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const { showSuccess, showError } = useDialogContext();
 
   const handleDeleteMatch = async (matchId: string) => {
     try {
@@ -41,7 +43,7 @@ export function MatchManagement({
       onDataChange(); // Refresh main app data
       setDeleteConfirm(null);
       
-      alert('Match deleted successfully!');
+      await showSuccess('Match deleted successfully!');
     } catch (error) {
       console.error('Failed to delete match:', error);
       onError('Failed to delete match: ' + error.message);

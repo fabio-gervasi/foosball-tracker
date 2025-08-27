@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Edit3, Save, X, Upload, Image, Trash2, AlertTriangle } from 'lucide-react';
 import { apiRequest } from '../../utils/supabase/client';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { useDialogContext } from '../common/DialogProvider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ export function GroupManagement({
   onGroupDeleted 
 }: GroupManagementProps) {
   const [isEditingGroup, setIsEditingGroup] = useState(false);
+  const { showSuccess, showError } = useDialogContext();
   const [groupEditData, setGroupEditData] = useState({ name: '', code: '' });
   const [groupEditError, setGroupEditError] = useState('');
   const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);
@@ -97,7 +99,7 @@ export function GroupManagement({
       // Refresh main app data - this will now properly reload group data
       onDataChange();
       setIsEditingGroup(false);
-      alert('Group settings updated successfully!');
+      await showSuccess('Group settings updated successfully!');
 
     } catch (error) {
       console.error('Failed to update group:', error);
@@ -151,7 +153,7 @@ export function GroupManagement({
 
       // Refresh main app data - this will now properly reload group data
       onDataChange();
-      alert('Group icon updated successfully!');
+      await showSuccess('Group icon updated successfully!');
 
     } catch (error) {
       console.error('Failed to upload group icon:', error);
@@ -175,7 +177,7 @@ export function GroupManagement({
         },
       });
       
-      alert('Group deleted successfully! You will now be redirected to group selection.');
+      await showSuccess('Group deleted successfully! You will now be redirected to group selection.');
       
       // Call the callback to handle group deletion (logout/redirect)
       if (onGroupDeleted) {
