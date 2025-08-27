@@ -17,7 +17,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { Avatar } from './Avatar';
-import { apiRequest } from '../utils/supabase/client';
+import { useMatchesQuery } from '../hooks/useQueries';
 import { logger } from '../utils/logger';
 import exampleImage from 'figma:asset/b116ece610e7864347e2bdd75f97d694d0ba8cab.png';
 
@@ -29,10 +29,17 @@ interface MatchHistoryProps {
 }
 
 export function MatchHistory({ currentUser, accessToken, group, users }: MatchHistoryProps) {
-  const [matches, setMatches] = useState([]);
+  // Use React Query for data fetching
+  const {
+    data: matches = [],
+    isLoading: loading,
+    error: queryError,
+    refetch: loadMatchHistory,
+    isFetching
+  } = useMatchesQuery(accessToken);
+
   const [filteredMatches, setFilteredMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const error = queryError?.message || '';
 
   // Filter states
   const [showMyGamesOnly, setShowMyGamesOnly] = useState(false);
@@ -42,63 +49,15 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    loadMatchHistory();
-  }, []);
-
-  useEffect(() => {
     applyFilters();
   }, [matches, showMyGamesOnly, gameTypeFilter, playerSearchFilter, dateFilter]);
 
-  const loadMatchHistory = async () => {
-    try {
-      setError('');
-      setLoading(true);
-
-      logger.debug('Loading match history', {
-        hasUser: !!currentUser,
-        currentGroup: currentUser?.currentGroup
-      });
-      // Checking access token for authentication
-
-      const response = await apiRequest('/matches', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      logger.info('Match history loaded', { count: response.matches?.length || 0 });
-      setMatches(response.matches || []);
-
-      // If no matches found, let's call the debug endpoint
-      if (!response.matches || response.matches.length === 0) {
-        logger.debug('No matches found, calling debug endpoint');
-        try {
-          const debugResponse = await apiRequest('/debug/matches', {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-          logger.debug('Debug matches response received');
-        } catch (debugError) {
-          logger.error('Debug endpoint failed', debugError);
-        }
-      }
-
-    } catch (error) {
-      logger.error('Failed to load match history', error);
-      setError('Failed to load match history: ' + error.message);
-
-      // Try to get debug info even on error
-      try {
-        const debugResponse = await apiRequest('/debug/demo');
-        logger.debug('Demo debug response received');
-      } catch (debugError) {
-        logger.error('Demo debug failed', debugError);
-      }
-    } finally {
-      setLoading(false);
+  // Log when matches data changes
+  useEffect(() => {
+    if (matches.length > 0) {
+      logger.info('Match history updated via React Query', { count: matches.length });
     }
-  };
+  }, [matches]);
 
   // Helper function to check if current user participated in match
   const isCurrentUserInMatch = (match: any) => {
@@ -548,10 +507,11 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         <div className="text-center">
           <button
             onClick={loadMatchHistory}
-            className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
+            disabled={isFetching}
+            className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-lg transition-colors text-sm"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
+            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       )}
