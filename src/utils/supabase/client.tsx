@@ -157,7 +157,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
           errorData = { error: 'Empty response from server' };
         }
       } catch (parseError) {
-        console.error('[API] Failed to read error response:', parseError);
+        logger.error('API Failed to read error response', parseError);
         errorData = { error: 'Network error or invalid response' };
       }
 

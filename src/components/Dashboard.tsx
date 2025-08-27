@@ -1,36 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Target, TrendingUp, Calendar, RefreshCw, Users, Code, History, BarChart3 } from 'lucide-react';
 import { Avatar } from './Avatar';
+import { logger } from '../utils/logger';
 
 interface DashboardProps {
   user: { id: string; name: string; username?: string; email: string; wins: number; losses: number; elo: number; avatar: string; avatarUrl?: string; currentGroup: string };
-  matches: Array<{ 
-    id: string; 
+  matches: Array<{
+    id: string;
     matchType?: string;
     // New format
     player1?: { id: string; name: string; isGuest?: boolean };
     player2?: { id: string; name: string; isGuest?: boolean };
     winner?: { id: string; name: string; isGuest?: boolean };
-    team1?: { 
+    team1?: {
       player1: { id: string; name: string; isGuest?: boolean };
       player2: { id: string; name: string; isGuest?: boolean };
     };
-    team2?: { 
+    team2?: {
       player1: { id: string; name: string; isGuest?: boolean };
       player2: { id: string; name: string; isGuest?: boolean };
     };
     winningTeam?: string;
     // Legacy format support
-    player1Email?: string; 
-    player2Email?: string; 
+    player1Email?: string;
+    player2Email?: string;
     team1Player1Email?: string;
     team1Player2Email?: string;
     team2Player1Email?: string;
     team2Player2Email?: string;
-    date: string; 
-    winnerEmail?: string; 
-    loserEmail?: string; 
-    eloChanges?: any; 
+    date: string;
+    winnerEmail?: string;
+    loserEmail?: string;
+    eloChanges?: any;
     groupCode: string;
     createdAt?: string;
   }>;
@@ -42,21 +43,20 @@ interface DashboardProps {
 
 export function Dashboard({ user, matches, users, group, error, accessToken }: DashboardProps) {
   // Add debugging logs
-  console.log('=== Dashboard Data ===');
-  console.log('User:', {
-    id: user.id,
-    username: user.username,
-    email: user.email,
+  logger.debug('Dashboard Data - Start');
+  logger.debug('Dashboard User Data', {
+    userId: user.id,
+    hasUsername: !!user.username,
     wins: user.wins,
     losses: user.losses,
     currentGroup: user.currentGroup
   });
-  console.log('All group matches passed to Dashboard:', matches.length);
-  console.log('Users:', users.length);
-  console.log('Group:', group);
-  
+  logger.debug('Dashboard matches', { count: matches.length });
+  logger.debug('Dashboard users', { count: users.length });
+  logger.debug('Dashboard group', { hasGroup: !!group });
+
   const userIdentifier = user.username || user.email;
-  
+
   // Filter matches for this specific user (supports both new and legacy formats)
   const userMatches = matches.filter(match => {
     // Handle 1v1 matches
@@ -73,29 +73,30 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
     else if (match.matchType === '2v2') {
       // New format
       if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
-        return match.team1.player1.id === user.id || 
+        return match.team1.player1.id === user.id ||
                match.team1.player2.id === user.id ||
-               match.team2.player1.id === user.id || 
+               match.team2.player1.id === user.id ||
                match.team2.player2.id === user.id;
       }
       // Legacy format
-      return match.team1Player1Email === userIdentifier || 
+      return match.team1Player1Email === userIdentifier ||
              match.team1Player2Email === userIdentifier ||
-             match.team2Player1Email === userIdentifier || 
+             match.team2Player1Email === userIdentifier ||
              match.team2Player2Email === userIdentifier ||
-             match.team1Player1Email === user.email || 
+             match.team1Player1Email === user.email ||
              match.team1Player2Email === user.email ||
-             match.team2Player1Email === user.email || 
+             match.team2Player1Email === user.email ||
              match.team2Player2Email === user.email;
     }
     return false;
   });
-  
-  console.log('User identifier (username||email):', userIdentifier);
-  console.log('User email:', user.email);
-  console.log('User-specific matches found:', userMatches.length);
-  console.log('Dashboard is showing user.wins + user.losses =', user.wins + user.losses);
-  console.log('Dashboard actually filtered matches =', userMatches.length);
+
+  logger.debug('User match filtering', {
+    hasUserIdentifier: !!userIdentifier,
+    userMatchesFound: userMatches.length,
+    profileStats: user.wins + user.losses,
+    actualMatches: userMatches.length
+  });
 
   // Calculate actual wins and losses from matches instead of using user profile stats
   let actualWins = 0;
@@ -105,7 +106,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
     if (match.matchType === '1v1' || !match.matchType) {
       // For 1v1 matches - check both new and legacy formats
       let isWinner = false;
-      
+
       // New format
       if (match.winner?.id) {
         isWinner = match.winner.id === user.id;
@@ -114,7 +115,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
       else {
         isWinner = match.winnerEmail === user.email || match.winnerEmail === userIdentifier;
       }
-      
+
       if (isWinner) {
         actualWins++;
       } else {
@@ -124,7 +125,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
       // For 2v2 matches - check both new and legacy formats
       let isInTeam1 = false;
       let isInTeam2 = false;
-      
+
       // New format
       if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
         isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
@@ -137,7 +138,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
         isInTeam2 = match.team2Player1Email === userIdentifier || match.team2Player2Email === userIdentifier ||
                     match.team2Player1Email === user.email || match.team2Player2Email === user.email;
       }
-      
+
       if (isInTeam1 && match.winningTeam === 'team1') {
         actualWins++;
       } else if (isInTeam2 && match.winningTeam === 'team2') {
@@ -151,15 +152,15 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
   // Use actual calculated stats instead of user profile stats
   const totalGames = actualWins + actualLosses;
   const winRate = totalGames > 0 ? (actualWins / totalGames * 100).toFixed(1) : '0';
-  
-  console.log('Calculated from matches: wins =', actualWins, 'losses =', actualLosses, 'total =', totalGames);
-  
+
+  logger.debug('Match calculations', { actualWins, actualLosses, totalGames });
+
   // Calculate total group games (all matches in the group)
   const totalGroupGames = matches.length;
-  console.log('Total group games:', totalGroupGames);
+  logger.debug('Group statistics', { totalGroupGames });
 
   const recentMatches = userMatches.slice(0, 5);
-  
+
   // Calculate user rank (now by ELO)
   const sortedUsers = [...users].sort((a, b) => {
     return (b.elo || 1200) - (a.elo || 1200);
@@ -173,31 +174,31 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
   // Helper function to resolve player name from identifier (email/username)
   const resolvePlayerName = (identifier: string) => {
     if (!identifier) return 'Unknown';
-    
+
     // Try to find user by email first
     let foundUser = users.find(u => u.email === identifier);
-    
+
     // If not found by email, try by username
     if (!foundUser) {
       foundUser = users.find(u => u.username === identifier);
     }
-    
+
     // If still not found, try by name
     if (!foundUser) {
       foundUser = users.find(u => u.name === identifier);
     }
-    
+
     // Return the user's display name or fallback to identifier
     if (foundUser) {
       return foundUser.username || foundUser.name || foundUser.email;
     }
-    
+
     // As a last resort, try to extract a readable name from the identifier
     if (identifier.includes('@')) {
       // If it's an email, use the part before @
       return identifier.split('@')[0];
     }
-    
+
     return identifier;
   };
 
@@ -231,7 +232,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
                         match.team1Player1Email === user.email || match.team1Player2Email === user.email;
       const isInTeam2 = match.team2Player1Email === userIdentifier || match.team2Player2Email === userIdentifier ||
                         match.team2Player1Email === user.email || match.team2Player2Email === user.email;
-      
+
       if (isInTeam1) {
         const partnerEmail = match.team1Player1Email === userIdentifier || match.team1Player1Email === user.email ? match.team1Player2Email : match.team1Player1Email;
         const partnerName = resolvePlayerName(partnerEmail);
@@ -276,7 +277,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
       {/* Welcome */}
       <div className="text-center py-6">
         <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-4">
-          <Avatar 
+          <Avatar
             src={user.avatarUrl}
             fallback={user.avatar}
             className="w-full h-full rounded-full"
@@ -285,7 +286,7 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
         </div>
         <h2 className="text-2xl text-gray-800">Welcome back, {user.username || user.name}!</h2>
         <p className="text-gray-600">Ready for your next match?</p>
-        
+
         {error && (
           <button
             onClick={handleRefresh}
@@ -349,18 +350,18 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg text-gray-800">Recent Matches</h3>
         </div>
-        
+
         {recentMatches.length > 0 ? (
           <div className="divide-y divide-gray-200">
             {recentMatches.map((match) => {
               const matchDescription = formatMatchDescription(match);
               const isWinner = isMatchWinner(match);
-              
+
               // Get ELO change for this user
               const userEloChange = match.eloChanges?.[userIdentifier] || match.eloChanges?.[user.email] || match.eloChanges?.[user.id];
-              const eloChangeText = userEloChange ? 
+              const eloChangeText = userEloChange ?
                 `${userEloChange.change > 0 ? '+' : ''}${userEloChange.change}` : '';
-              
+
               // Format date
               const matchDate = new Date(match.date).toLocaleDateString('en-US', {
                 month: 'short',

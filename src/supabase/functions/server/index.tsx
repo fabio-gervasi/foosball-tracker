@@ -4,12 +4,13 @@ import { logger } from 'npm:hono/logger';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Import constants and utilities
-import { 
+import {
   API_PREFIX
 } from './server-constants.tsx';
 import { validateUserAuth } from './auth-helpers.tsx';
 import { migrateGroupDataStructure } from './data-migration.tsx';
 import * as kv from './kv_store.tsx';
+import { serverLogger } from './server-logger.tsx';
 
 // Import route modules
 import { createAuthRoutes } from './auth-routes.tsx';
@@ -39,7 +40,7 @@ const supabase = createClient(
 // Simple health check endpoint that doesn't require any dependencies
 app.get('/make-server-171cbf6f/simple-health', (c) => {
   try {
-    return c.json({ 
+    return c.json({
       status: 'server-running',
       timestamp: new Date().toISOString(),
       message: 'Basic server is responding',
@@ -50,8 +51,8 @@ app.get('/make-server-171cbf6f/simple-health', (c) => {
       }
     });
   } catch (error) {
-    console.error('Simple health check failed:', error);
-    return c.json({ 
+    serverLogger.error('Simple health check failed', error);
+    return c.json({
       status: 'error',
       error: error.message,
       timestamp: new Date().toISOString()
@@ -86,60 +87,60 @@ setTimeout(async () => {
   try {
     // Migrate any existing group data structure
     await migrateGroupDataStructure();
-    console.log('Server data migrations completed successfully');
+    serverLogger.info('Server data migrations completed successfully');
   } catch (error) {
-    console.error('Failed to run data migrations on startup:', error);
+    serverLogger.error('Failed to run data migrations on startup', error);
   }
 }, 1000);
 
 // Mount route modules with error handling
 try {
-  console.log('Mounting debug routes...');
+  serverLogger.info('Mounting debug routes');
   app.route(`${API_PREFIX}`, createDebugRoutes(supabase));
-  console.log('✅ Debug routes mounted');
-  
-  console.log('Mounting auth routes...');
+  serverLogger.info('Debug routes mounted');
+
+  serverLogger.info('Mounting auth routes');
   app.route(`${API_PREFIX}`, createAuthRoutes(supabase));
-  console.log('✅ Auth routes mounted');
-  
-  console.log('Mounting password reset routes...');
+  serverLogger.info('Auth routes mounted');
+
+  serverLogger.info('Mounting password reset routes');
   app.route(`${API_PREFIX}`, createPasswordResetRoutes(supabase));
-  console.log('✅ Password reset routes mounted');
-  
-  console.log('Mounting group routes...');
+  serverLogger.info('Password reset routes mounted');
+
+  serverLogger.info('Mounting group routes');
   app.route(`${API_PREFIX}`, createGroupRoutes(supabase));
-  console.log('✅ Group routes mounted');
-  
-  console.log('Mounting match routes...');
+  serverLogger.info('Group routes mounted');
+
+  serverLogger.info('Mounting match routes');
   app.route(`${API_PREFIX}`, createMatchRoutes(supabase));
-  console.log('✅ Match routes mounted');
-  
-  console.log('Mounting user routes...');
+  serverLogger.info('Match routes mounted');
+
+  serverLogger.info('Mounting user routes');
   app.route(`${API_PREFIX}`, createUserRoutes(supabase));
-  console.log('✅ User routes mounted');
-  
-  console.log('Mounting admin routes...');
+  serverLogger.info('User routes mounted');
+
+  serverLogger.info('Mounting admin routes');
   app.route(`${API_PREFIX}`, createAdminRoutes(supabase));
-  console.log('✅ Admin routes mounted');
-  
-  console.log('✅ All routes mounted successfully');
+  serverLogger.info('Admin routes mounted');
+
+  serverLogger.info('All routes mounted successfully');
 } catch (routeError) {
-  console.error('❌ Error mounting routes:', routeError);
+  serverLogger.error('Error mounting routes', routeError);
   throw routeError;
 }
 
 // Global 404 handler for API routes
 app.all(`${API_PREFIX}/*`, (c) => {
-  console.log('404 - Route not found:', c.req.path);
+  serverLogger.warn('404 - Route not found', { path: c.req.path });
   return c.json({ error: `Route not found: ${c.req.path}` }, 404);
 });
 
 // Global error handler
 app.onError((err, c) => {
-  console.error('Unhandled server error:', err);
-  return c.json({ 
-    error: 'Internal server error', 
-    details: err.message 
+  serverLogger.error('Unhandled server error', err);
+  return c.json({
+    error: 'Internal server error',
+    details: err.message
   }, 500);
 });
 
@@ -149,21 +150,20 @@ app.onError((err, c) => {
 // The original index.tsx had many more endpoints (matches, profile, admin functions, etc.)
 // These would be moved to additional route files like:
 // - match-routes.tsx (for match recording and history)
-// - profile-routes.tsx (for profile updates, avatar uploads)  
+// - profile-routes.tsx (for profile updates, avatar uploads)
 // - admin-routes.tsx (for admin panel functionality)
 
 // Test all imports and components are working before starting server
 try {
-  console.log('=== Testing server component initialization ===');
-  console.log('✅ All route modules imported successfully');
-  console.log('✅ All constants and utilities imported successfully');
-  console.log('✅ Supabase client initialized');
-  console.log('✅ KV store imported successfully');
-  console.log('✅ Data migration imported successfully');
-  console.log('=== Server ready to start ===');
+  serverLogger.info('Testing server component initialization');
+  serverLogger.info('All route modules imported successfully');
+  serverLogger.info('All constants and utilities imported successfully');
+  serverLogger.info('Supabase client initialized');
+  serverLogger.info('KV store imported successfully');
+  serverLogger.info('Data migration imported successfully');
+  serverLogger.info('Server ready to start');
 } catch (error) {
-  console.error('❌ Server initialization failed:', error);
-  console.error('Error details:', {
+  serverLogger.error('Server initialization failed', {
     name: error.name,
     message: error.message,
     stack: error.stack?.substring(0, 1000)
@@ -171,16 +171,15 @@ try {
   throw error;
 }
 
-console.log('🚀 Foosball Tracker server initialized successfully');
+serverLogger.info('Foosball Tracker server initialized successfully');
 
 // Start the server with error handling
 try {
-  console.log('🔥 Starting Deno server...');
+  serverLogger.info('Starting Deno server');
   Deno.serve(app.fetch);
-  console.log('✅ Deno server started successfully');
+  serverLogger.info('Deno server started successfully');
 } catch (serverError) {
-  console.error('❌ Failed to start Deno server:', serverError);
-  console.error('Server error details:', {
+  serverLogger.error('Failed to start Deno server', {
     name: serverError.name,
     message: serverError.message,
     stack: serverError.stack?.substring(0, 1000)
