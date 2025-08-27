@@ -3,6 +3,7 @@ import { Building2, Edit3, Save, X, Upload, Image, Trash2, AlertTriangle } from 
 import { apiRequest } from '../../utils/supabase/client';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useDialogContext } from '../common/DialogProvider';
+import type { Group } from '../../types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,19 +17,19 @@ import {
 } from '../ui/alert-dialog';
 
 interface GroupManagementProps {
-  group: any;
+  group: Group | null;
   accessToken: string;
   onDataChange: () => void;
   onError: (error: string) => void;
   onGroupDeleted?: () => void;
 }
 
-export function GroupManagement({ 
-  group, 
-  accessToken, 
-  onDataChange, 
-  onError, 
-  onGroupDeleted 
+export function GroupManagement({
+  group,
+  accessToken,
+  onDataChange,
+  onError,
+  onGroupDeleted
 }: GroupManagementProps) {
   const [isEditingGroup, setIsEditingGroup] = useState(false);
   const { showSuccess, showError } = useDialogContext();
@@ -137,7 +138,7 @@ export function GroupManagement({
         fileSize: file.size,
         fileType: file.type,
         formDataEntries: Array.from(formData.entries()).map(([key, value]) => [
-          key, 
+          key,
           value instanceof File ? `File(${value.name}, ${value.size}b)` : value
         ])
       });
@@ -168,7 +169,7 @@ export function GroupManagement({
   const handleDeleteGroup = async () => {
     try {
       onError('');
-      
+
       console.log('Deleting group:', group?.code);
       await apiRequest('/admin/group', {
         method: 'DELETE',
@@ -176,14 +177,14 @@ export function GroupManagement({
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      
+
       await showSuccess('Group deleted successfully! You will now be redirected to group selection.');
-      
+
       // Call the callback to handle group deletion (logout/redirect)
       if (onGroupDeleted) {
         onGroupDeleted();
       }
-      
+
     } catch (error) {
       console.error('Failed to delete group:', error);
       onError('Failed to delete group: ' + error.message);
@@ -199,7 +200,7 @@ export function GroupManagement({
           <Building2 className="w-5 h-5 mr-2 text-purple-600" />
           Group Management
         </h3>
-        
+
         {/* Group Settings */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-3">
@@ -239,7 +240,7 @@ export function GroupManagement({
               {groupEditError}
             </div>
           )}
-          
+
           {/* Group Icon */}
           <div className="mb-4">
             <label className="block text-sm text-gray-600 mb-2">Group Icon</label>
@@ -298,7 +299,7 @@ export function GroupManagement({
                 </div>
               )}
             </div>
-            
+
             <div>
               <label className="block text-sm text-gray-600 mb-1">Group Code</label>
               {isEditingGroup ? (
@@ -324,11 +325,11 @@ export function GroupManagement({
             <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
             <h4 className="text-base text-red-800">Danger Zone</h4>
           </div>
-          
+
           <p className="text-sm text-red-700 mb-4">
             Permanently delete this group and all associated data. This action cannot be undone.
           </p>
-          
+
           <AlertDialog open={groupDeleteConfirm} onOpenChange={setGroupDeleteConfirm}>
             <AlertDialogTrigger asChild>
               <button className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
@@ -368,7 +369,7 @@ export function GroupManagement({
                 <AlertDialogCancel onClick={() => setGroupDeleteInput('')}>
                   Cancel
                 </AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogAction
                   onClick={handleDeleteGroup}
                   disabled={groupDeleteInput !== group?.name}
                   className="bg-red-600 hover:bg-red-700 focus:ring-red-600 disabled:opacity-50 disabled:cursor-not-allowed"

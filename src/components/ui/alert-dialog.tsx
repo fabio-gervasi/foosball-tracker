@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog@1.1.6";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
@@ -18,10 +18,10 @@ const AlertDialogTrigger = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Trigger>
 >(({ ...props }, ref) => (
-  <AlertDialogPrimitive.Trigger 
+  <AlertDialogPrimitive.Trigger
     ref={ref}
-    data-slot="alert-dialog-trigger" 
-    {...props} 
+    data-slot="alert-dialog-trigger"
+    {...props}
   />
 ));
 AlertDialogTrigger.displayName = "AlertDialogTrigger";
@@ -30,9 +30,9 @@ const AlertDialogPortal = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Portal>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Portal>
 >(({ ...props }, ref) => (
-  <AlertDialogPrimitive.Portal 
-    data-slot="alert-dialog-portal" 
-    {...props} 
+  <AlertDialogPrimitive.Portal
+    data-slot="alert-dialog-portal"
+    {...props}
   />
 ));
 AlertDialogPortal.displayName = "AlertDialogPortal";

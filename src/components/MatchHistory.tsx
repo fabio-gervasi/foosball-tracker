@@ -19,13 +19,14 @@ import {
 import { Avatar } from './Avatar';
 import { useMatchesQuery } from '../hooks/useQueries';
 import { logger } from '../utils/logger';
+import type { User as UserType, Group, Match } from '../types';
 import exampleImage from 'figma:asset/b116ece610e7864347e2bdd75f97d694d0ba8cab.png';
 
 interface MatchHistoryProps {
-  currentUser: any;
+  currentUser: UserType;
   accessToken: string;
-  group: any;
-  users: any[];
+  group: Group | null;
+  users: UserType[];
 }
 
 export function MatchHistory({ currentUser, accessToken, group, users }: MatchHistoryProps) {

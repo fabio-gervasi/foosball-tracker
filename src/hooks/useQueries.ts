@@ -1,7 +1,16 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
-import { Group, Match } from '../contexts/AppDataContext';
+import type {
+  User,
+  Group,
+  Match,
+  UserResponse,
+  GroupResponse,
+  UsersResponse,
+  MatchesResponse,
+  GroupsResponse
+} from '../types';
 
 // Query key factory for consistent cache keys
 export const queryKeys = {
@@ -12,49 +21,7 @@ export const queryKeys = {
   userGroups: () => ['groups', 'user'] as const,
 } as const;
 
-// User interface (extend as needed)
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  name: string;
-  currentGroup?: string;
-  rating?: number;
-  elo?: number;
-  avatar?: string;
-  isAdmin?: boolean;
-  createdAt: string;
-  updatedAt: string;
-  wins?: number;
-  losses?: number;
-  singlesWins?: number;
-  singlesLosses?: number;
-  doublesWins?: number;
-  doublesLosses?: number;
-  singlesElo?: number;
-  doublesElo?: number;
-}
-
-// API Response interfaces
-interface UserResponse {
-  user: User;
-}
-
-interface GroupResponse {
-  group: Group;
-}
-
-interface UsersResponse {
-  users: User[];
-}
-
-interface MatchesResponse {
-  matches: Match[];
-}
-
-interface UserGroupsResponse {
-  groups: Group[];
-}
+// API Response interfaces are now imported from types
 
 /**
  * Hook to fetch current user data
@@ -191,7 +158,7 @@ export const useUserGroupsQuery = (accessToken: string | null): UseQueryResult<G
 
       const response = await apiRequest('/groups/user-groups', {
         headers: { Authorization: `Bearer ${accessToken}` }
-      }) as UserGroupsResponse;
+      }) as GroupsResponse;
 
       return response.groups || [];
     },

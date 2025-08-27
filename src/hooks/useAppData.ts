@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
-import { useAppDataQueries, User } from './useQueries';
+import { useAppDataQueries } from './useQueries';
 import {
   useSubmitMatchMutation,
   useUpdateProfileMutation,
@@ -9,8 +9,8 @@ import {
   useCreateGroupMutation,
   useRefreshDataMutation
 } from './useMutations';
-import { Group, Match } from '../contexts/AppDataContext';
 import { logger } from '../utils/logger';
+import type { User, Group, Match, MatchSubmissionData, ProfileUpdateData, GroupCreationData } from '../types';
 
 // Enhanced app data hook interface
 export interface UseAppDataReturn {
@@ -42,11 +42,11 @@ export interface UseAppDataReturn {
   refetchAll: () => void;
 
   // Mutations
-  submitMatch: (matchData: MatchData) => Promise<any>;
-  updateUserProfile: (profileData: ProfileData) => Promise<void>;
+  submitMatch: (matchData: MatchSubmissionData) => Promise<any>;
+  updateUserProfile: (profileData: ProfileUpdateData) => Promise<void>;
   switchGroup: (groupCode: string) => Promise<void>;
   joinGroup: (groupCode: string) => Promise<void>;
-  createGroup: (groupData: GroupData) => Promise<void>;
+  createGroup: (groupData: GroupCreationData) => Promise<void>;
 
   // Mutation states
   isSubmittingMatch: boolean;
@@ -64,31 +64,7 @@ export interface UseAppDataReturn {
 }
 
 // Data interfaces
-export interface MatchData {
-  matchType: '1v1' | '2v2';
-  player1Email?: string;
-  player2Email?: string;
-  team1Player1Email?: string;
-  team1Player2Email?: string;
-  team2Player1Email?: string;
-  team2Player2Email?: string;
-  score1: number;
-  score2: number;
-  [key: string]: any;
-}
-
-export interface ProfileData {
-  name?: string;
-  username?: string;
-  avatar?: string;
-  [key: string]: any;
-}
-
-export interface GroupData {
-  name: string;
-  code: string;
-  icon?: string;
-}
+// Interfaces now imported from types
 
 export interface UserStats {
   wins: number;

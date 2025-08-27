@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, Crown, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../utils/supabase/client';
 import { useDialogContext } from '../common/DialogProvider';
+import type { User } from '../../types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,26 +16,26 @@ import {
 } from '../ui/alert-dialog';
 
 interface UserManagementProps {
-  users: any[];
-  currentUser: any;
+  users: User[];
+  currentUser: User;
   accessToken: string;
   onDataChange: () => void;
   onError: (error: string) => void;
 }
 
-export function UserManagement({ 
-  users, 
-  currentUser, 
-  accessToken, 
-  onDataChange, 
-  onError 
+export function UserManagement({
+  users,
+  currentUser,
+  accessToken,
+  onDataChange,
+  onError
 }: UserManagementProps) {
   const { showSuccess, showError } = useDialogContext();
 
   const handleToggleAdminStatus = async (userId: string, currentAdminStatus: boolean) => {
     try {
       onError('');
-      
+
       console.log('Toggling admin status for user:', userId, 'to', !currentAdminStatus);
       await apiRequest(`/admin/users/${userId}/admin`, {
         method: 'PUT',
@@ -43,7 +44,7 @@ export function UserManagement({
         },
         body: JSON.stringify({ isAdmin: !currentAdminStatus }),
       });
-      
+
       onDataChange(); // Refresh main app data
       await showSuccess(`User admin status ${!currentAdminStatus ? 'granted' : 'revoked'} successfully!`);
     } catch (error) {
@@ -55,7 +56,7 @@ export function UserManagement({
   const handleDeleteUser = async (userId: string) => {
     try {
       onError('');
-      
+
       console.log('Deleting user:', userId);
       await apiRequest(`/admin/users/${userId}`, {
         method: 'DELETE',
@@ -63,10 +64,10 @@ export function UserManagement({
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      
+
       // Refresh main app data
       onDataChange();
-      
+
       await showSuccess('User deleted successfully!');
     } catch (error) {
       console.error('Failed to delete user:', error);
@@ -81,7 +82,7 @@ export function UserManagement({
           <Users className="w-5 h-5 mr-2 text-purple-600" />
           User Management
         </h3>
-        
+
         {users.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">No users found in this group.</p>
@@ -107,7 +108,7 @@ export function UserManagement({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     {user.isAdmin && (
                       <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full flex items-center">
@@ -115,7 +116,7 @@ export function UserManagement({
                         Admin
                       </span>
                     )}
-                    
+
                     {user.id !== currentUser.id && (
                       <>
                         <button
@@ -128,7 +129,7 @@ export function UserManagement({
                         >
                           {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
                         </button>
-                        
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button
@@ -149,7 +150,7 @@ export function UserManagement({
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogAction
                                 onClick={() => handleDeleteUser(user.id)}
                                 className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
                               >

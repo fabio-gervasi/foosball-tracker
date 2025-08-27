@@ -3,33 +3,14 @@ import { User, Users, Shield, ArrowLeft, Trophy, TrendingUp, Award } from 'lucid
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
+import type { User as UserType, Group, Match } from '../types';
 
 interface PlayerProfileProps {
   playerId: string;
-  currentUser: { id: string; name: string; email: string; username?: string; currentGroup: string };
-  group: { code: string; name: string; createdAt: string; memberCount: number } | null;
+  currentUser: UserType;
+  group: Group | null;
   accessToken: string;
   onBack: () => void;
-}
-
-interface PlayerData {
-  id: string;
-  name: string;
-  email: string;
-  username?: string;
-  wins: number;
-  losses: number;
-  elo: number;
-  singlesWins: number;
-  singlesLosses: number;
-  doublesWins: number;
-  doublesLosses: number;
-  singlesElo: number;
-  doublesElo: number;
-  avatar: string;
-  avatarUrl?: string;
-  currentGroup: string;
-  isAdmin: boolean;
 }
 
 interface MatchData {
@@ -65,7 +46,7 @@ const emailToUsername = (email: string): string => {
 };
 
 export function PlayerProfile({ playerId, currentUser, group, accessToken, onBack }: PlayerProfileProps) {
-  const [player, setPlayer] = useState<PlayerData | null>(null);
+  const [player, setPlayer] = useState<UserType | null>(null);
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

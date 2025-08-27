@@ -1,20 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
-
-// Type definitions
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  name: string;
-  currentGroup?: string;
-  rating?: number;
-  avatar?: string;
-  isAdmin?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { User } from '../types';
 
 interface AuthContextType {
   // Auth state
@@ -181,15 +168,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Navigate to password reset form instead of using prompt
             logger.info('Navigating to password reset form');
-            
+
             // Store the token in URL parameters for the password reset form
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.set('token', accessToken);
             currentUrl.searchParams.set('type', 'recovery');
-            
+
             // Update the URL without causing a page reload
             window.history.replaceState({}, document.title, currentUrl.toString());
-            
+
             // The App component will detect this change and show the password reset form
             setError(null);
 
@@ -225,15 +212,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Navigate to password reset form instead of using prompt
             logger.info('Navigating to password reset form for token hash flow');
-            
+
             // Store the token hash in URL parameters for the password reset form
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.set('token', tokenHash);
             currentUrl.searchParams.set('type', 'recovery');
-            
+
             // Update the URL without causing a page reload
             window.history.replaceState({}, document.title, currentUrl.toString());
-            
+
             // The App component will detect this change and show the password reset form
             setError(null);
             return;

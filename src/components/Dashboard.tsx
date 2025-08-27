@@ -2,41 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Target, TrendingUp, Calendar, RefreshCw, Users, Code, History, BarChart3 } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { logger } from '../utils/logger';
+import type { User, Match, Group } from '../types';
 
 interface DashboardProps {
-  user: { id: string; name: string; username?: string; email: string; wins: number; losses: number; elo: number; avatar: string; avatarUrl?: string; currentGroup: string };
-  matches: Array<{
-    id: string;
-    matchType?: string;
-    // New format
-    player1?: { id: string; name: string; isGuest?: boolean };
-    player2?: { id: string; name: string; isGuest?: boolean };
-    winner?: { id: string; name: string; isGuest?: boolean };
-    team1?: {
-      player1: { id: string; name: string; isGuest?: boolean };
-      player2: { id: string; name: string; isGuest?: boolean };
-    };
-    team2?: {
-      player1: { id: string; name: string; isGuest?: boolean };
-      player2: { id: string; name: string; isGuest?: boolean };
-    };
-    winningTeam?: string;
-    // Legacy format support
-    player1Email?: string;
-    player2Email?: string;
-    team1Player1Email?: string;
-    team1Player2Email?: string;
-    team2Player1Email?: string;
-    team2Player2Email?: string;
-    date: string;
-    winnerEmail?: string;
-    loserEmail?: string;
-    eloChanges?: any;
-    groupCode: string;
-    createdAt?: string;
-  }>;
-  users: Array<{ id: string; name: string; username?: string; email: string; wins: number; losses: number; elo: number; avatar: string; currentGroup: string }>;
-  group: { code: string; name: string; createdAt: string; memberCount: number } | null;
+  user: User;
+  matches: Match[];
+  users: User[];
+  group: Group | null;
   error?: string;
   accessToken?: string;
 }

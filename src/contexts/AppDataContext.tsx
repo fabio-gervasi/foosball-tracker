@@ -1,39 +1,14 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { logger } from '../utils/logger';
 import { useAuth } from './AuthContext';
-import {
-  useAppDataQueries,
-  User
-} from '../hooks/useQueries';
+import { useAppDataQueries } from '../hooks/useQueries';
 import {
   useSubmitMatchMutation,
   useUpdateProfileMutation,
   useGroupSwitchMutation,
   useRefreshDataMutation
 } from '../hooks/useMutations';
-
-// Type definitions
-export interface Group {
-  id: string;
-  name: string;
-  code: string;
-  icon?: string;
-  createdAt: string;
-  adminIds: string[];
-}
-
-export interface Match {
-  id: string;
-  matchType: '1v1' | '2v2';
-  player1?: any;
-  player2?: any;
-  team1?: any;
-  team2?: any;
-  score1: number;
-  score2: number;
-  groupId: string;
-  createdAt: string;
-}
+import type { User, Group, Match, MatchSubmissionData, ProfileUpdateData } from '../types';
 
 interface AppDataContextType {
   // Data state (maintained for backward compatibility)
@@ -54,8 +29,8 @@ interface AppDataContextType {
   setCurrentGroup: (group: Group | null) => void;
   handleGroupSelected: () => Promise<void>;
   handleGroupChanged: () => Promise<void>;
-  handleMatchSubmit: (matchData: any) => Promise<any>;
-  handleProfileUpdate: (updatedProfile: any) => Promise<void>;
+  handleMatchSubmit: (matchData: MatchSubmissionData) => Promise<Match>;
+  handleProfileUpdate: (updatedProfile: ProfileUpdateData) => Promise<void>;
   clearError: () => void;
 
   // New React Query-powered actions
@@ -126,7 +101,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     refetchAll();
   };
 
-  const handleMatchSubmit = async (matchData: any): Promise<any> => {
+  const handleMatchSubmit = async (matchData: MatchSubmissionData): Promise<Match> => {
     try {
       logger.debug('Submitting match via React Query mutation');
 
@@ -140,7 +115,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     }
   };
 
-  const handleProfileUpdate = async (updatedProfile: any): Promise<void> => {
+  const handleProfileUpdate = async (updatedProfile: ProfileUpdateData): Promise<void> => {
     try {
       logger.debug('Updating profile via React Query mutation');
 

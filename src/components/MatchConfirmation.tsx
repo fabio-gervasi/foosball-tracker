@@ -3,6 +3,7 @@ import { Trophy, Calendar, User, ArrowLeft, Trash2, CheckCircle, Users } from 'l
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
 import { useDialogContext } from './common/DialogProvider';
+import type { User as UserType } from '../types';
 
 interface MatchConfirmationProps {
   matchResult: {
@@ -37,7 +38,7 @@ interface MatchConfirmationProps {
       };
     };
   };
-  currentUser: any;
+  currentUser: UserType;
   accessToken: string;
   onBack: () => void;
   onDataChange: () => void;
