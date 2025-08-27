@@ -8,7 +8,7 @@ export interface UseLocalStorageReturn<T> {
   removeValue: () => void;
   isLoading: boolean;
   error: string | null;
-  
+
   // Additional utilities
   hasValue: boolean;
   getValueWithDefault: (defaultValue: T) => T;
@@ -69,7 +69,7 @@ export const useLocalStorage = <T>(
       if (item === null) {
         return null;
       }
-      
+
       return serializer.deserialize(item);
     } catch (error) {
       handleError(error as Error, 'read');
@@ -88,7 +88,7 @@ export const useLocalStorage = <T>(
       window.localStorage.setItem(key, serializedValue);
       setValue(newValue);
       setError(null);
-      
+
       logger.debug('LocalStorage write successful', { key, hasValue: true });
     } catch (error) {
       handleError(error as Error, 'write');
@@ -105,7 +105,7 @@ export const useLocalStorage = <T>(
       window.localStorage.removeItem(key);
       setValue(null);
       setError(null);
-      
+
       logger.debug('LocalStorage remove successful', { key });
     } catch (error) {
       handleError(error as Error, 'remove');
@@ -149,7 +149,7 @@ export const useLocalStorage = <T>(
           const newValue = serializer.deserialize(e.newValue);
           setValue(newValue);
           setError(null);
-          
+
           logger.debug('LocalStorage sync from other tab', { key });
         } catch (error) {
           handleError(error as Error, 'sync');
@@ -161,7 +161,7 @@ export const useLocalStorage = <T>(
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -176,7 +176,7 @@ export const useLocalStorage = <T>(
     removeValue,
     isLoading,
     error,
-    
+
     // Additional utilities
     hasValue,
     getValueWithDefault,
@@ -218,7 +218,7 @@ export const useFormStorage = <T extends Record<string, any>>(formId: string) =>
  */
 export const useRecentItems = <T>(maxItems: number = 10) => {
   const storage = useLocalStorage<T[]>('recent-items');
-  
+
   const addItem = useCallback((item: T) => {
     storage.updateValue((current) => {
       const items = current || [];

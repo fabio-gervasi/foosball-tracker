@@ -47,7 +47,7 @@ export type Permission = 'admin' | 'manage_users' | 'manage_groups' | 'view_admi
 export const useAuth = (): UseAuthReturn => {
   // Get base auth state from context
   const authContext = useAuthContext();
-  
+
   // Additional local state for enhanced functionality
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
@@ -78,9 +78,9 @@ export const useAuth = (): UseAuthReturn => {
         },
       });
 
-      logger.authEvent('Login successful', { 
+      logger.authEvent('Login successful', {
         userId: response.user.id,
-        userName: response.user.name 
+        userName: response.user.name
       });
 
       // Use the context's login method to update state
@@ -167,9 +167,9 @@ export const useAuth = (): UseAuthReturn => {
   const refreshToken = useCallback(async (): Promise<void> => {
     try {
       logger.sessionEvent('Token refresh initiated');
-      
+
       const { data, error } = await supabase.auth.refreshSession();
-      
+
       if (error || !data.session) {
         logger.error('Token refresh failed', error);
         throw new Error(error?.message || 'Token refresh failed');

@@ -3,9 +3,9 @@ import { useAuth } from './useAuth';
 import { logger } from '../utils/logger';
 
 // Permission types
-export type Permission = 
+export type Permission =
   | 'admin'
-  | 'manage_users' 
+  | 'manage_users'
   | 'manage_groups'
   | 'view_admin_panel'
   | 'delete_matches'
@@ -46,7 +46,7 @@ export interface UsePermissionsReturn {
   hasPermission: (permission: Permission) => boolean;
   getPermissionLevel: () => PermissionLevel;
   canAccessRoute: (route: string) => boolean;
-  
+
   // Permission checks with reasons
   checkPermission: (permission: Permission) => { allowed: boolean; reason?: string };
 }
@@ -183,14 +183,14 @@ export const usePermissions = (): UsePermissionsReturn => {
   const checkPermission = useMemo(() => {
     return (permission: Permission): { allowed: boolean; reason?: string } => {
       if (!isLoggedIn) {
-        return { 
-          allowed: false, 
-          reason: 'Authentication required' 
+        return {
+          allowed: false,
+          reason: 'Authentication required'
         };
       }
 
       const allowed = hasPermission(permission);
-      
+
       if (!allowed) {
         switch (permission) {
           case 'admin':
@@ -198,24 +198,24 @@ export const usePermissions = (): UsePermissionsReturn => {
           case 'manage_groups':
           case 'view_admin_panel':
           case 'delete_matches':
-            return { 
-              allowed: false, 
-              reason: 'Administrator privileges required' 
+            return {
+              allowed: false,
+              reason: 'Administrator privileges required'
             };
 
           case 'submit_matches':
             if (!currentUser?.currentGroup) {
-              return { 
-                allowed: false, 
-                reason: 'Must be a member of a group to submit matches' 
+              return {
+                allowed: false,
+                reason: 'Must be a member of a group to submit matches'
               };
             }
             break;
 
           default:
-            return { 
-              allowed: false, 
-              reason: 'Insufficient permissions' 
+            return {
+              allowed: false,
+              reason: 'Insufficient permissions'
             };
         }
       }

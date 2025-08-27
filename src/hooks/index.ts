@@ -1,6 +1,6 @@
 /**
  * Custom Hooks Index
- * 
+ *
  * Centralized exports for all custom hooks in the application.
  * This provides a clean import interface for components.
  */
@@ -12,16 +12,16 @@ export { useAppData } from './useAppData';
 // Specialized hooks
 export { usePermissions } from './usePermissions';
 export { useMatchValidation } from './useMatchValidation';
-export { 
-  useLocalStorage, 
-  useUserPreferences, 
-  useThemePreferences, 
-  useFormStorage, 
-  useRecentItems 
+export {
+  useLocalStorage,
+  useUserPreferences,
+  useThemePreferences,
+  useFormStorage,
+  useRecentItems
 } from './useLocalStorage';
 
 // React Query hooks (re-export for consistency)
-export { 
+export {
   useUserQuery,
   useCurrentGroupQuery,
   useUsersQuery,

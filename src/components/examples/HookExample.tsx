@@ -9,12 +9,12 @@ import { logger } from '../../utils/logger';
  */
 export function HookExample() {
   // Authentication state and actions
-  const { 
-    currentUser, 
-    isLoggedIn, 
+  const {
+    currentUser,
+    isLoggedIn,
     isLoading: authLoading,
     logout,
-    isAdmin 
+    isAdmin
   } = useAuth();
 
   // App data state and actions
@@ -112,7 +112,7 @@ export function HookExample() {
     <div className="space-y-6 p-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Custom Hooks Demo</h2>
-        
+
         {/* User Information */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">User Information</h3>
@@ -221,7 +221,7 @@ export function HookExample() {
               {isSubmittingMatch ? 'Submitting...' : 'Submit Example Match'}
             </button>
           )}
-          
+
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -255,8 +255,8 @@ export function HookExample() {
                   )}
                 </div>
                 <span className={`px-3 py-1 rounded text-sm ${
-                  permissionCheck.allowed 
-                    ? 'bg-green-100 text-green-800' 
+                  permissionCheck.allowed
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
                   {permissionCheck.allowed ? 'Allowed' : 'Denied'}

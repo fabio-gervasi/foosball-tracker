@@ -39,16 +39,16 @@ export interface UseMatchValidationReturn {
   validatePlayers: (players: Player[]) => ValidationResult;
   validateScore: (score1: number, score2: number) => ValidationResult;
   validateMatchType: (matchType: string, players: Player[]) => ValidationResult;
-  
+
   // Current validation state
   errors: ValidationError[];
   isValid: boolean;
-  
+
   // Utility functions
   isValidEmail: (email: string) => boolean;
   isValidScore: (score: number) => boolean;
   getPlayerByEmail: (email: string) => Player | undefined;
-  
+
   // Validation rules
   rules: {
     minScore: number;
@@ -82,20 +82,20 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
   // Email validation
   const isValidEmail = useCallback((email: string): boolean => {
     if (!email) return false;
-    
+
     // Basic email pattern
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     // Allow foosball.local emails for local users
     const localPattern = /^[^\s@]+@foosball\.local$/;
-    
+
     return emailPattern.test(email) || localPattern.test(email);
   }, []);
 
   // Score validation
   const isValidScore = useCallback((score: number): boolean => {
-    return Number.isInteger(score) && 
-           score >= rules.minScore && 
+    return Number.isInteger(score) &&
+           score >= rules.minScore &&
            score <= rules.maxScore;
   }, [rules]);
 
@@ -107,7 +107,7 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
   // Validate individual players
   const validatePlayers = useCallback((players: Player[]): ValidationResult => {
     const errors: ValidationError[] = [];
-    
+
     // Check for empty players array
     if (!players || players.length === 0) {
       errors.push({
@@ -250,8 +250,8 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
   // Main match validation function
   const validateMatch = useCallback((matchData: MatchValidationData): ValidationResult => {
     const allErrors: ValidationError[] = [];
-    
-    logger.debug('Validating match data', { 
+
+    logger.debug('Validating match data', {
       matchType: matchData.matchType,
       hasScore1: matchData.score1 !== undefined,
       hasScore2: matchData.score2 !== undefined
@@ -259,7 +259,7 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
 
     // Extract players based on match type
     const players: Player[] = [];
-    
+
     if (matchData.matchType === '1v1') {
       if (matchData.player1Email) {
         players.push({ email: matchData.player1Email });
@@ -298,9 +298,9 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
     // For example: rate limiting, player availability, etc.
 
     const isValid = allErrors.length === 0;
-    
-    logger.debug('Match validation complete', { 
-      isValid, 
+
+    logger.debug('Match validation complete', {
+      isValid,
       errorCount: allErrors.length,
       errors: allErrors.map(e => e.code)
     });
@@ -317,16 +317,16 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
     validatePlayers,
     validateScore,
     validateMatchType,
-    
+
     // Current state
     errors,
     isValid,
-    
+
     // Utilities
     isValidEmail,
     isValidScore,
     getPlayerByEmail,
-    
+
     // Rules
     rules,
   };
