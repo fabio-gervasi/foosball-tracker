@@ -1,9 +1,9 @@
 /**
- * Environment-based logger utility for secure logging
- * Prevents sensitive data exposure in production builds
+ * Server-side logger utility for Deno/Edge Functions
+ * Compatible with Supabase Edge Functions environment
  */
 
-export enum LogLevel {
+export enum ServerLogLevel {
   ERROR = 0,
   WARN = 1,
   INFO = 2,
@@ -33,19 +33,17 @@ const SENSITIVE_FIELDS = [
 // Email regex for sanitization
 const EMAIL_REGEX = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
 
-class Logger {
-  private isDevelopment: boolean;
-  private logLevel: LogLevel;
+class ServerLogger {
+  private logLevel: ServerLogLevel;
 
   constructor() {
-    // Determine environment based on Vite's NODE_ENV or import.meta.env.DEV
-    this.isDevelopment = import.meta.env?.DEV || import.meta.env?.NODE_ENV === 'development';
-
-    // Set log level based on environment
-    this.logLevel = this.isDevelopment ? LogLevel.DEBUG : LogLevel.ERROR;
+    // In production Edge Functions, only log errors by default
+    // In development/local, allow more verbose logging
+    const env = Deno.env.get('DENO_DEPLOYMENT_ID') ? 'production' : 'development';
+    this.logLevel = env === 'production' ? ServerLogLevel.ERROR : ServerLogLevel.DEBUG;
   }
 
-  private shouldLog(level: LogLevel): boolean {
+  private shouldLog(level: ServerLogLevel): boolean {
     return level <= this.logLevel;
   }
 
@@ -119,9 +117,9 @@ class Logger {
     return sanitized;
   }
 
-  private formatMessage(prefix: string, message: string, data?: any): void {
+  private formatMessage(level: string, message: string, data?: any): void {
     const timestamp = new Date().toISOString();
-    const formattedMessage = `[${timestamp}] ${prefix} ${message}`;
+    const formattedMessage = `[${timestamp}] [${level}] ${message}`;
 
     if (data !== undefined) {
       const sanitizedData = this.sanitizeData(data);
@@ -135,12 +133,13 @@ class Logger {
    * Log error messages - always shown in all environments
    */
   error(message: string, error?: Error | any): void {
-    if (this.shouldLog(LogLevel.ERROR)) {
+    if (this.shouldLog(ServerLogLevel.ERROR)) {
       const sanitizedMessage = this.sanitizeString(message);
 
       if (error instanceof Error) {
         console.error(`[ERROR] ${sanitizedMessage}`, error.message);
-        if (this.isDevelopment && error.stack) {
+        // In development, show stack trace
+        if (this.logLevel >= ServerLogLevel.DEBUG && error.stack) {
           console.error('Stack trace:', error.stack);
         }
       } else if (error) {
@@ -156,14 +155,9 @@ class Logger {
    * Log warning messages - only in development
    */
   warn(message: string, data?: any): void {
-    if (this.shouldLog(LogLevel.WARN)) {
+    if (this.shouldLog(ServerLogLevel.WARN)) {
       const sanitizedMessage = this.sanitizeString(message);
-      if (data !== undefined) {
-        const sanitizedData = this.sanitizeData(data);
-        console.warn(`[WARN] ${sanitizedMessage}`, sanitizedData);
-      } else {
-        console.warn(`[WARN] ${sanitizedMessage}`);
-      }
+      this.formatMessage('WARN', sanitizedMessage, data);
     }
   }
 
@@ -171,9 +165,9 @@ class Logger {
    * Log info messages - only in development
    */
   info(message: string, data?: any): void {
-    if (this.shouldLog(LogLevel.INFO)) {
+    if (this.shouldLog(ServerLogLevel.INFO)) {
       const sanitizedMessage = this.sanitizeString(message);
-      this.formatMessage('[INFO]', sanitizedMessage, data);
+      this.formatMessage('INFO', sanitizedMessage, data);
     }
   }
 
@@ -181,24 +175,17 @@ class Logger {
    * Log debug messages - only in development
    */
   debug(message: string, data?: any): void {
-    if (this.shouldLog(LogLevel.DEBUG)) {
+    if (this.shouldLog(ServerLogLevel.DEBUG)) {
       const sanitizedMessage = this.sanitizeString(message);
-      this.formatMessage('[DEBUG]', sanitizedMessage, data);
+      this.formatMessage('DEBUG', sanitizedMessage, data);
     }
-  }
-
-  /**
-   * Public method to sanitize data for external use
-   */
-  sanitize(data: any): any {
-    return this.sanitizeData(data);
   }
 
   /**
    * Secure API logging - never logs sensitive data
    */
   apiRequest(endpoint: string, method: string = 'GET', hasAuth: boolean = false): void {
-    if (this.shouldLog(LogLevel.INFO)) {
+    if (this.shouldLog(ServerLogLevel.INFO)) {
       this.info(`API Request: ${method} ${endpoint}`, {
         hasAuth,
         timestamp: new Date().toISOString()
@@ -210,7 +197,7 @@ class Logger {
    * Secure API response logging
    */
   apiResponse(endpoint: string, status: number, success: boolean): void {
-    if (this.shouldLog(LogLevel.INFO)) {
+    if (this.shouldLog(ServerLogLevel.INFO)) {
       this.info(`API Response: ${endpoint}`, {
         status,
         success,
@@ -223,36 +210,43 @@ class Logger {
    * Secure auth logging - never logs tokens or session details
    */
   authEvent(event: string, success: boolean = true): void {
-    if (this.shouldLog(LogLevel.INFO)) {
+    if (this.shouldLog(ServerLogLevel.INFO)) {
       this.info(`Auth Event: ${event}`, { success });
     }
   }
 
   /**
-   * Session logging - only logs safe metadata
+   * Database operation logging
    */
-  sessionEvent(event: 'created' | 'validated' | 'refreshed' | 'expired' | 'cleared', userId?: string): void {
-    if (this.shouldLog(LogLevel.INFO)) {
-      this.info(`Session ${event}`, {
-        hasUser: !!userId,
-        timestamp: new Date().toISOString()
+  dbOperation(operation: string, table: string, success: boolean, recordCount?: number): void {
+    if (this.shouldLog(ServerLogLevel.INFO)) {
+      this.info(`DB ${operation}: ${table}`, {
+        success,
+        recordCount: recordCount || 0
       });
     }
+  }
+
+  /**
+   * Public method to sanitize data for external use
+   */
+  sanitize(data: any): any {
+    return this.sanitizeData(data);
   }
 
   /**
    * Check if development mode for conditional logging
    */
   get isDev(): boolean {
-    return this.isDevelopment;
+    return this.logLevel >= ServerLogLevel.DEBUG;
   }
 }
 
 // Export singleton instance
-export const logger = new Logger();
+export const serverLogger = new ServerLogger();
 
 // Export convenience functions
-export const logError = (message: string, error?: Error | any) => logger.error(message, error);
-export const logWarn = (message: string, data?: any) => logger.warn(message, data);
-export const logInfo = (message: string, data?: any) => logger.info(message, data);
-export const logDebug = (message: string, data?: any) => logger.debug(message, data);
+export const logError = (message: string, error?: Error | any) => serverLogger.error(message, error);
+export const logWarn = (message: string, data?: any) => serverLogger.warn(message, data);
+export const logInfo = (message: string, data?: any) => serverLogger.info(message, data);
+export const logDebug = (message: string, data?: any) => serverLogger.debug(message, data);

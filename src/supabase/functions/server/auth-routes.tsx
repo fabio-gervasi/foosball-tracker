@@ -1,18 +1,19 @@
 import { Hono } from 'npm:hono';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as kv from './kv_store.tsx';
-import { 
-  INITIAL_ELO, 
+import {
+  INITIAL_ELO,
   ADMIN_SECRET,
   API_PREFIX
 } from './server-constants.tsx';
-import { 
+import {
   generateAvatar,
-  usernameToEmail, 
+  usernameToEmail,
   emailToUsername,
   validateUsername,
   validateEmail
 } from './server-helpers.tsx';
+import { serverLogger } from './server-logger.tsx';
 import { validateUserAuth, validateAdminAuth } from './auth-helpers.tsx';
 
 export function createAuthRoutes(supabase: any) {
@@ -21,59 +22,59 @@ export function createAuthRoutes(supabase: any) {
   // User signin with username instead of email
   app.post('/signin', async (c) => {
     try {
-      console.log('=== Signin request received ===');
+      serverLogger.info('Signin request received');
       const authHeader = c.req.header('Authorization');
-      console.log('Auth header present:', !!authHeader);
-      
+      serverLogger.debug('Auth header present', { hasAuth: !!authHeader });
+
       const { username, password } = await c.req.json();
-      console.log('Signin attempt for username:', username);
-      
+      serverLogger.info('Signin attempt', { username: username ? '[USERNAME_PROVIDED]' : '[NO_USERNAME]' });
+
       if (!username || !password) {
-        console.log('Missing username or password');
+        serverLogger.warn('Missing username or password');
         return c.json({ error: 'Username and password required' }, 400);
       }
 
       // Try to find the user in KV store
-      console.log('Checking if user exists in KV store...');
+      serverLogger.debug('Checking if user exists in KV store');
       let userId = null;
       let userProfile = null;
-      
+
       // First, try username lookup
       userId = await kv.get(`user:username:${username}`);
       if (userId) {
-        console.log('Found user by username lookup');
+        serverLogger.debug('Found user by username lookup');
       } else {
         // Backward compatibility: if username lookup fails, try email lookup
-        console.log('Username not found, trying email lookup for backward compatibility...');
+        serverLogger.debug('Username not found, trying email lookup for backward compatibility');
         userId = await kv.get(`user:email:${username}`);
-        
+
         if (userId) {
-          console.log('Found user by email lookup, migrating to username lookup...');
+          serverLogger.info('Found user by email lookup, migrating to username lookup');
           try {
             await kv.set(`user:username:${username}`, userId);
           } catch (migrationError) {
-            console.error('Failed to migrate user to username lookup:', migrationError);
+            serverLogger.error('Failed to migrate user to username lookup', migrationError);
           }
         }
       }
-      
+
       if (!userId) {
         console.error('User not found in KV store for identifier:', username);
-        
+
         // Get all username keys to help debug (but don't expose to client)
         const allUserKeys = await kv.getByPrefix('user:username:');
         console.log('Available usernames:', allUserKeys.map(item => item.key.replace('user:username:', '')));
-        
+
         // Check if this might be a commonly attempted demo username
         const demoUsernames = ['Demo Player', 'Tsubasa', 'demo', 'demo.player'];
         if (demoUsernames.some(demo => demo.toLowerCase() === username.toLowerCase())) {
-          return c.json({ 
-            error: `Demo accounts are no longer available. Please create a new account by clicking "Sign Up".` 
+          return c.json({
+            error: `Demo accounts are no longer available. Please create a new account by clicking "Sign Up".`
           }, 401);
         }
-        
-        return c.json({ 
-          error: `User '${username}' not found. Please check your username and try again, or create a new account by clicking "Sign Up".` 
+
+        return c.json({
+          error: `User '${username}' not found. Please check your username and try again, or create a new account by clicking "Sign Up".`
         }, 401);
       }
 
@@ -89,7 +90,7 @@ export function createAuthRoutes(supabase: any) {
         console.error('Deleted user attempted to login:', userId);
         return c.json({ error: 'Account has been deleted' }, 401);
       }
-      
+
       console.log('User found in KV store:', {
         userId,
         username: userProfile.username,
@@ -105,7 +106,7 @@ export function createAuthRoutes(supabase: any) {
       }
 
       console.log('Attempting Supabase auth signin with anon key...');
-      
+
       // Create a client-side Supabase client for authentication
       const clientSupabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
@@ -114,19 +115,19 @@ export function createAuthRoutes(supabase: any) {
 
       // Build list of emails to try for authentication
       const emailsToTry = [];
-      
+
       // 1. First priority: real email from user profile (new users)
       if (userProfile.email && userProfile.email !== username && !userProfile.email.endsWith('@foosball.app')) {
         emailsToTry.push(userProfile.email);
         console.log('Will try real email from profile:', userProfile.email);
       }
-      
+
       // 2. Second priority: username if it looks like an email
       if (username.includes('@')) {
         emailsToTry.push(username);
         console.log('Will try username as email:', username);
       }
-      
+
       // 3. Third priority: converted username to fake email (legacy users)
       try {
         const fakeEmail = usernameToEmail(username);
@@ -149,13 +150,13 @@ export function createAuthRoutes(supabase: any) {
       let authSuccess = false;
       let authData = null;
       let lastError = null;
-      
+
       // Try each email until one works
       for (let i = 0; i < emailsToTry.length; i++) {
         const emailForAuth = emailsToTry[i];
         try {
           console.log(`Auth attempt ${i + 1}/${emailsToTry.length} with email:`, emailForAuth);
-          
+
           const { data, error } = await clientSupabase.auth.signInWithPassword({
             email: emailForAuth,
             password,
@@ -169,7 +170,7 @@ export function createAuthRoutes(supabase: any) {
 
           if (data?.user && data?.session) {
             console.log('Supabase signin successful! User ID:', data.user.id);
-            
+
             // Verify that the authenticated user matches our KV store user
             if (data.user.id === userId) {
               console.log('User ID matches KV store, authentication successful');
@@ -192,9 +193,9 @@ export function createAuthRoutes(supabase: any) {
 
       if (authSuccess && authData) {
         console.log('Authentication successful, returning session');
-        return c.json({ 
-          user: userProfile, 
-          session: { access_token: authData.session.access_token } 
+        return c.json({
+          user: userProfile,
+          session: { access_token: authData.session.access_token }
         });
       } else {
         console.error('All authentication attempts failed for username:', username);
@@ -219,10 +220,10 @@ export function createAuthRoutes(supabase: any) {
       console.log('=== Signup request received ===');
       const authHeader = c.req.header('Authorization');
       console.log('Auth header present:', !!authHeader);
-      
+
       const { username, email, password } = await c.req.json();
       console.log('Signup attempt for username:', username, 'email:', email);
-      
+
       if (!username || !email || !password) {
         return c.json({ error: 'Username, email, and password are required' }, 400);
       }
@@ -324,7 +325,7 @@ export function createAuthRoutes(supabase: any) {
   app.get('/user', async (c) => {
     try {
       console.log('=== User info request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -346,21 +347,21 @@ export function createAuthRoutes(supabase: any) {
   app.post('/check-user-exists', async (c) => {
     try {
       console.log('=== Check user exists request ===');
-      
+
       const { username } = await c.req.json();
       if (!username) {
         return c.json({ error: 'Username is required' }, 400);
       }
-      
+
       // Check if user exists in KV store
       const userId = await kv.get(`user:username:${username}`);
       if (!userId) {
-        return c.json({ 
-          exists: false, 
-          message: 'User not found. Please create a new account.' 
+        return c.json({
+          exists: false,
+          message: 'User not found. Please create a new account.'
         });
       }
-      
+
       // Check if user exists in Supabase auth
       try {
         const { data: authUser, error } = await supabase.auth.admin.getUserById(userId);
@@ -373,7 +374,7 @@ export function createAuthRoutes(supabase: any) {
             message: 'This account needs to be recreated. Please sign up with a new account using your email.'
           });
         }
-        
+
         return c.json({
           exists: true,
           message: 'User exists. You can sign in.'

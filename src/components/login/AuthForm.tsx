@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Lock, Mail, RefreshCw } from 'lucide-react';
 import { LOGIN_MESSAGES, USERNAME_REQUIREMENTS, INSTRUCTIONS } from '../../utils/login-constants';
+import { logger } from '../../utils/logger';
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -46,13 +47,14 @@ export function AuthForm({
   onPasswordResetToggle
 }: AuthFormProps) {
   const handleFormSubmit = (e) => {
-    console.log('=== AuthForm - Form Submit Triggered ===');
-    console.log('isLogin:', isLogin);
-    console.log('isPasswordReset:', isPasswordReset);
-    console.log('email:', email);
-    console.log('password:', password ? '[HIDDEN]' : 'empty');
-    console.log('isLoading:', isLoading);
-    console.log('serverStatus:', serverStatus);
+    logger.debug('AuthForm - Form Submit Triggered', {
+      isLogin,
+      isPasswordReset,
+      email: email ? `[EMAIL:${email.split('@')[1] || 'unknown'}]` : 'empty',
+      hasPassword: !!password,
+      isLoading,
+      serverHealthy: serverStatus?.isHealthy
+    });
     onSubmit(e);
   };
 
@@ -159,8 +161,8 @@ export function AuthForm({
               onChange={(e) => setEmail(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder={
-                isPasswordReset 
-                  ? "Enter your email address" 
+                isPasswordReset
+                  ? "Enter your email address"
                   : (isLogin ? "Enter your username or email" : "Enter your email address")
               }
               disabled={isLoading}
@@ -234,11 +236,13 @@ export function AuthForm({
             type="submit"
             disabled={isLoading || (serverStatus && serverStatus.isLoading) || (serverStatus && !serverStatus.isHealthy)}
             onClick={() => {
-              console.log('=== AuthForm - Button Clicked ===');
-              console.log('Button disabled?', isLoading || (serverStatus && serverStatus.isLoading) || (serverStatus && !serverStatus.isHealthy));
-              console.log('isLoading:', isLoading);
-              console.log('serverStatus:', serverStatus);
-              alert('Button clicked! Check console for details.');
+              const isDisabled = isLoading || (serverStatus && serverStatus.isLoading) || (serverStatus && !serverStatus.isHealthy);
+              logger.debug('AuthForm - Button Clicked', {
+                isDisabled,
+                isLoading,
+                serverLoading: serverStatus?.isLoading,
+                serverHealthy: serverStatus?.isHealthy
+              });
             }}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
           >
@@ -246,16 +250,16 @@ export function AuthForm({
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>
-                  {isPasswordReset 
-                    ? 'Sending Reset Email...' 
+                  {isPasswordReset
+                    ? 'Sending Reset Email...'
                     : (!isLogin ? 'Creating Account...' : 'Signing In...')
                   }
                 </span>
               </>
             ) : (
               <span>
-                {isPasswordReset 
-                  ? 'Send Reset Email' 
+                {isPasswordReset
+                  ? 'Send Reset Email'
                   : (!isLogin ? 'Create Account' : 'Sign In')
                 }
               </span>

@@ -4,6 +4,7 @@ import { apiRequest, supabase } from '../utils/supabase/client';
 import { projectId } from '../utils/supabase/info';
 import { Avatar } from './Avatar';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { logger } from '../utils/logger';
 
 
 interface ProfileProps {
@@ -28,7 +29,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
   const [avatarError, setAvatarError] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Password change state
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -91,7 +92,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       });
       setUserGroups(response.groups || []);
     } catch (error) {
-      console.error('Failed to load user groups:', error);
+      logger.error('Failed to load user groups', error);
     } finally {
       setIsLoadingGroups(false);
     }
@@ -99,7 +100,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
 
   const handleSwitchGroup = async (groupCode: string) => {
     if (groupCode === user.currentGroup) return;
-    
+
     setIsSwitchingGroup(true);
     try {
       await apiRequest('/groups/switch', {
@@ -112,13 +113,13 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       });
 
       setShowGroupSelector(false);
-      
+
       // Notify parent component to reload data
       if (onGroupChanged) {
         onGroupChanged();
       }
     } catch (error) {
-      console.error('Failed to switch group:', error);
+      logger.error('Failed to switch group', error);
       alert('Failed to switch group. Please try again.');
     } finally {
       setIsSwitchingGroup(false);
@@ -152,7 +153,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
 
       setJoinGroupSuccess(response.isNewMember ? 'Successfully joined group!' : 'You are already a member of this group');
       setJoinGroupForm({ groupCode: '' });
-      
+
       // Reload user groups
       await loadUserGroups();
 
@@ -163,7 +164,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       }, 2000);
 
     } catch (error) {
-      console.error('Failed to join group:', error);
+      logger.error('Failed to join group', error);
       setJoinGroupError(error.message || 'Failed to join group');
     } finally {
       setIsJoiningGroup(false);
@@ -201,7 +202,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
 
       setCreateGroupSuccess(`Successfully created group! Code: ${response.group.code}`);
       setCreateGroupForm({ name: '' });
-      
+
       // Reload user groups and notify parent of group change
       await loadUserGroups();
 
@@ -217,7 +218,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       }, 3000);
 
     } catch (error) {
-      console.error('Failed to create group:', error);
+      logger.error('Failed to create group', error);
       setCreateGroupError(error.message || 'Failed to create group');
     } finally {
       setIsCreatingGroup(false);
@@ -250,7 +251,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       try {
         await supabase.auth.signOut();
       } catch (error) {
-        console.error('Logout error:', error);
+        logger.error('Logout error', error);
       }
     }
   };
@@ -306,7 +307,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       }
 
       const data = await response.json();
-      
+
       // Update local user state
       if (onDataChange) {
         onDataChange();
@@ -315,7 +316,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       setPreviewUrl(null);
       alert('Profile picture updated successfully!');
     } catch (error) {
-      console.error('Avatar upload error:', error);
+      logger.error('Avatar upload error', error);
       setAvatarError(error.message || 'Failed to upload image');
       setPreviewUrl(null);
     } finally {
@@ -346,7 +347,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
 
       alert('Profile picture deleted successfully!');
     } catch (error) {
-      console.error('Avatar delete error:', error);
+      logger.error('Avatar delete error', error);
       setAvatarError(error.message || 'Failed to delete image');
     } finally {
       setIsUploadingAvatar(false);
@@ -414,7 +415,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
         newPassword: '',
         confirmPassword: '',
       });
-      
+
       // Close modal after 2 seconds
       setTimeout(() => {
         setShowPasswordChange(false);
@@ -422,7 +423,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       }, 2000);
 
     } catch (error) {
-      console.error('Password change error:', error);
+      logger.error('Password change error', error);
       setPasswordError('Failed to update password. Please try again.');
     } finally {
       setIsUpdatingPassword(false);
@@ -450,7 +451,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
       <div className="text-center py-6">
         <div className="relative inline-block">
           <div className="w-24 h-24 bg-blue-100 rounded-full mb-4 relative">
-            <Avatar 
+            <Avatar
               src={previewUrl || user.avatarUrl}
               fallback={user.avatar}
               className="w-full h-full rounded-full"
@@ -462,7 +463,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
               </div>
             )}
           </div>
-          
+
           {/* Avatar Actions */}
           <div className="flex justify-center space-x-2 mb-4">
             <button
@@ -473,7 +474,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
             >
               <Camera className="w-4 h-4" />
             </button>
-            
+
             {user.avatarUrl && (
               <button
                 onClick={handleDeleteAvatar}
@@ -502,7 +503,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
             </div>
           )}
         </div>
-        
+
         <>
           <h2 className="text-2xl text-gray-800">{user.username || user.name}</h2>
           <p className="text-gray-600 text-sm">@{user.username || emailToUsername(user.email)}</p>
@@ -543,7 +544,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
             </div>
           </div>
         </div>
-        
+
         <div className="p-4">
           {/* Current Group Selector */}
           {group && (
@@ -637,7 +638,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
               )}
             </div>
           )}
-          
+
           {/* Leave Group Option */}
           {group && (
             <div className="text-center mt-4 pt-4 border-t border-gray-200">
@@ -663,7 +664,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg text-gray-800">Account Information</h3>
         </div>
-        
+
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -672,7 +673,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
             </div>
             <span className="text-gray-600 text-sm">{user.username || user.email}</span>
           </div>
-          
+
           {user.email && !user.email.endsWith('@foosball.app') && (
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -682,7 +683,7 @@ export function Profile({ user, group, accessToken, onUpdateProfile, onDataChang
               <span className="text-gray-600 text-sm">{user.email}</span>
             </div>
           )}
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <User className="w-5 h-5 text-gray-400" />

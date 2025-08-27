@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
+import { logger } from '../utils/logger';
 import exampleImage from 'figma:asset/b116ece610e7864347e2bdd75f97d694d0ba8cab.png';
 
 interface MatchHistoryProps {
@@ -53,9 +54,10 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       setError('');
       setLoading(true);
 
-      console.log('=== Loading match history ===');
-      console.log('Current user:', currentUser?.username || currentUser?.email);
-      console.log('Current group:', currentUser?.currentGroup);
+      logger.debug('Loading match history', {
+        hasUser: !!currentUser,
+        currentGroup: currentUser?.currentGroup
+      });
       // Checking access token for authentication
 
       const response = await apiRequest('/matches', {
@@ -64,35 +66,34 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         },
       });
 
-      console.log('Match history API response:', response);
+      logger.info('Match history loaded', { count: response.matches?.length || 0 });
       setMatches(response.matches || []);
-      console.log('Match history loaded:', response.matches?.length || 0);
 
       // If no matches found, let's call the debug endpoint
       if (!response.matches || response.matches.length === 0) {
-        console.log('No matches found, calling debug endpoint...');
+        logger.debug('No matches found, calling debug endpoint');
         try {
           const debugResponse = await apiRequest('/debug/matches', {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
           });
-          console.log('Debug matches response:', debugResponse);
+          logger.debug('Debug matches response received');
         } catch (debugError) {
-          console.error('Debug endpoint failed:', debugError);
+          logger.error('Debug endpoint failed', debugError);
         }
       }
 
     } catch (error) {
-      console.error('Failed to load match history:', error);
+      logger.error('Failed to load match history', error);
       setError('Failed to load match history: ' + error.message);
 
       // Try to get debug info even on error
       try {
         const debugResponse = await apiRequest('/debug/demo');
-        console.log('Demo debug response:', debugResponse);
+        logger.debug('Demo debug response received');
       } catch (debugError) {
-        console.error('Demo debug failed:', debugError);
+        logger.error('Demo debug failed', debugError);
       }
     } finally {
       setLoading(false);
