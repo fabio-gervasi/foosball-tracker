@@ -1,6 +1,7 @@
 # Foosball Tracker Refactoring Requirements Document
 
 ## Document Information
+
 - **Created**: December 2024
 - **Version**: 1.0
 - **Status**: Ready for Implementation
@@ -12,6 +13,7 @@
 This document outlines the comprehensive refactoring requirements for the Foosball Tracker application. The current codebase suffers from architectural issues, excessive complexity, and maintainability challenges that need immediate attention.
 
 **Key Metrics**:
+
 - Main App.tsx component: 952 lines (Target: <200 lines)
 - Console logging instances: 554 (Target: <50 production logs)
 - Unused components identified: 4
@@ -20,6 +22,7 @@ This document outlines the comprehensive refactoring requirements for the Foosba
 ## Current State Analysis
 
 ### Critical Issues Identified
+
 1. **Monolithic App Component**: Single 952-line component handling multiple responsibilities
 2. **Excessive Logging**: 554 console.log/error instances across 25 files
 3. **Unused Code**: 4 components/utilities serving no purpose
@@ -34,14 +37,15 @@ This document outlines the comprehensive refactoring requirements for the Foosba
 
 ### Version Update Decision Matrix:
 
-| REQ Type | Impact Level | Version Change | Example |
-|----------|-------------|----------------|---------|
-| **Security/Bug Fixes** | Patch | `0.2.0` → `0.2.1` | REQ-0.1, REQ-0.2 |
-| **Major Architecture** | Minor | `0.1.0` → `0.2.0` | REQ-1.1, REQ-2.1 |
-| **Phase Completion** | Minor | `0.2.x` → `0.3.0` | All Phase 1 REQs complete |
-| **Breaking Changes** | Major | `0.x.x` → `1.0.0` | Refactoring project complete |
+| REQ Type               | Impact Level | Version Change    | Example                      |
+| ---------------------- | ------------ | ----------------- | ---------------------------- |
+| **Security/Bug Fixes** | Patch        | `0.2.0` → `0.2.1` | REQ-0.1, REQ-0.2             |
+| **Major Architecture** | Minor        | `0.1.0` → `0.2.0` | REQ-1.1, REQ-2.1             |
+| **Phase Completion**   | Minor        | `0.2.x` → `0.3.0` | All Phase 1 REQs complete    |
+| **Breaking Changes**   | Major        | `0.x.x` → `1.0.0` | Refactoring project complete |
 
 ### Implementation Checklist:
+
 - [ ] REQ implementation complete
 - [ ] All tests passing
 - [ ] Documentation updated
@@ -51,6 +55,7 @@ This document outlines the comprehensive refactoring requirements for the Foosba
 - [ ] REFACTORING_STATUS.md updated with version info
 
 ### Version Update Commit Format:
+
 ```
 chore: bump version to X.Y.Z - [REQ-X.X implementation complete]
 
@@ -62,11 +67,13 @@ Brief description of what warranted the version change:
 ```
 
 ### Current Version: 0.7.0
+
 **Last Update Reason**: REQ-5.1 Complete - Vercel Platform Optimization with advanced configuration, Edge Functions, comprehensive analytics integration, and production-grade security headers. Successfully transformed basic deployment into world-class production platform.
 
 ## PHASE 0: SECURITY & ENVIRONMENT SETUP (Week 1 - Priority 1)
 
 ### REQ-0.1: Security Hardening
+
 **Priority**: Critical
 **Estimated Effort**: 4 hours
 **Dependencies**: None
@@ -74,6 +81,7 @@ Brief description of what warranted the version change:
 #### Implementation Details
 
 ##### REQ-0.1.1: Environment Variables Migration
+
 ```bash
 # File: .env.example
 VITE_SUPABASE_PROJECT_ID=your_project_id_here
@@ -93,6 +101,7 @@ if (!projectId || !publicAnonKey) {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] .env.example file created with required variables
 - [ ] src/utils/supabase/info.tsx throws error if env vars missing
 - [ ] README.md updated with environment setup instructions
@@ -100,26 +109,33 @@ if (!projectId || !publicAnonKey) {
 - [ ] Build fails fast with helpful error if env vars missing
 
 ##### REQ-0.1.2: Remove Sensitive Logging
+
 **Files to Update**:
+
 - src/utils/supabase/client.tsx (apiRequest function)
 - src/App.tsx (auth state logging)
 
 **Acceptance Criteria**:
+
 - [ ] No token content, length, or expiry logged in production
 - [ ] No session internals logged in production builds
 - [ ] Debug logging only in development mode
 - [ ] Error logging preserved for troubleshooting
 
 ##### REQ-0.1.3: Remove Client-Side Secrets
+
 **Files to Remove/Update**:
+
 - src/utils/server-constants.tsx (contains ADMIN_SECRET)
 
 **Acceptance Criteria**:
+
 - [ ] No secret values present in client bundles
 - [ ] ADMIN_SECRET moved to server-only code
 - [ ] Bundle analysis confirms no secrets leaked
 
 ### REQ-0.2: Critical Bug Fixes
+
 **Priority**: Critical
 **Estimated Effort**: 2 hours
 **Dependencies**: None
@@ -127,6 +143,7 @@ if (!projectId || !publicAnonKey) {
 #### Implementation Details
 
 ##### REQ-0.2.1: Fix Header Logo Display
+
 ```typescript
 // File: src/App.tsx (header section)
 <ImageWithFallback
@@ -137,17 +154,20 @@ if (!projectId || !publicAnonKey) {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Header shows group icon when currentGroup.icon exists
 - [ ] Falls back to foosballIcon when no group icon
 - [ ] No broken images or layout issues
 
 ##### REQ-0.2.2: Fix Server Import Error
+
 ```typescript
 // File: src/supabase/functions/server/debug-routes.tsx
 import { createClient } from 'npm:@supabase/supabase-js@2';
 ```
 
 **Acceptance Criteria**:
+
 - [ ] /debug/test-email-config endpoint starts without ReferenceError
 - [ ] Server functions deploy successfully
 - [ ] Debug routes work in development
@@ -155,11 +175,13 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 ## PHASE 1: CRITICAL REFACTORING (Week 1)
 
 ### REQ-1.1: App.tsx Component Decomposition
+
 **Priority**: Critical
 **Estimated Effort**: 16 hours
 **Dependencies**: None
 
 #### Acceptance Criteria
+
 - [ ] App.tsx reduced to <200 lines
 - [ ] Authentication logic extracted to separate context
 - [ ] Data fetching logic extracted to custom hooks
@@ -170,6 +192,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 #### Implementation Details
 
 ##### REQ-1.1.1: Create Authentication Context
+
 ```typescript
 // File: src/contexts/AuthContext.tsx
 interface AuthContextType {
@@ -190,6 +213,7 @@ interface AuthContextType {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] AuthContext provides all authentication state
 - [ ] Password reset logic handled within context
 - [ ] Supabase auth state changes managed
@@ -197,6 +221,7 @@ interface AuthContextType {
 - [ ] Token refresh logic included
 
 ##### REQ-1.1.2: Create App Data Context
+
 ```typescript
 // File: src/contexts/AppDataContext.tsx
 interface AppDataContextType {
@@ -218,6 +243,7 @@ interface AppDataContextType {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All data fetching logic centralized
 - [ ] Loading states managed
 - [ ] Error handling implemented
@@ -225,6 +251,7 @@ interface AppDataContextType {
 - [ ] Optimistic updates supported
 
 ##### REQ-1.1.3: Create App Router Component
+
 ```typescript
 // File: src/components/AppRouter.tsx
 interface AppRouterProps {
@@ -240,6 +267,7 @@ interface AppRouterProps {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All routing logic centralized
 - [ ] View state management included
 - [ ] Navigation events handled
@@ -247,6 +275,7 @@ interface AppRouterProps {
 - [ ] Match confirmation flows preserved
 
 ##### REQ-1.1.4: Create Loading Screen Component
+
 ```typescript
 // File: src/components/LoadingScreen.tsx
 interface LoadingScreenProps {
@@ -257,17 +286,20 @@ interface LoadingScreenProps {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Reusable loading component created
 - [ ] Supports different loading states
 - [ ] Group logo display logic included
 - [ ] Responsive design maintained
 
 ### REQ-1.2: Console Logging Cleanup
+
 **Priority**: High
 **Estimated Effort**: 6 hours
 **Dependencies**: None
 
 #### Acceptance Criteria
+
 - [ ] Logger utility created with environment-based logging
 - [ ] All console.log replaced with logger.info
 - [ ] Production logs limited to errors only
@@ -277,13 +309,14 @@ interface LoadingScreenProps {
 #### Implementation Details
 
 ##### REQ-1.2.1: Create Logger Utility
+
 ```typescript
 // File: src/utils/logger.ts
 enum LogLevel {
   ERROR = 0,
   WARN = 1,
   INFO = 2,
-  DEBUG = 3
+  DEBUG = 3,
 }
 
 interface Logger {
@@ -295,6 +328,7 @@ interface Logger {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Environment-based log level control
 - [ ] Structured logging format
 - [ ] Error logs always shown
@@ -302,32 +336,38 @@ interface Logger {
 - [ ] Performance impact minimized
 
 ##### REQ-1.2.2: Replace Console Statements
+
 **Files to Update**: All 25 files with console statements
 
 **Replacement Strategy**:
+
 - `console.log` → `logger.info` or `logger.debug`
 - `console.error` → `logger.error`
 - `console.warn` → `logger.warn`
 - Remove redundant debug statements
 
 **Acceptance Criteria**:
+
 - [ ] Zero console.log statements in production
 - [ ] Error logging preserved
 - [ ] Debug information available in development
 - [ ] No functionality lost
 
 ### REQ-1.3: Remove Unused Components
+
 **Priority**: Medium
 **Estimated Effort**: 2 hours
 **Dependencies**: None
 
 #### Files to Remove
+
 1. `src/components/PasswordResetConfirm.tsx` - Empty stub component
 2. `src/utils/auth-helpers.tsx` - Empty utility file
 3. `src/utils/demo-data.tsx` - Empty utility file
 4. `src/components/FoosballIcon.tsx` - Imported but unused
 
 #### Acceptance Criteria
+
 - [ ] All unused files deleted
 - [ ] Import statements cleaned up
 - [ ] No broken references
@@ -337,11 +377,13 @@ interface Logger {
 ## PHASE 2: ARCHITECTURE IMPROVEMENTS (Week 2)
 
 ### REQ-2.1: React Query Data Layer Implementation
+
 **Priority**: High
 **Estimated Effort**: 16 hours
 **Dependencies**: REQ-1.1, REQ-1.2
 
 #### REQ-2.1.1: Install and Configure React Query
+
 ```bash
 npm install @tanstack/react-query
 ```
@@ -372,12 +414,14 @@ export function QueryProvider({ children }) {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] React Query properly configured
 - [ ] Query client with appropriate defaults
 - [ ] Provider wrapped around app
 - [ ] Development tools available
 
 #### REQ-2.1.2: Create Data Query Hooks
+
 ```typescript
 // File: src/hooks/useQueries.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -386,9 +430,10 @@ import { apiRequest } from '../utils/supabase/client';
 export const useUserQuery = (accessToken: string) => {
   return useQuery({
     queryKey: ['user'],
-    queryFn: () => apiRequest('/user', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }),
+    queryFn: () =>
+      apiRequest('/user', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
     enabled: !!accessToken,
   });
 };
@@ -396,9 +441,10 @@ export const useUserQuery = (accessToken: string) => {
 export const useCurrentGroupQuery = (accessToken: string) => {
   return useQuery({
     queryKey: ['group', 'current'],
-    queryFn: () => apiRequest('/groups/current', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }),
+    queryFn: () =>
+      apiRequest('/groups/current', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
     enabled: !!accessToken,
   });
 };
@@ -406,9 +452,10 @@ export const useCurrentGroupQuery = (accessToken: string) => {
 export const useUsersQuery = (accessToken: string) => {
   return useQuery({
     queryKey: ['users'],
-    queryFn: () => apiRequest('/users', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }),
+    queryFn: () =>
+      apiRequest('/users', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
     enabled: !!accessToken,
   });
 };
@@ -416,15 +463,17 @@ export const useUsersQuery = (accessToken: string) => {
 export const useMatchesQuery = (accessToken: string) => {
   return useQuery({
     queryKey: ['matches'],
-    queryFn: () => apiRequest('/matches', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    }),
+    queryFn: () =>
+      apiRequest('/matches', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
     enabled: !!accessToken,
   });
 };
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All data fetching replaced with React Query
 - [ ] Proper cache invalidation on mutations
 - [ ] Loading states managed by queries
@@ -432,11 +481,13 @@ export const useMatchesQuery = (accessToken: string) => {
 - [ ] Background refetching enabled
 
 ### REQ-2.2: Custom Hooks Implementation
+
 **Priority**: High
 **Estimated Effort**: 12 hours
 **Dependencies**: REQ-1.1, REQ-1.2, REQ-2.1
 
 #### REQ-2.1.1: Create useAuth Hook
+
 ```typescript
 // File: src/hooks/useAuth.ts
 interface UseAuthReturn {
@@ -450,6 +501,7 @@ interface UseAuthReturn {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Authentication logic reusable across components
 - [ ] Loading states managed
 - [ ] Error handling included
@@ -457,6 +509,7 @@ interface UseAuthReturn {
 - [ ] TypeScript support complete
 
 #### REQ-2.1.2: Create useAppData Hook
+
 ```typescript
 // File: src/hooks/useAppData.ts
 interface UseAppDataReturn {
@@ -470,6 +523,7 @@ interface UseAppDataReturn {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Data fetching logic centralized
 - [ ] Loading states provided
 - [ ] Error handling included
@@ -477,6 +531,7 @@ interface UseAppDataReturn {
 - [ ] Automatic refresh on auth changes
 
 ### REQ-2.3: API Request Standardization
+
 **Priority**: High
 **Estimated Effort**: 8 hours
 **Dependencies**: REQ-1.2
@@ -484,6 +539,7 @@ interface UseAppDataReturn {
 #### Implementation Details
 
 ##### REQ-2.2.1: Create useApiRequest Hook
+
 ```typescript
 // File: src/hooks/useApiRequest.ts
 interface ApiRequestOptions {
@@ -501,6 +557,7 @@ interface UseApiRequestReturn<T> {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Consistent API request patterns
 - [ ] Built-in loading states
 - [ ] Error handling standardized
@@ -508,6 +565,7 @@ interface UseApiRequestReturn<T> {
 - [ ] Authentication header management
 
 ##### REQ-2.2.2: Centralized Error Handling
+
 ```typescript
 // File: src/utils/errorHandler.ts
 interface ErrorHandler {
@@ -518,6 +576,7 @@ interface ErrorHandler {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] User-friendly error messages
 - [ ] Consistent error handling patterns
 - [ ] Automatic auth error handling
@@ -525,6 +584,7 @@ interface ErrorHandler {
 - [ ] Validation error formatting
 
 ### REQ-2.4: UX Improvements - Remove Browser Prompts
+
 **Priority**: High
 **Estimated Effort**: 8 hours
 **Dependencies**: REQ-1.1
@@ -532,6 +592,7 @@ interface ErrorHandler {
 #### Implementation Details
 
 ##### REQ-2.4.1: Replace Password Reset Prompt
+
 ```typescript
 // File: src/components/auth/PasswordResetForm.tsx
 export function PasswordResetForm() {
@@ -553,6 +614,7 @@ export function PasswordResetRoute() {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] /password-reset route implemented
 - [ ] Password reset form component created
 - [ ] checkPasswordResetCallback() navigates to route instead of prompt
@@ -560,10 +622,12 @@ export function PasswordResetRoute() {
 - [ ] Form validation and error handling
 
 ##### REQ-2.4.2: Replace Alert/Confirm Dialogs
+
 **Files to Update**:
+
 - src/components/Profile.tsx
 - src/components/AdminPanel.tsx
-- src/components/admin/*.tsx
+- src/components/admin/\*.tsx
 
 ```typescript
 // Replace alert() with:
@@ -578,12 +642,14 @@ export function PasswordResetRoute() {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All alert() calls replaced with AlertDialog
 - [ ] All confirm() calls replaced with confirmation dialogs
 - [ ] Consistent UI across all user messages
 - [ ] No native browser dialogs remain
 
 ### REQ-2.5: TypeScript Interface Implementation
+
 **Priority**: Medium
 **Estimated Effort**: 6 hours
 **Dependencies**: None
@@ -591,6 +657,7 @@ export function PasswordResetRoute() {
 #### Implementation Details
 
 ##### REQ-2.3.1: Core Type Definitions
+
 ```typescript
 // File: src/types/index.ts
 export interface User {
@@ -630,6 +697,7 @@ export interface Match {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All major entities typed
 - [ ] Component props typed
 - [ ] API responses typed
@@ -637,6 +705,7 @@ export interface Match {
 - [ ] Generic types used appropriately
 
 ##### REQ-2.3.2: Component Prop Interfaces
+
 ```typescript
 // File: src/types/componentProps.ts
 export interface BaseComponentProps {
@@ -653,6 +722,7 @@ export interface DataComponentProps extends BaseComponentProps {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Shared prop interfaces defined
 - [ ] Component-specific interfaces created
 - [ ] Inheritance used appropriately
@@ -662,11 +732,13 @@ export interface DataComponentProps extends BaseComponentProps {
 ## PHASE 3: CODE QUALITY & ORGANIZATION (Week 3)
 
 ### REQ-3.1: Enhanced Component Cleanup
+
 **Priority**: Medium
 **Estimated Effort**: 6 hours
 **Dependencies**: REQ-1.3
 
 #### Additional Files to Remove
+
 ```bash
 # Admin components (unused)
 src/components/admin/AdminInstructions.tsx
@@ -698,6 +770,7 @@ src/components/ui/context-menu.tsx
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All unused admin components removed
 - [ ] Login sub-components consolidated
 - [ ] Unused UI components deleted
@@ -706,6 +779,7 @@ src/components/ui/context-menu.tsx
 - [ ] Bundle size measurably reduced
 
 #### REQ-3.1.1: Dependency Pruning
+
 ```bash
 # NPM packages to remove after component cleanup
 npm uninstall recharts react-day-picker vaul cmdk sonner react-resizable-panels
@@ -716,6 +790,7 @@ npm uninstall class-variance-authority tailwind-merge clsx
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Unused NPM packages removed
 - [ ] package.json cleaned up
 - [ ] No orphaned dependencies
@@ -723,11 +798,13 @@ npm uninstall class-variance-authority tailwind-merge clsx
 - [ ] All functionality preserved
 
 ### REQ-3.2: Shared Utilities Directory
+
 **Priority**: Medium
 **Estimated Effort**: 4 hours
 **Dependencies**: REQ-1.3
 
 #### Implementation Details
+
 ```bash
 # Create shared directory structure
 mkdir src/shared
@@ -750,6 +827,7 @@ export function calculateElo(/* params */) {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] src/shared/ directory created
 - [ ] Duplicated utilities consolidated
 - [ ] Platform conditionals added where needed
@@ -757,11 +835,13 @@ export function calculateElo(/* params */) {
 - [ ] ELO calculations work on both client and server
 
 ### REQ-3.3: Component Organization
+
 **Priority**: Medium
 **Estimated Effort**: 4 hours
 **Dependencies**: REQ-1.1
 
 #### New Directory Structure
+
 ```
 src/components/
   auth/
@@ -786,6 +866,7 @@ src/components/
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Components logically grouped
 - [ ] Import paths updated
 - [ ] No broken references
@@ -793,11 +874,13 @@ src/components/
 - [ ] File organization clear
 
 ### REQ-3.4: Error Boundary Implementation
+
 **Priority**: Medium
 **Estimated Effort**: 4 hours
 **Dependencies**: REQ-2.2.2
 
 #### Implementation Details
+
 ```typescript
 // File: src/components/common/ErrorBoundary.tsx
 interface ErrorBoundaryState {
@@ -812,6 +895,7 @@ class ErrorBoundary extends React.Component<Props, ErrorBoundaryState> {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Catches JavaScript errors
 - [ ] Provides fallback UI
 - [ ] Logs errors appropriately
@@ -819,6 +903,7 @@ class ErrorBoundary extends React.Component<Props, ErrorBoundaryState> {
 - [ ] Nested boundary support
 
 ### REQ-3.5: Build Configuration & Tooling
+
 **Priority**: Medium
 **Estimated Effort**: 6 hours
 **Dependencies**: REQ-3.1
@@ -826,6 +911,7 @@ class ErrorBoundary extends React.Component<Props, ErrorBoundaryState> {
 #### Implementation Details
 
 ##### REQ-3.5.1: ESLint and Prettier Setup
+
 ```bash
 npm install --save-dev eslint prettier @typescript-eslint/parser @typescript-eslint/eslint-plugin
 npm install --save-dev eslint-plugin-react eslint-plugin-react-hooks
@@ -848,6 +934,7 @@ npm install --save-dev eslint-plugin-react eslint-plugin-react-hooks
 ```
 
 **Acceptance Criteria**:
+
 - [ ] ESLint configured with TypeScript rules
 - [ ] Prettier configured for consistent formatting
 - [ ] Pre-commit hooks optional but recommended
@@ -855,6 +942,7 @@ npm install --save-dev eslint-plugin-react eslint-plugin-react-hooks
 - [ ] Unused variables and imports flagged
 
 ##### REQ-3.5.2: Vite Config Cleanup
+
 ```typescript
 // File: vite.config.ts
 export default defineConfig({
@@ -869,11 +957,13 @@ export default defineConfig({
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Vite aliases simplified to essentials
 - [ ] Build works with leaner configuration
 - [ ] No unused aliases remain
 
 ##### REQ-3.5.3: Tailwind Config Cleanup
+
 ```javascript
 // File: tailwind.config.js
 module.exports = {
@@ -883,15 +973,17 @@ module.exports = {
     // Remove unused paths like './pages/**/*', './app/**/*'
   ],
   // ... rest of config
-}
+};
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Tailwind content paths pruned to only used directories
 - [ ] Build performance improved
 - [ ] No unused CSS generated
 
 ### REQ-3.6: Server Security Enhancements
+
 **Priority**: Medium
 **Estimated Effort**: 4 hours
 **Dependencies**: REQ-0.1
@@ -899,23 +991,27 @@ module.exports = {
 #### Implementation Details
 
 ##### REQ-3.6.1: CORS Configuration
+
 ```typescript
 // File: src/supabase/functions/server/index.tsx
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://yourdomain.com']
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin:
+    process.env.NODE_ENV === 'production'
+      ? ['https://yourdomain.com']
+      : ['http://localhost:5173', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Production CORS restricts origins
 - [ ] Development CORS allows localhost
 - [ ] Only necessary methods and headers allowed
 
 ##### REQ-3.6.2: Request Validation
+
 ```bash
 npm install zod
 ```
@@ -933,12 +1029,14 @@ export const createMatchSchema = z.object({
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Zod validation added to write endpoints
 - [ ] Invalid payloads return clear 400 errors
 - [ ] No server exceptions for common input errors
 - [ ] Validation errors include helpful messages
 
 ### REQ-3.7: Testing Framework Setup
+
 **Priority**: Low
 **Estimated Effort**: 8 hours
 **Dependencies**: REQ-2.1, REQ-2.2
@@ -963,6 +1061,7 @@ describe('AuthProvider', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Vitest configured and running
 - [ ] Auth provider tests written
 - [ ] Query hooks tests written
@@ -970,17 +1069,20 @@ describe('AuthProvider', () => {
 - [ ] 80%+ test coverage on critical paths
 
 ### REQ-3.8: Performance Optimization
+
 **Priority**: Low
 **Estimated Effort**: 6 hours
 **Dependencies**: REQ-2.1
 
 #### Implementation Areas
+
 1. **Memoization**: Add React.memo to expensive components
 2. **Callback Optimization**: Use useCallback for event handlers
 3. **State Updates**: Optimize setState patterns
 4. **Re-render Prevention**: Minimize unnecessary renders
 
 **Acceptance Criteria**:
+
 - [ ] Heavy components memoized
 - [ ] Event handlers optimized
 - [ ] State updates batched
@@ -990,6 +1092,7 @@ describe('AuthProvider', () => {
 ## PHASE 4: TESTING FRAMEWORK & PERFORMANCE OPTIMIZATION ✅ COMPLETED
 
 ### REQ-4.1: Comprehensive Testing Infrastructure ✅ COMPLETED
+
 **Priority**: High
 **Estimated Effort**: 16 hours
 **Dependencies**: REQ-1.1, REQ-1.2, REQ-2.1
@@ -997,6 +1100,7 @@ describe('AuthProvider', () => {
 #### Implementation Details
 
 ##### REQ-4.1.1: Vitest Configuration and Setup
+
 ```bash
 npm install --save-dev vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom @vitest/coverage-v8
 ```
@@ -1019,19 +1123,23 @@ export default defineConfig({
 ```
 
 **Acceptance Criteria**:
+
 - [x] Vitest properly configured with jsdom environment
 - [x] Test setup file created with global configurations
 - [x] Coverage reporting configured with v8 provider
 - [x] Testing scripts added to package.json
 
 ##### REQ-4.1.2: Unit Test Suite Implementation
+
 **Files Created**:
+
 - src/tests/unit/components/ErrorBoundary.test.tsx (21 tests)
 - src/tests/unit/components/Navigation.test.tsx (24 tests)
 - src/tests/unit/components/AppRouter-render-bug-prevention.test.tsx (4 tests)
 - src/tests/unit/utils/logger.test.tsx (15 tests)
 
 **Acceptance Criteria**:
+
 - [x] 49 unit tests covering critical components
 - [x] ErrorBoundary component fully tested with error scenarios
 - [x] Navigation component tested for rendering and interactions
@@ -1039,30 +1147,37 @@ export default defineConfig({
 - [x] Rendering bug prevention tests implemented
 
 ##### REQ-4.1.3: Integration Test Suite Implementation
+
 **Files Created**:
+
 - src/tests/integration/react-query-integration.test.tsx (5 tests)
 - src/tests/integration/logger-completeness.test.tsx (5 tests)
 - src/tests/integration/rendering-patterns.test.tsx (4 tests)
 
 **Acceptance Criteria**:
+
 - [x] 14 integration tests covering system interactions
 - [x] React Query integration properly tested
 - [x] Logger completeness validation implemented
 - [x] Static code analysis for rendering patterns
 
 ##### REQ-4.1.4: Mock Infrastructure
+
 **Files Created**:
-- src/tests/__mocks__/supabase.ts
+
+- src/tests/**mocks**/supabase.ts
 - src/tests/utils/test-utils.tsx
 - src/tests/setup.ts
 
 **Acceptance Criteria**:
+
 - [x] Supabase client and authentication mocking
 - [x] Custom render utilities with context providers
 - [x] Global test setup with cleanup functions
 - [x] Environment variable mocking for tests
 
 ### REQ-4.2: React Performance Optimization ✅ COMPLETED
+
 **Priority**: High
 **Estimated Effort**: 12 hours
 **Dependencies**: REQ-1.1, REQ-2.1
@@ -1070,6 +1185,7 @@ export default defineConfig({
 #### Implementation Details
 
 ##### REQ-4.2.1: Lazy Loading Implementation
+
 ```typescript
 // File: src/components/AppRouter.tsx
 import { lazy, Suspense } from 'react';
@@ -1092,12 +1208,14 @@ const renderCurrentView = useMemo(() => {
 ```
 
 **Acceptance Criteria**:
+
 - [x] All major components lazy-loaded with React.lazy
 - [x] Suspense boundaries with LoadingScreen fallbacks
 - [x] Dynamic imports for optimal code splitting
 - [x] Proper error boundaries for lazy loading failures
 
 ##### REQ-4.2.2: React.memo Implementation
+
 ```typescript
 // File: src/components/dashboard/Dashboard.tsx
 export const Dashboard = memo(function Dashboard({ user, matches, users, group, error, accessToken }: DashboardProps) {
@@ -1115,34 +1233,47 @@ export const Dashboard = memo(function Dashboard({ user, matches, users, group, 
 ```
 
 **Acceptance Criteria**:
+
 - [x] Dashboard component wrapped with React.memo
 - [x] Expensive calculations optimized with useMemo
 - [x] User matching and statistics calculations memoized
 - [x] Proper dependency arrays for memoization
 
 ##### REQ-4.2.3: Event Handler Optimization
+
 ```typescript
 // File: src/components/AppRouter.tsx
-const handleNavigate = useCallback((view: string, data?: any) => {
-  // Navigation logic
-}, [dependencies]);
+const handleNavigate = useCallback(
+  (view: string, data?: any) => {
+    // Navigation logic
+  },
+  [dependencies]
+);
 
-const handlePlayerSelect = useCallback((playerId: string) => {
-  // Player selection logic
-}, [dependencies]);
+const handlePlayerSelect = useCallback(
+  (playerId: string) => {
+    // Player selection logic
+  },
+  [dependencies]
+);
 
-const handleMatchSubmitWithNavigation = useCallback(async (matchData: any) => {
-  // Match submission logic
-}, [dependencies]);
+const handleMatchSubmitWithNavigation = useCallback(
+  async (matchData: any) => {
+    // Match submission logic
+  },
+  [dependencies]
+);
 ```
 
 **Acceptance Criteria**:
+
 - [x] Event handlers wrapped with useCallback
 - [x] Proper dependency arrays to prevent unnecessary re-renders
 - [x] Navigation and interaction handlers optimized
 - [x] Match submission logic optimized
 
 ##### REQ-4.2.4: Performance Monitoring Hook
+
 ```typescript
 // File: src/hooks/usePerformanceMonitor.ts
 export const usePerformanceMonitor = (componentName: string, dependencies: any[] = []) => {
@@ -1153,7 +1284,8 @@ export const usePerformanceMonitor = (componentName: string, dependencies: any[]
     return () => {
       if (startTimeRef.current !== null) {
         const renderTime = performance.now() - startTimeRef.current;
-        if (renderTime > 16) { // 60fps threshold
+        if (renderTime > 16) {
+          // 60fps threshold
           logger.warn(`Slow render: ${componentName} took ${renderTime.toFixed(2)}ms`);
         }
       }
@@ -1163,12 +1295,14 @@ export const usePerformanceMonitor = (componentName: string, dependencies: any[]
 ```
 
 **Acceptance Criteria**:
+
 - [x] Performance monitoring hook created
 - [x] Render time tracking with 60fps threshold
 - [x] Slow render warnings logged in development
 - [x] Component-specific performance tracking
 
 ### REQ-4.3: Bundle & Loading Optimization ✅ COMPLETED
+
 **Priority**: High
 **Estimated Effort**: 8 hours
 **Dependencies**: REQ-4.2
@@ -1176,6 +1310,7 @@ export const usePerformanceMonitor = (componentName: string, dependencies: any[]
 #### Implementation Details
 
 ##### REQ-4.3.1: Advanced Rollup Chunking
+
 ```typescript
 // File: vite.config.ts
 export default defineConfig({
@@ -1184,7 +1319,12 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          ui: ['lucide-react', '@radix-ui/react-alert-dialog', '@radix-ui/react-label', '@radix-ui/react-slot'],
+          ui: [
+            'lucide-react',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-label',
+            '@radix-ui/react-slot',
+          ],
           utils: ['clsx', 'tailwind-merge'],
           supabase: ['@supabase/supabase-js'],
           query: ['@tanstack/react-query'],
@@ -1201,12 +1341,14 @@ export default defineConfig({
 ```
 
 **Acceptance Criteria**:
+
 - [x] Strategic code splitting with manual chunks
 - [x] Vendor libraries separated from application code
 - [x] UI components chunked for optimal loading
 - [x] Build performance optimized with esbuild
 
 ##### REQ-4.3.2: Performance Budget Monitoring
+
 ```typescript
 // File: src/components/common/ErrorBoundary.tsx
 const performanceMonitor = {
@@ -1233,12 +1375,14 @@ const performanceMonitor = {
 ```
 
 **Acceptance Criteria**:
+
 - [x] Performance monitoring utilities implemented
 - [x] Render time tracking with warnings for slow renders
 - [x] Memory usage monitoring in development
 - [x] Performance metrics reporting integrated
 
 ### REQ-4.4: Critical Bug Fixes & Prevention ✅ COMPLETED
+
 **Priority**: Critical
 **Estimated Effort**: 4 hours
 **Dependencies**: REQ-4.1
@@ -1246,6 +1390,7 @@ const performanceMonitor = {
 #### Implementation Details
 
 ##### REQ-4.4.1: renderCurrentView Function Call Error Fix
+
 **Problem**: `TypeError: renderCurrentView is not a function` during login
 **Root Cause**: useMemo returns a value, but code was trying to call it as a function
 
@@ -1260,12 +1405,14 @@ return <main>{renderCurrentView}</main>; // ✅ Use memoized value directly
 ```
 
 **Acceptance Criteria**:
+
 - [x] renderCurrentView error fixed in AppRouter component
 - [x] useMemo pattern corrected throughout codebase
 - [x] Login flow restored to working state
 - [x] No function call errors on memoized values
 
 ##### REQ-4.4.2: Logger Method Completeness
+
 **Problem**: `logger.apiRequest is not a function` and `logger.apiResponse is not a function`
 **Root Cause**: Logger utility missing required methods used by API client
 
@@ -1283,23 +1430,27 @@ export const logger = {
       const statusType = ok ? 'SUCCESS' : 'ERROR';
       console.log(`[API RESPONSE] ${statusType} ${status} ${endpoint}`, data);
     }
-  }
+  },
 };
 ```
 
 **Acceptance Criteria**:
+
 - [x] apiRequest method added to logger utility
 - [x] apiResponse method added to logger utility
 - [x] All logger methods used in codebase implemented
 - [x] Authentication flow restored to working state
 
 ##### REQ-4.4.3: Comprehensive Bug Prevention Tests
+
 **Files Created**:
+
 - src/tests/unit/components/AppRouter-render-bug-prevention.test.tsx
 - src/tests/integration/rendering-patterns.test.tsx
 - src/tests/integration/logger-completeness.test.tsx
 
 **Acceptance Criteria**:
+
 - [x] Rendering pattern tests prevent function call errors
 - [x] Static code analysis detects problematic patterns
 - [x] Logger completeness tests ensure all methods exist
@@ -1310,6 +1461,7 @@ export const logger = {
 ## PHASE 5: PRODUCTION EXCELLENCE & ADVANCED OPERATIONS (Week 5-6)
 
 ### REQ-5.1: Vercel Platform Optimization ✅ COMPLETED
+
 **Priority**: High
 **Estimated Effort**: 16 hours (Completed)
 **Dependencies**: REQ-4.1, REQ-4.2, REQ-4.3
@@ -1317,40 +1469,49 @@ export const logger = {
 **Version Impact**: 0.6.0 → 0.7.0
 
 #### Implementation Results
+
 **Phase 5.1.1: Advanced Vercel Configuration** ✅
+
 - Advanced `vercel.json` with security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
 - Long-term caching strategy for static assets (1 year with immutable flag)
 - SPA routing configuration with proper rewrites
 - Production-grade Content Security Policy allowing Supabase connections
 
 **Phase 5.1.2: Edge Functions Implementation** ✅
+
 - `/pages/api/analytics.js` - Real-time analytics with geographic and connection data
 - `/pages/api/performance.js` - Performance metrics processing with recommendations
 - `/pages/api/health.js` - System health monitoring across edge regions
 - Edge runtime optimized for global <50ms response times
 
 **Phase 5.1.3: ISR/SSG Strategy Optimization** ✅
+
 - Enhanced Vite build configuration with CSS code splitting
 - 4KB asset inline limit for optimal loading
 - Strategic chunking maintained while adding new optimizations
 - Module preload optimization for reduced bundle size
 
 **Phase 5.1.4: Vercel Analytics Integration** ✅
+
 - `@vercel/analytics` - Privacy-friendly analytics without cookies
 - `@vercel/speed-insights` - Core Web Vitals tracking and monitoring
 - Custom foosball-specific analytics system (matches, auth, groups, performance)
 - Automatic slow render detection and reporting integration
 
 #### Deployment Challenges & Resolutions
+
 **Issue 1**: Initial deployment failed with "Function Runtimes must have a valid version" error
+
 - **Cause**: Incorrect `functions` section in vercel.json for Edge Functions
 - **Resolution**: Removed functions section as Edge Functions specify runtime individually
 
 **Issue 2**: Edge Functions not accessible after deployment
+
 - **Cause**: Incorrect directory structure for Vite projects on Vercel
 - **Resolution**: Moved Edge Functions from `/api/` to `/pages/api/` directory
 
 #### Success Metrics Achieved
+
 - ✅ **Main Application**: Successfully deployed with 200 OK status
 - ✅ **Security Score**: All production security headers active and validated
 - ✅ **Performance**: Maintained existing optimizations while adding analytics
@@ -1358,7 +1519,9 @@ export const logger = {
 - ✅ **Version Management**: Proper version bump following established protocol
 
 #### Files Created/Modified
+
 **New Files**:
+
 - `vercel.json` - Advanced Vercel configuration
 - `pages/api/analytics.js` - Edge Function for analytics collection
 - `pages/api/performance.js` - Edge Function for performance monitoring
@@ -1368,6 +1531,7 @@ export const logger = {
 - `VERCEL_OPTIMIZATION_GUIDE.md` - Complete optimization documentation
 
 **Modified Files**:
+
 - `package.json` - Version bump to 0.7.0, added Vercel Analytics packages
 - `vite.config.ts` - Enhanced build optimizations
 - `src/App.tsx` - Integrated AnalyticsProvider
@@ -1375,26 +1539,60 @@ export const logger = {
 - `src/components/auth/Login.tsx` - Login/registration event tracking
 
 ### REQ-5.2: Enhanced CI/CD Pipeline
+
 **Priority**: High
 **Estimated Effort**: 12 hours
 **Dependencies**: REQ-5.1
 
+#### REQ-5.2.6: Vercel Preview Test Optimization
+
+**Priority**: Medium
+**Estimated Effort**: 1 hour
+**Implementation**: Configure Vercel "Ignored Build Step" to prevent preview tests on main branch merges
+
+**Rationale**: Preview tests should only run on feature branches and dev branch, not when merging from dev to main, as main should only receive already-tested code.
+
+**Configuration**:
+
+```bash
+# In Vercel Project Settings > Git > Ignored Build Step
+if [ "$VERCEL_GIT_COMMIT_REF" == "main" ]; then exit 0; else exit 1; fi
+```
+
+**Benefits**:
+
+- Faster dev → main merge process
+- Reduced CI/CD resource usage
+- Prevents redundant testing of already-validated code
+- Streamlined deployment pipeline for production releases
+
+**Acceptance Criteria**:
+
+- [ ] Vercel Ignored Build Step configured in project settings
+- [ ] Preview tests skip when merging dev → main
+- [ ] Preview tests continue running on feature branches
+- [ ] Documentation updated with configuration details
+
 ### REQ-5.3: Advanced Monitoring & Observability
+
 **Priority**: High
 **Estimated Effort**: 14 hours
 **Dependencies**: REQ-5.1, REQ-5.2
 
 ### REQ-5.4: Production Performance Excellence
+
 **Priority**: High
 **Estimated Effort**: 10 hours
 **Dependencies**: REQ-5.1, REQ-5.3
 
 ### REQ-5.5: Security & Compliance Enhancement
+
 **Priority**: High
 **Estimated Effort**: 8 hours
 **Dependencies**: REQ-5.1
 
 ### REQ-5.6: Operational Excellence
+
 **Priority**: Medium
 **Estimated Effort**: 12 hours
 **Dependencies**: REQ-5.3, REQ-5.4
@@ -1404,6 +1602,7 @@ export const logger = {
 ## PHASE 6: MULTI-GROUP MANAGEMENT IMPROVEMENTS (Week 7-8)
 
 ### REQ-6.1: Multi-Group Management Issues Resolution
+
 **Priority**: High
 **Estimated Effort**: 20 hours
 **Dependencies**: REQ-2.1, REQ-2.2
@@ -1411,34 +1610,40 @@ export const logger = {
 #### Current Issues Identified
 
 ##### REQ-4.1.1: Group Dropdown Limitation
+
 **Problem**: Users can only see one group in the dropdown and cannot switch between groups
 **Root Cause**: The `loadUserGroups()` function in Profile.tsx may not be loading all user groups correctly, or the group switching UI is not displaying multiple groups properly
 
 **Current Implementation Analysis**:
+
 ```typescript
 // In Profile.tsx - loadUserGroups()
 const response = await apiRequest('/groups/user-groups', {
-  headers: { Authorization: `Bearer ${accessToken}` }
+  headers: { Authorization: `Bearer ${accessToken}` },
 });
 setUserGroups(response.groups || []);
 ```
 
 **Issues**:
+
 - `/groups/user-groups` endpoint may not be returning all user groups
 - Group dropdown UI might be filtering or limiting display
 - User groups array structure may not match expected format
 
 **Acceptance Criteria**:
+
 - [ ] All user groups displayed in dropdown
 - [ ] Group switching functionality works bidirectionally
 - [ ] UI clearly shows current vs available groups
 - [ ] Loading states for group switching
 
 ##### REQ-4.1.2: Group Creation Navigation Lock
+
 **Problem**: After creating a new group, users cannot navigate back to previous groups without leaving/deleting the new group
 **Root Cause**: Group creation process may not properly maintain user's group membership list or the switching mechanism is broken
 
 **Current Implementation Analysis**:
+
 ```typescript
 // In group-routes.tsx - Create group
 userProfile.currentGroup = groupCode;
@@ -1447,26 +1652,30 @@ userProfile.groups.push({
   code: groupCode,
   name,
   joinedAt: new Date().toISOString(),
-  role: 'admin'
+  role: 'admin',
 });
 ```
 
 **Issues**:
+
 - Group creation may overwrite previous group memberships
 - User profile groups array may not be properly maintained
 - Group switching logic may not handle newly created groups correctly
 
 **Acceptance Criteria**:
+
 - [ ] Creating new group preserves existing group memberships
 - [ ] Users can switch back to previous groups after creation
 - [ ] Group membership persistence across sessions
 - [ ] Proper group role management (admin/member)
 
 ##### REQ-4.1.3: Cross-Group Statistics Contamination
+
 **Problem**: When creating a new group, rankings still show wins/losses from other groups instead of being isolated per group
 **Root Cause**: User statistics (wins, losses, ELO) are stored globally on user profile instead of being group-specific
 
 **Current Implementation Analysis**:
+
 ```typescript
 // In user profile structure
 user: {
@@ -1479,12 +1688,14 @@ user: {
 ```
 
 **Issues**:
+
 - Statistics are stored at user level, not per group
 - Match calculations aggregate across all groups
 - Leaderboard and rankings show cross-group contamination
 - No group-specific ELO or statistics tracking
 
 **Acceptance Criteria**:
+
 - [ ] Group-specific statistics storage
 - [ ] Isolated ELO ratings per group
 - [ ] Match history filtered by current group
@@ -1496,6 +1707,7 @@ user: {
 ##### Phase 4.1: Data Model Restructuring (8 hours)
 
 **REQ-4.1.1-A: Group-Specific User Statistics**
+
 ```typescript
 // New user profile structure
 interface UserProfile {
@@ -1519,7 +1731,7 @@ interface UserProfile {
       doublesElo: number;
       joinedAt: string;
       lastActiveAt: string;
-    }
+    };
   };
 
   // Legacy global stats (deprecated)
@@ -1538,12 +1750,14 @@ interface GroupMembership {
 ```
 
 **Implementation Steps**:
+
 1. Create data migration script for existing users
 2. Update user profile creation to initialize group stats
 3. Modify match result processing to update group-specific stats
 4. Update all statistics calculations to use group-specific data
 
 **Acceptance Criteria**:
+
 - [ ] New user profile structure implemented
 - [ ] Data migration script for existing users
 - [ ] Group-specific statistics properly isolated
@@ -1552,6 +1766,7 @@ interface GroupMembership {
 ##### Phase 4.2: Group Management API Improvements (6 hours)
 
 **REQ-4.1.2-A: Enhanced Group Endpoints**
+
 ```typescript
 // New/Updated API endpoints needed:
 // GET /groups/user-groups - Fix to return ALL user groups
@@ -1562,6 +1777,7 @@ interface GroupMembership {
 ```
 
 **Implementation Steps**:
+
 1. Fix `/groups/user-groups` to return complete group list
 2. Enhance group switching validation and error handling
 3. Add group leave functionality
@@ -1569,6 +1785,7 @@ interface GroupMembership {
 5. Add group-specific statistics endpoints
 
 **Acceptance Criteria**:
+
 - [ ] All user groups returned in API calls
 - [ ] Group switching works between any user groups
 - [ ] Users can leave groups (with confirmation)
@@ -1578,6 +1795,7 @@ interface GroupMembership {
 ##### Phase 4.3: UI/UX Improvements (6 hours)
 
 **REQ-4.1.3-A: Enhanced Group Management Interface**
+
 ```typescript
 // Profile.tsx improvements needed:
 // - Multi-group dropdown with all available groups
@@ -1588,6 +1806,7 @@ interface GroupMembership {
 ```
 
 **Implementation Steps**:
+
 1. Redesign group selector dropdown
 2. Add group management actions (leave/delete)
 3. Implement proper loading and error states
@@ -1595,6 +1814,7 @@ interface GroupMembership {
 5. Update group switching UX flow
 
 **Acceptance Criteria**:
+
 - [ ] All user groups visible in dropdown
 - [ ] Clear visual indication of current group
 - [ ] Group leave/delete functionality
@@ -1604,18 +1824,21 @@ interface GroupMembership {
 #### Testing Requirements
 
 **Unit Tests**:
+
 - [ ] Group-specific statistics calculations
 - [ ] Group switching logic
 - [ ] Data migration functions
 - [ ] API endpoint validation
 
 **Integration Tests**:
+
 - [ ] Multi-group user workflows
 - [ ] Group creation and switching flow
 - [ ] Statistics isolation between groups
 - [ ] Group management permissions
 
 **User Acceptance Tests**:
+
 - [ ] Create group → switch back to original group
 - [ ] Verify statistics are isolated per group
 - [ ] Test group dropdown shows all user groups
@@ -1624,21 +1847,25 @@ interface GroupMembership {
 #### Migration Strategy
 
 **Phase 1: Data Migration (Non-breaking)**
+
 1. Add new group-specific statistics fields
 2. Migrate existing user data to new structure
 3. Maintain backward compatibility
 
 **Phase 2: API Updates (Backward Compatible)**
+
 1. Update endpoints to support new data structure
 2. Add new group management endpoints
 3. Maintain legacy endpoint compatibility
 
 **Phase 3: UI Updates (User-Visible)**
+
 1. Update Profile component group management
 2. Update statistics displays to use group-specific data
 3. Update leaderboard to show group-specific rankings
 
 **Phase 4: Cleanup (Breaking Changes)**
+
 1. Remove legacy global statistics fields
 2. Remove backward compatibility code
 3. Update documentation
@@ -1646,22 +1873,25 @@ interface GroupMembership {
 #### Risk Assessment
 
 **High Risk**:
+
 - **Data Migration**: Risk of losing existing user statistics
-  - *Mitigation*: Comprehensive backup, gradual rollout, rollback plan
+  - _Mitigation_: Comprehensive backup, gradual rollout, rollback plan
 
 - **Group Isolation**: Risk of breaking existing group functionality
-  - *Mitigation*: Extensive testing, feature flags, staged deployment
+  - _Mitigation_: Extensive testing, feature flags, staged deployment
 
 **Medium Risk**:
+
 - **Performance Impact**: Group-specific queries may be slower
-  - *Mitigation*: Database indexing, query optimization, caching
+  - _Mitigation_: Database indexing, query optimization, caching
 
 - **User Confusion**: New group management UX may confuse users
-  - *Mitigation*: Clear documentation, gradual UX changes, user feedback
+  - _Mitigation_: Clear documentation, gradual UX changes, user feedback
 
 #### Success Metrics
 
 **Functional Metrics**:
+
 - [ ] Users can see all their groups in dropdown
 - [ ] Group switching works bidirectionally
 - [ ] New group creation doesn't lock users
@@ -1669,6 +1899,7 @@ interface GroupMembership {
 - [ ] Group leave/delete functionality works
 
 **Technical Metrics**:
+
 - [ ] Zero data loss during migration
 - [ ] <500ms response time for group operations
 - [ ] 100% backward compatibility during transition
@@ -1677,27 +1908,32 @@ interface GroupMembership {
 ## Implementation Timeline
 
 ### Week 1: Security & Critical Refactoring
+
 **Day 1**: REQ-0.1, REQ-0.2 (Security hardening & critical fixes)
 **Days 2-3**: REQ-1.1 (App.tsx decomposition)
 **Day 4**: REQ-1.2 (Console logging cleanup)
 **Day 5**: REQ-1.3 (Remove unused components)
 
 ### Week 2: Architecture & Data Layer
+
 **Days 1-2**: REQ-2.1 (React Query implementation)
 **Days 2-3**: REQ-2.2, REQ-2.3 (Custom hooks & API standardization)
 **Days 4-5**: REQ-2.4, REQ-2.5 (UX improvements & TypeScript interfaces)
 
 ### Week 3: Quality & Organization
+
 **Days 1-2**: REQ-3.1, REQ-3.2 (Enhanced cleanup & shared utilities)
 **Day 3**: REQ-3.3, REQ-3.4 (Component organization & error boundaries)
 **Days 4-5**: REQ-3.5, REQ-3.6 (Build tooling & server security)
 
 ### Week 4: Testing & Performance (Optional)
+
 **Days 1-2**: REQ-3.7 (Testing framework)
 **Days 3-4**: REQ-3.8 (Performance optimization)
 **Day 5**: Final testing and documentation
 
 ### Week 4-5: Group Management Improvements (Critical Issues)
+
 **Days 1-2**: REQ-4.1.1-A (Data model restructuring for group-specific stats)
 **Days 2-3**: REQ-4.1.2-A (Enhanced group management APIs)
 **Days 4-5**: REQ-4.1.3-A (UI/UX improvements for multi-group management)
@@ -1706,18 +1942,21 @@ interface GroupMembership {
 ## Testing Requirements
 
 ### Unit Testing
+
 - [ ] All custom hooks tested
 - [ ] Context providers tested
 - [ ] Utility functions tested
 - [ ] Component rendering tested
 
 ### Integration Testing
+
 - [ ] Authentication flow tested
 - [ ] Data fetching tested
 - [ ] API integration tested
 - [ ] Error scenarios tested
 
 ### Performance Testing
+
 - [ ] Bundle size measured
 - [ ] Render performance tested
 - [ ] Memory usage monitored
@@ -1726,12 +1965,14 @@ interface GroupMembership {
 ## Success Metrics
 
 ### Security Metrics
+
 - Environment variables: 100% required, no hardcoded fallbacks
 - Sensitive logging: 0 token/session logs in production
 - Client secrets: 0 secret values in client bundle
 - CORS configuration: Restrictive origins in production
 
 ### Code Quality Metrics
+
 - App.tsx lines: 952 → <200 (Target: 75% reduction)
 - Console logs: 554 → <50 (Target: 90% reduction)
 - TypeScript coverage: ~60% → >90%
@@ -1739,6 +1980,7 @@ interface GroupMembership {
 - ESLint violations: <10 warnings, 0 errors
 
 ### Performance Metrics
+
 - Bundle size reduction: Target 15-25% (after dependency pruning)
 - First contentful paint: Maintain current performance
 - Time to interactive: Improve by 10-15%
@@ -1746,11 +1988,13 @@ interface GroupMembership {
 - Cache hit rate: >80% for data queries
 
 ### UX Metrics
+
 - Browser prompts: 0 remaining (all replaced with UI components)
 - Error messages: 100% user-friendly with dev details
 - Deep linking: All routes support direct navigation
 
 ### Maintainability Metrics
+
 - Cyclomatic complexity: Reduce by 40%
 - Code duplication: <5%
 - Test coverage: >80%
@@ -1759,40 +2003,45 @@ interface GroupMembership {
 ## Risk Assessment
 
 ### High Risk
+
 - **Environment Variables**: Risk of breaking builds/deployments
-  - *Mitigation*: Test in staging, provide clear documentation
+  - _Mitigation_: Test in staging, provide clear documentation
 
 - **Authentication Context**: Risk of breaking auth flow
-  - *Mitigation*: Incremental rollout, comprehensive testing
+  - _Mitigation_: Incremental rollout, comprehensive testing
 
 - **React Query Migration**: Risk of data inconsistency
-  - *Mitigation*: Parallel implementation, thorough cache invalidation testing
+  - _Mitigation_: Parallel implementation, thorough cache invalidation testing
 
 ### Medium Risk
+
 - **UX Prompt Replacement**: Risk of breaking user flows
-  - *Mitigation*: Test all dialog interactions, maintain functionality parity
+  - _Mitigation_: Test all dialog interactions, maintain functionality parity
 
 - **Dependency Pruning**: Risk of removing needed packages
-  - *Mitigation*: Test in branch, bundle analysis before merging
+  - _Mitigation_: Test in branch, bundle analysis before merging
 
 - **API Standardization**: Risk of request failures
-  - *Mitigation*: Parallel implementation, gradual migration
+  - _Mitigation_: Parallel implementation, gradual migration
 
 ### Low Risk
+
 - **Component Organization**: Risk of import issues
-  - *Mitigation*: IDE refactoring tools, careful testing
+  - _Mitigation_: IDE refactoring tools, careful testing
 
 - **Build Configuration**: Risk of breaking development workflow
-  - *Mitigation*: Test locally, maintain existing scripts
+  - _Mitigation_: Test locally, maintain existing scripts
 
 ## Dependencies
 
 ### External Dependencies
+
 - React 18.3.1 (Context API, hooks)
 - TypeScript 5.3.3 (type definitions)
 - Supabase JS 2.39.0 (authentication)
 
 ### Internal Dependencies
+
 - Existing component interfaces must be preserved
 - Current authentication flow must remain functional
 - Data fetching patterns must be maintained during transition
@@ -1808,18 +2057,21 @@ interface GroupMembership {
 ## Post-Implementation
 
 ### Monitoring
+
 - [ ] Error rate monitoring
 - [ ] Performance metrics tracking
 - [ ] User experience monitoring
 - [ ] Bundle size tracking
 
 ### Documentation Updates
+
 - [ ] Component documentation
 - [ ] API documentation
 - [ ] Architecture documentation
 - [ ] Development guidelines
 
 ### Team Training
+
 - [ ] New patterns training
 - [ ] Code review guidelines
 - [ ] Testing procedures
@@ -1827,4 +2079,4 @@ interface GroupMembership {
 
 ---
 
-*This document serves as the authoritative guide for the Foosball Tracker refactoring initiative. All implementation should follow these specifications to ensure consistency and quality.*
+_This document serves as the authoritative guide for the Foosball Tracker refactoring initiative. All implementation should follow these specifications to ensure consistency and quality._
