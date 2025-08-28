@@ -73,7 +73,7 @@
     "deploy:production": "vercel --prod --confirm",
     "rollback:auto": "npm run ci:rollback-monitor",
     "rollback:manual": "npm run ci:rollback-force",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
