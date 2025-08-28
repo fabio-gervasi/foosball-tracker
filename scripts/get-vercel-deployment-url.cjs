@@ -23,7 +23,7 @@ class VercelDeploymentFinder {
     try {
       // Strategy 1: Try to use Vercel API if we have access
       console.log(`🔄 Attempting to fetch deployment from Vercel API...`);
-      
+
       try {
         const apiUrl = await this.fetchFromVercelAPI(commitSha, branchName);
         if (apiUrl) {
@@ -33,20 +33,20 @@ class VercelDeploymentFinder {
       } catch (apiError) {
         console.log(`⚠️ Vercel API unavailable: ${apiError.message}`);
       }
-      
+
       // Strategy 2: Use intelligent URL pattern generation and testing
       console.log(`🔄 Falling back to URL pattern testing...`);
-      
+
       const urlPatterns = this.generateUrlPatterns(branchName, commitSha);
-      
+
       for (const url of urlPatterns) {
         console.log(`🔗 Testing: ${url}`);
-        
+
         if (await this.testUrl(url)) {
           console.log(`✅ Found working deployment URL: ${url}`);
           return url;
         }
-        
+
         // Small delay between tests to avoid overwhelming the server
         await this.sleep(500);
       }
@@ -64,18 +64,18 @@ class VercelDeploymentFinder {
   async fetchFromVercelAPI(commitSha, branchName) {
     // In a real implementation, this would use a Vercel API token
     // For now, we'll simulate the API call and fall back to pattern matching
-    
+
     // Check if we have environment variables that might help
     if (process.env.VERCEL_URL) {
       console.log(`📍 Found VERCEL_URL environment variable: ${process.env.VERCEL_URL}`);
       return `https://${process.env.VERCEL_URL}`;
     }
-    
+
     if (process.env.VERCEL_BRANCH_URL) {
       console.log(`📍 Found VERCEL_BRANCH_URL environment variable: ${process.env.VERCEL_BRANCH_URL}`);
       return `https://${process.env.VERCEL_BRANCH_URL}`;
     }
-    
+
     // If no environment variables available, we'll use the pattern-based approach
     throw new Error('No Vercel environment variables available');
   }
@@ -88,45 +88,45 @@ class VercelDeploymentFinder {
     const patterns = [];
     const shortCommit = commitSha.substring(0, 8);
     const hashSuffix = shortCommit.substring(0, 6);
-    
+
     // Sanitize branch name for URL usage
     const safeBranch = branchName.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
-    
+
     console.log(`📝 Generating patterns for branch: ${branchName} (${safeBranch})`);
-    
+
     // Pattern 0: Known working patterns (high priority)
     if (branchName === 'feature/enhanced-ci-cd-pipeline') {
       patterns.push('https://foosball-tracker-git-feature-enh-9da74d-fabio-gervasis-projects.vercel.app');
     }
-    
+
     // Pattern 1: Direct commit-based deployment (most reliable for any branch)
     patterns.push(`https://foosball-tracker-${shortCommit}-fabio-gervasis-projects.vercel.app`);
-    
+
     // Pattern 2: Vercel's intelligent branch truncation algorithm
     // This mimics how Vercel actually truncates long branch names
     const intelligentTruncation = this.generateVercelStyleTruncation(safeBranch, hashSuffix);
     intelligentTruncation.forEach(pattern => {
       patterns.push(`https://foosball-tracker-git-${pattern}-fabio-gervasis-projects.vercel.app`);
     });
-    
+
     // Pattern 3: Git branch alias - full sanitized name (for short branches)
     if (safeBranch.length <= 30) {
       patterns.push(`https://foosball-tracker-git-${safeBranch}-fabio-gervasis-projects.vercel.app`);
     }
-    
+
     // Pattern 4: Alternative domain patterns
     const altDomains = [
       'fabio-gervasi.vercel.app',
       'fabio-gervasis-projects.vercel.app'
     ];
-    
+
     altDomains.forEach(domain => {
       patterns.push(`https://foosball-tracker-${shortCommit}-${domain}`);
       if (safeBranch.length <= 20) {
         patterns.push(`https://foosball-tracker-git-${safeBranch}-${domain}`);
       }
     });
-    
+
     // Remove duplicates and return
     return [...new Set(patterns)];
   }
@@ -137,25 +137,25 @@ class VercelDeploymentFinder {
    */
   generateVercelStyleTruncation(safeBranch, hashSuffix) {
     const patterns = [];
-    
+
     // Vercel's truncation patterns (observed behavior):
     // 1. If branch is short enough, use as-is
     // 2. If branch is long, truncate and add hash
     // 3. Special handling for common prefixes (feature/, fix/, etc.)
-    
+
     if (safeBranch.length <= 25) {
       patterns.push(safeBranch);
       return patterns;
     }
-    
+
     // For long branches, Vercel typically:
     // 1. Truncates to around 15-20 chars
     // 2. Adds a hash suffix
     // 3. Tries to break at word boundaries when possible
-    
+
     const maxLength = 15;
     let truncated = safeBranch;
-    
+
     // Try to find a good breaking point (dash, underscore)
     if (safeBranch.length > maxLength) {
       const breakPoints = [];
@@ -164,7 +164,7 @@ class VercelDeploymentFinder {
           breakPoints.push(i);
         }
       }
-      
+
       // Use the last good break point within our limit
       const goodBreak = breakPoints.find(bp => bp <= maxLength && bp >= maxLength - 5);
       if (goodBreak) {
@@ -173,11 +173,11 @@ class VercelDeploymentFinder {
         truncated = safeBranch.substring(0, maxLength);
       }
     }
-    
+
     // Generate common patterns
     patterns.push(truncated);
     patterns.push(`${truncated}-${hashSuffix}`);
-    
+
     // For feature branches, also try without the 'feature-' prefix
     if (safeBranch.startsWith('feature-')) {
       const withoutFeature = safeBranch.substring(8);
@@ -186,7 +186,7 @@ class VercelDeploymentFinder {
         patterns.push(`feature-${withoutFeature.substring(0, Math.min(10, withoutFeature.length))}-${hashSuffix}`);
       }
     }
-    
+
     return patterns;
   }
 
@@ -245,11 +245,11 @@ async function main() {
   try {
     const finder = new VercelDeploymentFinder();
     const url = await finder.findDeploymentByCommit(commitSha, branchName);
-    
+
     // Output for GitHub Actions
     console.log(`::set-output name=url::${url}`);
     console.log(`PREVIEW_URL=${url}`);
-    
+
     process.exit(0);
   } catch (error) {
     console.error('💥 Failed to find deployment URL:', error.message);
