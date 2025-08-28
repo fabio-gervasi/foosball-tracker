@@ -59,20 +59,41 @@ jobs:
           # Vercel truncates long branch names and adds a hash suffix
           # For feature/enhanced-ci-cd-pipeline -> feature-enh-9da74d
 
-          # Based on the current deployment, use the known working branch alias
-          if [[ "${BRANCH_NAME}" == "feature/enhanced-ci-cd-pipeline" ]]; then
-            PREVIEW_URL="https://foosball-tracker-git-feature-enh-9da74d-fabio-gervasis-projects.vercel.app"
+          # Strategy 1: Use GitHub Deployments API to get actual Vercel URL
+          echo "🔍 Checking GitHub Deployments API for Vercel URL..."
+          if node scripts/get-github-deployment-url.cjs "${COMMIT_SHA}" "${{ github.repository_owner }}" "foosball-tracker" "${{ secrets.GITHUB_TOKEN }}"; then
+            PREVIEW_URL=$(node scripts/get-github-deployment-url.cjs "${COMMIT_SHA}" "${{ github.repository_owner }}" "foosball-tracker" "${{ secrets.GITHUB_TOKEN }}" | grep "PREVIEW_URL=" | cut -d'=' -f2)
+            echo "✅ Found URL via GitHub Deployments API: ${PREVIEW_URL}"
           else
-            # Try to find the deployment URL dynamically
-            echo "🔍 Using dynamic deployment URL detection..."
-            if node scripts/get-vercel-deployment-url.cjs "${COMMIT_SHA}" "${BRANCH_NAME}"; then
-              # Script will output PREVIEW_URL=... which we can source
-              PREVIEW_URL=$(node scripts/get-vercel-deployment-url.cjs "${COMMIT_SHA}" "${BRANCH_NAME}" | grep "PREVIEW_URL=" | cut -d'=' -f2)
-            else
-              # Final fallback to general pattern
-              echo "⚠️ Using fallback URL pattern..."
-              SAFE_BRANCH_NAME=$(echo "${BRANCH_NAME}" | sed 's/[^a-z0-9-]/-/gi' | tr '[:upper:]' '[:lower:]' | cut -c1-20)
-              PREVIEW_URL="https://foosball-tracker-git-${SAFE_BRANCH_NAME}-fabio-gervasis-projects.vercel.app"
+            # Strategy 2: Use intelligent Vercel URL patterns
+            echo "⚠️ GitHub API failed, using intelligent URL patterns..."
+            
+            # Generate Vercel URL patterns based on their documented behavior
+            REPO_NAME="foosball-tracker"
+            SAFE_BRANCH=$(echo "${BRANCH_NAME}" | sed 's/[^a-z0-9-]/-/gi' | tr '[:upper:]' '[:lower:]')
+            SHORT_COMMIT="${COMMIT_SHA:0:8}"
+            
+            # Test multiple Vercel URL patterns
+            POSSIBLE_URLS=(
+              "https://${REPO_NAME}-git-${SAFE_BRANCH:0:20}-${{ github.repository_owner }}.vercel.app"
+              "https://${REPO_NAME}-${SHORT_COMMIT}-${{ github.repository_owner }}.vercel.app"
+              "https://${REPO_NAME}-git-${SAFE_BRANCH:0:15}-${SHORT_COMMIT:0:6}-${{ github.repository_owner }}.vercel.app"
+            )
+            
+            PREVIEW_URL=""
+            for url in "${POSSIBLE_URLS[@]}"; do
+              echo "🔗 Testing: $url"
+              if curl -k -s --head --max-time 10 "$url" | head -1 | grep -q "HTTP/[12].[0-9] [23]"; then
+                PREVIEW_URL="$url"
+                echo "✅ Found working deployment: $url"
+                break
+              fi
+            done
+            
+            # Final fallback
+            if [ -z "$PREVIEW_URL" ]; then
+              PREVIEW_URL="https://${REPO_NAME}-git-${SAFE_BRANCH:0:20}-${{ github.repository_owner }}.vercel.app"
+              echo "⚠️ Using fallback URL: $PREVIEW_URL"
             fi
           fi
           DEPLOYMENT_ID="preview-${COMMIT_SHA:0:8}"
