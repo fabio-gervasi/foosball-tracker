@@ -204,12 +204,16 @@ jobs:
             if [[ -n "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" ]]; then
               echo "🔑 Using Vercel Protection Bypass Secret"
               
+              # Clean the secret (remove any whitespace/newlines)
+              BYPASS_SECRET=$(echo "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" | tr -d '\n\r\t ')
+              echo "🔍 Secret length after cleaning: $(echo "${BYPASS_SECRET}" | wc -c | tr -d ' ') characters"
+              
               # Method 1: Try with headers (recommended approach)
               echo "🔄 Testing bypass with headers..."
               BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
                 --max-time 30 \
                 --location \
-                -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" \
+                -H "x-vercel-protection-bypass: ${BYPASS_SECRET}" \
                 -H "x-vercel-set-bypass-cookie: true" \
                 "${PREVIEW_URL}" || echo "000")
               
@@ -218,7 +222,7 @@ jobs:
               # Method 2: Try with query parameters (alternative approach)
               if [[ "$BYPASS_STATUS" != "200" ]]; then
                 echo "🔄 Testing bypass with query parameters..."
-                BYPASS_URL="${PREVIEW_URL}?x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}&x-vercel-set-bypass-cookie=true"
+                BYPASS_URL="${PREVIEW_URL}?x-vercel-protection-bypass=${BYPASS_SECRET}&x-vercel-set-bypass-cookie=true"
                 BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
                   --max-time 30 \
                   --location \
@@ -229,7 +233,7 @@ jobs:
               # Method 3: Try the specific Vercel bypass URL pattern
               if [[ "$BYPASS_STATUS" != "200" ]]; then
                 echo "🔄 Testing Vercel-specific bypass URL pattern..."
-                BYPASS_URL="${PREVIEW_URL}?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}"
+                BYPASS_URL="${PREVIEW_URL}?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${BYPASS_SECRET}"
                 BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
                   --max-time 30 \
                   --location \
@@ -266,12 +270,14 @@ jobs:
                 echo "   - Ensure the bypass secret hasn't been regenerated"
                 echo "   - Confirm the secret format is correct (32-character alphanumeric string)"
                 
-                # Test the secret format
-                SECRET_LENGTH=$(echo "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" | wc -c)
-                if [[ $SECRET_LENGTH -gt 20 && $SECRET_LENGTH -lt 50 ]]; then
-                  echo "   ✅ Secret format appears correct (${SECRET_LENGTH} characters)"
+                # Test the secret format (using cleaned secret)
+                SECRET_LENGTH=$(echo "${BYPASS_SECRET}" | wc -c)
+                if [[ $SECRET_LENGTH -eq 33 ]]; then  # 32 chars + 1 for wc newline
+                  echo "   ✅ Secret format appears correct (32 characters)"
+                elif [[ $SECRET_LENGTH -gt 20 && $SECRET_LENGTH -lt 50 ]]; then
+                  echo "   ⚠️ Secret format appears acceptable ($(($SECRET_LENGTH - 1)) characters)"
                 else
-                  echo "   ❌ Secret format may be incorrect (${SECRET_LENGTH} characters, expected 20-50)"
+                  echo "   ❌ Secret format may be incorrect ($(($SECRET_LENGTH - 1)) characters, expected ~32)"
                 fi
                 
                 # Also test if secret is not empty
