@@ -15,8 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
   PREVIEW_TIMEOUT: 300 # 5 minutes timeout for preview deployment
+  # Clean CI logging
+  NO_COLOR: 1
+  CI: true
 
 jobs:
   # Phase 1: Wait for Vercel Preview Deployment

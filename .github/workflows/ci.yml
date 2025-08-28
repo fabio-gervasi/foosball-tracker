@@ -18,9 +18,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
   # Cache keys for consistent caching across jobs
   CACHE_KEY_PREFIX: foosball-tracker-v1
+  # Clean CI logging
+  NO_COLOR: 1
+  CI: true
 
 jobs:
   # Phase 1: Quality Gates - Comprehensive validation
