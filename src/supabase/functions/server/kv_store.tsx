@@ -12,17 +12,15 @@ CREATE TABLE kv_store_171cbf6f (
 // This file provides a simple key-value interface for storing Figma Make data. It should be adequate for most small-scale use cases.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const client = () => createClient(
-  Deno.env.get("SUPABASE_URL"),
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-);
+const client = () =>
+  createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
 
 // Set stores a key-value pair in the database.
 export const set = async (key: string, value: any): Promise<void> => {
-  const supabase = client()
-  const { error } = await supabase.from("kv_store_171cbf6f").upsert({
+  const supabase = client();
+  const { error } = await supabase.from('kv_store_171cbf6f').upsert({
     key,
-    value
+    value,
   });
   if (error) {
     throw new Error(error.message);
@@ -31,8 +29,12 @@ export const set = async (key: string, value: any): Promise<void> => {
 
 // Get retrieves a key-value pair from the database.
 export const get = async (key: string): Promise<any> => {
-  const supabase = client()
-  const { data, error } = await supabase.from("kv_store_171cbf6f").select("value").eq("key", key).maybeSingle();
+  const supabase = client();
+  const { data, error } = await supabase
+    .from('kv_store_171cbf6f')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle();
   if (error) {
     throw new Error(error.message);
   }
@@ -41,8 +43,8 @@ export const get = async (key: string): Promise<any> => {
 
 // Delete deletes a key-value pair from the database.
 export const del = async (key: string): Promise<void> => {
-  const supabase = client()
-  const { error } = await supabase.from("kv_store_171cbf6f").delete().eq("key", key);
+  const supabase = client();
+  const { error } = await supabase.from('kv_store_171cbf6f').delete().eq('key', key);
   if (error) {
     throw new Error(error.message);
   }
@@ -50,8 +52,10 @@ export const del = async (key: string): Promise<void> => {
 
 // Sets multiple key-value pairs in the database.
 export const mset = async (keys: string[], values: any[]): Promise<void> => {
-  const supabase = client()
-  const { error } = await supabase.from("kv_store_171cbf6f").upsert(keys.map((k, i) => ({ key: k, value: values[i] })));
+  const supabase = client();
+  const { error } = await supabase
+    .from('kv_store_171cbf6f')
+    .upsert(keys.map((k, i) => ({ key: k, value: values[i] })));
   if (error) {
     throw new Error(error.message);
   }
@@ -59,18 +63,18 @@ export const mset = async (keys: string[], values: any[]): Promise<void> => {
 
 // Gets multiple key-value pairs from the database.
 export const mget = async (keys: string[]): Promise<any[]> => {
-  const supabase = client()
-  const { data, error } = await supabase.from("kv_store_171cbf6f").select("value").in("key", keys);
+  const supabase = client();
+  const { data, error } = await supabase.from('kv_store_171cbf6f').select('value').in('key', keys);
   if (error) {
     throw new Error(error.message);
   }
-  return data?.map((d) => d.value) ?? [];
+  return data?.map(d => d.value) ?? [];
 };
 
 // Deletes multiple key-value pairs from the database.
 export const mdel = async (keys: string[]): Promise<void> => {
-  const supabase = client()
-  const { error } = await supabase.from("kv_store_171cbf6f").delete().in("key", keys);
+  const supabase = client();
+  const { error } = await supabase.from('kv_store_171cbf6f').delete().in('key', keys);
   if (error) {
     throw new Error(error.message);
   }
@@ -78,10 +82,13 @@ export const mdel = async (keys: string[]): Promise<void> => {
 
 // Search for key-value pairs by prefix.
 export const getByPrefix = async (prefix: string): Promise<any[]> => {
-  const supabase = client()
-  const { data, error } = await supabase.from("kv_store_171cbf6f").select("key, value").like("key", prefix + "%");
+  const supabase = client();
+  const { data, error } = await supabase
+    .from('kv_store_171cbf6f')
+    .select('key, value')
+    .like('key', `${prefix}%`);
   if (error) {
     throw new Error(error.message);
   }
-  return data?.map((d) => ({ key: d.key, value: d.value })) ?? [];
+  return data?.map(d => ({ key: d.key, value: d.value })) ?? [];
 };

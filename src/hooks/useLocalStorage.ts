@@ -39,11 +39,7 @@ export const useLocalStorage = <T>(
   key: string,
   options: LocalStorageOptions = {}
 ): UseLocalStorageReturn<T> => {
-  const {
-    serializer = defaultSerializer,
-    syncAcrossTabs = false,
-    onError,
-  } = options;
+  const { serializer = defaultSerializer, syncAcrossTabs = false, onError } = options;
 
   // State
   const [value, setValue] = useState<T | null>(null);
@@ -51,12 +47,15 @@ export const useLocalStorage = <T>(
   const [error, setError] = useState<string | null>(null);
 
   // Helper to handle errors
-  const handleError = useCallback((error: Error, operation: string) => {
-    const errorMessage = `LocalStorage ${operation} failed: ${error.message}`;
-    logger.error(errorMessage, error);
-    setError(errorMessage);
-    onError?.(error);
-  }, [onError]);
+  const handleError = useCallback(
+    (error: Error, operation: string) => {
+      const errorMessage = `LocalStorage ${operation} failed: ${error.message}`;
+      logger.error(errorMessage, error);
+      setError(errorMessage);
+      onError?.(error);
+    },
+    [onError]
+  );
 
   // Read value from localStorage
   const readValue = useCallback((): T | null => {
@@ -78,22 +77,25 @@ export const useLocalStorage = <T>(
   }, [key, serializer, handleError]);
 
   // Write value to localStorage
-  const writeValue = useCallback((newValue: T) => {
-    if (typeof window === 'undefined') {
-      return; // SSR safety
-    }
+  const writeValue = useCallback(
+    (newValue: T) => {
+      if (typeof window === 'undefined') {
+        return; // SSR safety
+      }
 
-    try {
-      const serializedValue = serializer.serialize(newValue);
-      window.localStorage.setItem(key, serializedValue);
-      setValue(newValue);
-      setError(null);
+      try {
+        const serializedValue = serializer.serialize(newValue);
+        window.localStorage.setItem(key, serializedValue);
+        setValue(newValue);
+        setError(null);
 
-      logger.debug('LocalStorage write successful', { key, hasValue: true });
-    } catch (error) {
-      handleError(error as Error, 'write');
-    }
-  }, [key, serializer, handleError]);
+        logger.debug('LocalStorage write successful', { key, hasValue: true });
+      } catch (error) {
+        handleError(error as Error, 'write');
+      }
+    },
+    [key, serializer, handleError]
+  );
 
   // Remove value from localStorage
   const removeValue = useCallback(() => {
@@ -113,16 +115,22 @@ export const useLocalStorage = <T>(
   }, [key, handleError]);
 
   // Update value with function
-  const updateValue = useCallback((updater: (current: T | null) => T) => {
-    const currentValue = readValue();
-    const newValue = updater(currentValue);
-    writeValue(newValue);
-  }, [readValue, writeValue]);
+  const updateValue = useCallback(
+    (updater: (current: T | null) => T) => {
+      const currentValue = readValue();
+      const newValue = updater(currentValue);
+      writeValue(newValue);
+    },
+    [readValue, writeValue]
+  );
 
   // Get value with default
-  const getValueWithDefault = useCallback((defaultValue: T): T => {
-    return value ?? defaultValue;
-  }, [value]);
+  const getValueWithDefault = useCallback(
+    (defaultValue: T): T => {
+      return value ?? defaultValue;
+    },
+    [value]
+  );
 
   // Initialize value on mount
   useEffect(() => {
@@ -219,20 +227,26 @@ export const useFormStorage = <T extends Record<string, any>>(formId: string) =>
 export const useRecentItems = <T>(maxItems: number = 10) => {
   const storage = useLocalStorage<T[]>('recent-items');
 
-  const addItem = useCallback((item: T) => {
-    storage.updateValue((current) => {
-      const items = current || [];
-      const filtered = items.filter(i => JSON.stringify(i) !== JSON.stringify(item));
-      return [item, ...filtered].slice(0, maxItems);
-    });
-  }, [storage, maxItems]);
+  const addItem = useCallback(
+    (item: T) => {
+      storage.updateValue(current => {
+        const items = current || [];
+        const filtered = items.filter(i => JSON.stringify(i) !== JSON.stringify(item));
+        return [item, ...filtered].slice(0, maxItems);
+      });
+    },
+    [storage, maxItems]
+  );
 
-  const removeItem = useCallback((item: T) => {
-    storage.updateValue((current) => {
-      const items = current || [];
-      return items.filter(i => JSON.stringify(i) !== JSON.stringify(item));
-    });
-  }, [storage]);
+  const removeItem = useCallback(
+    (item: T) => {
+      storage.updateValue(current => {
+        const items = current || [];
+        return items.filter(i => JSON.stringify(i) !== JSON.stringify(item));
+      });
+    },
+    [storage]
+  );
 
   return {
     ...storage,

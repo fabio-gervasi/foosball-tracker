@@ -64,8 +64,8 @@ export interface ErrorComponentProps {
  */
 export interface StandardComponentProps
   extends BaseComponentProps,
-          LoadingComponentProps,
-          ErrorComponentProps {
+    LoadingComponentProps,
+    ErrorComponentProps {
   /** Optional className for styling */
   className?: string;
   /** Optional children */

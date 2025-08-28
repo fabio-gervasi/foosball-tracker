@@ -39,109 +39,112 @@ export enum ErrorCategory {
   CLIENT = 'CLIENT',
   TIMEOUT = 'TIMEOUT',
   CANCELLED = 'CANCELLED',
-  UNKNOWN = 'UNKNOWN'
+  UNKNOWN = 'UNKNOWN',
 }
 
 // Error code mappings for user-friendly messages
-const ERROR_MESSAGES: Record<string, { message: string; action?: string; severity: ErrorSeverity }> = {
+const ERROR_MESSAGES: Record<
+  string,
+  { message: string; action?: string; severity: ErrorSeverity }
+> = {
   // Network errors
-  'NETWORK_ERROR': {
+  NETWORK_ERROR: {
     message: 'Unable to connect to the server. Please check your internet connection.',
     action: 'Check your internet connection and try again.',
-    severity: 'error'
+    severity: 'error',
   },
-  'REQUEST_TIMEOUT': {
+  REQUEST_TIMEOUT: {
     message: 'The request is taking longer than expected.',
     action: 'Please try again in a moment.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  'SERVER_UNAVAILABLE': {
+  SERVER_UNAVAILABLE: {
     message: 'The server is temporarily unavailable.',
     action: 'Please try again in a few minutes.',
-    severity: 'error'
+    severity: 'error',
   },
-  
+
   // Authentication errors
-  'AUTH_REQUIRED': {
+  AUTH_REQUIRED: {
     message: 'You need to sign in to access this feature.',
     action: 'Please sign in to continue.',
-    severity: 'info'
+    severity: 'info',
   },
-  'AUTH_EXPIRED': {
+  AUTH_EXPIRED: {
     message: 'Your session has expired.',
     action: 'Please sign in again.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  'AUTH_INVALID': {
+  AUTH_INVALID: {
     message: 'Your credentials are invalid.',
     action: 'Please check your email and password.',
-    severity: 'error'
+    severity: 'error',
   },
-  
+
   // Authorization errors
-  'ACCESS_DENIED': {
-    message: 'You don\'t have permission to perform this action.',
+  ACCESS_DENIED: {
+    message: "You don't have permission to perform this action.",
     action: 'Contact an administrator if you need access.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  'INSUFFICIENT_PERMISSIONS': {
-    message: 'You don\'t have sufficient permissions.',
+  INSUFFICIENT_PERMISSIONS: {
+    message: "You don't have sufficient permissions.",
     action: 'Contact an administrator for assistance.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  
+
   // Validation errors
-  'VALIDATION_ERROR': {
+  VALIDATION_ERROR: {
     message: 'Please check the information you entered.',
     action: 'Correct the highlighted fields and try again.',
-    severity: 'info'
+    severity: 'info',
   },
-  'REQUIRED_FIELD': {
+  REQUIRED_FIELD: {
     message: 'Some required fields are missing.',
     action: 'Please fill in all required fields.',
-    severity: 'info'
+    severity: 'info',
   },
-  'INVALID_FORMAT': {
+  INVALID_FORMAT: {
     message: 'Some fields have invalid formats.',
     action: 'Please check the format of your entries.',
-    severity: 'info'
+    severity: 'info',
   },
-  
+
   // Server errors
-  'SERVER_ERROR': {
+  SERVER_ERROR: {
     message: 'Something went wrong on our end.',
     action: 'Please try again later or contact support if the problem persists.',
-    severity: 'error'
+    severity: 'error',
   },
-  'NOT_FOUND': {
+  NOT_FOUND: {
     message: 'The requested resource was not found.',
     action: 'Please check the URL or contact support.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  'CONFLICT': {
+  CONFLICT: {
     message: 'This action conflicts with existing data.',
     action: 'Please refresh the page and try again.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  
+
   // Client errors
-  'INVALID_REQUEST': {
+  INVALID_REQUEST: {
     message: 'The request format is invalid.',
     action: 'Please try again or contact support.',
-    severity: 'error'
+    severity: 'error',
   },
-  'RATE_LIMITED': {
+  RATE_LIMITED: {
     message: 'Too many requests. Please slow down.',
     action: 'Wait a moment before trying again.',
-    severity: 'warning'
+    severity: 'warning',
   },
-  
+
   // Generic fallback
-  'UNKNOWN_ERROR': {
+  UNKNOWN_ERROR: {
     message: 'An unexpected error occurred.',
     action: 'Please try again or contact support if the problem persists.',
-    severity: 'error'
-  }
+    severity: 'error',
+  },
 };
 
 // HTTP status code to error code mapping
@@ -170,30 +173,33 @@ class ErrorHandler {
     if (error.name === 'AbortError') {
       return ErrorCategory.CANCELLED;
     }
-    
+
     if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
       return ErrorCategory.TIMEOUT;
     }
-    
-    if (error.message?.includes('network') || error.message?.includes('Network') || 
-        error.message?.includes('fetch')) {
+
+    if (
+      error.message?.includes('network') ||
+      error.message?.includes('Network') ||
+      error.message?.includes('fetch')
+    ) {
       return ErrorCategory.NETWORK;
     }
-    
+
     if (error.status) {
       if (error.status === 401) return ErrorCategory.AUTHENTICATION;
       if (error.status === 403) return ErrorCategory.AUTHORIZATION;
       if (error.status >= 400 && error.status < 500) return ErrorCategory.CLIENT;
       if (error.status >= 500) return ErrorCategory.SERVER;
     }
-    
+
     if (error.message?.toLowerCase().includes('validation')) {
       return ErrorCategory.VALIDATION;
     }
-    
+
     return ErrorCategory.UNKNOWN;
   }
-  
+
   /**
    * Extract error code from error object
    */
@@ -202,12 +208,12 @@ class ErrorHandler {
     if (error.code) {
       return error.code;
     }
-    
+
     // Map HTTP status codes
     if (error.status && STATUS_CODE_MAPPING[error.status]) {
       return STATUS_CODE_MAPPING[error.status];
     }
-    
+
     // Map based on category
     switch (category) {
       case ErrorCategory.NETWORK:
@@ -230,45 +236,44 @@ class ErrorHandler {
         return 'UNKNOWN_ERROR';
     }
   }
-  
+
   /**
    * Determine if error is recoverable (can be retried)
    */
   private isRecoverable(error: any, category: ErrorCategory): boolean {
     // Never retry authentication or authorization errors
-    if (category === ErrorCategory.AUTHENTICATION || 
-        category === ErrorCategory.AUTHORIZATION) {
+    if (category === ErrorCategory.AUTHENTICATION || category === ErrorCategory.AUTHORIZATION) {
       return false;
     }
-    
+
     // Never retry validation errors
     if (category === ErrorCategory.VALIDATION) {
       return false;
     }
-    
+
     // Never retry cancelled requests
     if (category === ErrorCategory.CANCELLED) {
       return false;
     }
-    
+
     // Retry network and timeout errors
     if (category === ErrorCategory.NETWORK || category === ErrorCategory.TIMEOUT) {
       return true;
     }
-    
+
     // Retry server errors (5xx)
     if (category === ErrorCategory.SERVER) {
       return true;
     }
-    
+
     // Don't retry client errors (4xx) except for specific cases
     if (category === ErrorCategory.CLIENT) {
       return error.status === 408 || error.status === 429; // Timeout or rate limit
     }
-    
+
     return false;
   }
-  
+
   /**
    * Main error processing function
    */
@@ -276,10 +281,10 @@ class ErrorHandler {
     const category = this.categorizeError(error);
     const code = this.extractErrorCode(error, category);
     const recoverable = this.isRecoverable(error, category);
-    
+
     // Get user-friendly message
     const errorInfo = ERROR_MESSAGES[code] || ERROR_MESSAGES['UNKNOWN_ERROR'];
-    
+
     // Create enhanced error object
     const userFriendlyError: UserFriendlyError = {
       name: 'UserFriendlyError',
@@ -291,10 +296,11 @@ class ErrorHandler {
       originalError: error,
       context,
     };
-    
+
     // Log error with appropriate level
-    const logLevel = errorInfo.severity === 'critical' || errorInfo.severity === 'error' ? 'error' : 'warn';
-    
+    const logLevel =
+      errorInfo.severity === 'critical' || errorInfo.severity === 'error' ? 'error' : 'warn';
+
     if (logLevel === 'error') {
       logger.error('API Error processed', {
         code,
@@ -302,7 +308,7 @@ class ErrorHandler {
         recoverable,
         severity: errorInfo.severity,
         originalMessage: error.message,
-        context
+        context,
       });
     } else {
       logger.warn('API Warning processed', {
@@ -311,29 +317,29 @@ class ErrorHandler {
         recoverable,
         severity: errorInfo.severity,
         originalMessage: error.message,
-        context
+        context,
       });
     }
-    
+
     return userFriendlyError;
   }
-  
+
   /**
    * Handle authentication-specific errors
    */
   handleAuthError(error: any): UserFriendlyError {
     logger.debug('Processing authentication error', { error: error.message });
-    
+
     let code = 'AUTH_INVALID';
-    
+
     if (error.message?.includes('expired') || error.message?.includes('JWT')) {
       code = 'AUTH_EXPIRED';
     } else if (error.message?.includes('required') || error.message?.includes('session')) {
       code = 'AUTH_REQUIRED';
     }
-    
+
     const errorInfo = ERROR_MESSAGES[code];
-    
+
     const authError: UserFriendlyError = {
       name: 'UserFriendlyError',
       message: errorInfo.message,
@@ -343,46 +349,46 @@ class ErrorHandler {
       action: errorInfo.action,
       originalError: error,
     };
-    
+
     // Trigger auth state cleanup for expired sessions
     if (code === 'AUTH_EXPIRED') {
       // This could trigger a logout or token refresh
       logger.info('Authentication expired, may need to refresh session');
     }
-    
+
     return authError;
   }
-  
+
   /**
    * Handle validation errors from forms or API
    */
   handleValidationError(errors: ValidationError[]): Record<string, string> {
     const fieldErrors: Record<string, string> = {};
-    
+
     errors.forEach(error => {
       fieldErrors[error.field] = error.message;
-      
+
       logger.debug('Validation error processed', {
         field: error.field,
         code: error.code,
-        message: error.message
+        message: error.message,
       });
     });
-    
+
     return fieldErrors;
   }
-  
+
   /**
    * Handle network-specific errors
    */
   handleNetworkError(error: NetworkError): UserFriendlyError {
     logger.debug('Processing network error', {
       status: error.status,
-      statusText: error.statusText
+      statusText: error.statusText,
     });
-    
+
     let code = 'NETWORK_ERROR';
-    
+
     if (error.status === 0 || !navigator.onLine) {
       code = 'NETWORK_ERROR';
     } else if (error.status && error.status >= 500) {
@@ -390,9 +396,9 @@ class ErrorHandler {
     } else if (error.message?.includes('timeout')) {
       code = 'REQUEST_TIMEOUT';
     }
-    
+
     const errorInfo = ERROR_MESSAGES[code];
-    
+
     return {
       name: 'UserFriendlyError',
       message: errorInfo.message,
@@ -403,7 +409,7 @@ class ErrorHandler {
       originalError: error,
     };
   }
-  
+
   /**
    * Check if an error can be retried
    */
@@ -411,19 +417,19 @@ class ErrorHandler {
     const category = this.categorizeError(error);
     return this.isRecoverable(error, category);
   }
-  
+
   /**
    * Calculate retry delay with exponential backoff
    */
   getRetryDelay(attempt: number, baseDelay: number = 1000): number {
     const maxDelay = 30000; // 30 seconds max
     const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
-    
+
     // Add jitter to prevent thundering herd
     const jitter = Math.random() * 0.1 * delay;
     return Math.floor(delay + jitter);
   }
-  
+
   /**
    * Report error to external service (placeholder for future implementation)
    */
@@ -433,18 +439,18 @@ class ErrorHandler {
       logger.debug('Error reported for external tracking', {
         message: error.message,
         stack: error.stack,
-        context
+        context,
       });
       return;
     }
-    
+
     // In production, this could send to error tracking service
     // like Sentry, LogRocket, etc.
     try {
       // Placeholder for error reporting service
       logger.info('Error reported to tracking service', {
         message: error.message,
-        hasContext: !!context
+        hasContext: !!context,
       });
     } catch (reportingError) {
       logger.error('Failed to report error to tracking service', reportingError);

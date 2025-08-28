@@ -20,7 +20,7 @@ export {
   useUserPreferences,
   useThemePreferences,
   useFormStorage,
-  useRecentItems
+  useRecentItems,
 } from './useLocalStorage';
 
 // React Query hooks (re-export for consistency)
@@ -31,7 +31,7 @@ export {
   useMatchesQuery,
   useUserGroupsQuery,
   useAppDataQueries,
-  queryKeys
+  queryKeys,
 } from './useQueries';
 
 export {
@@ -40,7 +40,7 @@ export {
   useGroupSwitchMutation,
   useCreateGroupMutation,
   useJoinGroupMutation,
-  useRefreshDataMutation
+  useRefreshDataMutation,
 } from './useMutations';
 
 // Types
@@ -48,9 +48,19 @@ export type { UseAuthReturn, ProfileUpdateData, Permission } from './useAuth';
 export type { UseAppDataReturn, MatchData, ProfileData, GroupData, UserStats } from './useAppData';
 export type { UseApiRequestReturn, ApiRequestOptions } from './useApiRequest';
 export type { UsePermissionsReturn, PermissionLevel } from './usePermissions';
-export type { UseMatchValidationReturn, ValidationResult, ValidationError, Player, MatchValidationData } from './useMatchValidation';
+export type {
+  UseMatchValidationReturn,
+  ValidationResult,
+  ValidationError,
+  Player,
+  MatchValidationData,
+} from './useMatchValidation';
 export type { UseLocalStorageReturn, LocalStorageOptions } from './useLocalStorage';
 export type { User } from './useQueries';
 
 // Error handling types
-export type { UserFriendlyError, ValidationError as APIValidationError, NetworkError } from '../utils/errorHandler';
+export type {
+  UserFriendlyError,
+  ValidationError as APIValidationError,
+  NetworkError,
+} from '../utils/errorHandler';

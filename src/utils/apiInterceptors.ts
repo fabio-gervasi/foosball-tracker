@@ -53,7 +53,7 @@ class ApiInterceptorManager {
    */
   addRequestInterceptor(interceptor: RequestInterceptor): () => void {
     this.requestInterceptors.push(interceptor);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.requestInterceptors.indexOf(interceptor);
@@ -68,7 +68,7 @@ class ApiInterceptorManager {
    */
   addResponseInterceptor(interceptor: ResponseInterceptor): () => void {
     this.responseInterceptors.push(interceptor);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.responseInterceptors.indexOf(interceptor);
@@ -149,10 +149,10 @@ export const apiInterceptorManager = new ApiInterceptorManager();
 
 // Request ID and timing interceptor
 export const requestIdInterceptor: RequestInterceptor = {
-  onRequest: (config) => {
+  onRequest: config => {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    
+
     return {
       ...config,
       metadata: {
@@ -160,36 +160,36 @@ export const requestIdInterceptor: RequestInterceptor = {
         requestId,
         startTime,
         endpoint: config.url,
-      }
+      },
     };
-  }
+  },
 };
 
 // Request logging interceptor
 export const requestLoggingInterceptor: RequestInterceptor = {
-  onRequest: (config) => {
+  onRequest: config => {
     logger.debug('API Request intercepted', {
       method: config.method,
       url: config.url,
       requestId: config.metadata?.requestId,
       hasAuth: !!config.headers.Authorization,
-      hasBody: !!config.body
+      hasBody: !!config.body,
     });
-    
+
     return config;
   },
-  onRequestError: (error) => {
+  onRequestError: error => {
     logger.error('Request interceptor error', error);
-  }
+  },
 };
 
 // Authentication header interceptor
 export const authHeaderInterceptor: RequestInterceptor = {
-  onRequest: (config) => {
+  onRequest: config => {
     // This will be handled by useApiRequest hook, but can be extended here
     // for additional auth logic like token refresh
     return config;
-  }
+  },
 };
 
 /**
@@ -202,9 +202,9 @@ export const responseTimingInterceptor: ResponseInterceptor = {
     const endTime = Date.now();
     // The duration calculation would need access to request metadata
     // This is handled in the main API request logic
-    
+
     return data;
-  }
+  },
 };
 
 // Response logging interceptor
@@ -214,21 +214,21 @@ export const responseLoggingInterceptor: ResponseInterceptor = {
       status: response.status,
       statusText: response.statusText,
       url: response.url,
-      hasData: !!data
+      hasData: !!data,
     });
-    
+
     return data;
   },
-  onResponseError: (error) => {
+  onResponseError: error => {
     const processedError = handleApiError(error);
-    
+
     logger.debug('API Error intercepted', {
       code: processedError.code,
       severity: processedError.severity,
       recoverable: processedError.recoverable,
-      message: processedError.message
+      message: processedError.message,
     });
-  }
+  },
 };
 
 // Data transformation interceptor
@@ -238,21 +238,21 @@ export const dataTransformInterceptor: ResponseInterceptor = {
     if (data && typeof data === 'object') {
       // Transform timestamps to Date objects if needed
       const transformedData = transformTimestamps(data);
-      
+
       // Normalize response structure if needed
       return normalizeResponseData(transformedData);
     }
-    
+
     return data;
-  }
+  },
 };
 
 // Error standardization interceptor
 export const errorStandardizationInterceptor: ResponseInterceptor = {
-  onResponseError: (error) => {
+  onResponseError: error => {
     // Ensure all errors are processed through our error handler
     return handleApiError(error);
-  }
+  },
 };
 
 /**
@@ -270,7 +270,7 @@ function transformTimestamps(obj: any): any {
   }
 
   const transformed: any = {};
-  
+
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string' && isISODateString(value)) {
       transformed[key] = new Date(value);
@@ -298,7 +298,7 @@ function normalizeResponseData(data: any): any {
     if ('data' in data && Object.keys(data).length === 1) {
       return data.data;
     }
-    
+
     // Handle pagination responses
     if ('items' in data && 'total' in data) {
       return {
@@ -307,8 +307,8 @@ function normalizeResponseData(data: any): any {
           total: data.total,
           page: data.page || 1,
           limit: data.limit || data.items.length,
-          hasMore: data.hasMore || false
-        }
+          hasMore: data.hasMore || false,
+        },
       };
     }
   }

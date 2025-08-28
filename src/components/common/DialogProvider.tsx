@@ -1,5 +1,10 @@
 import React, { createContext, useContext } from 'react';
-import { useDialogs, UseDialogsReturn, ConfirmDialogConfig, AlertConfig } from '../../hooks/useDialogs';
+import {
+  useDialogs,
+  UseDialogsReturn,
+  ConfirmDialogConfig,
+  AlertConfig,
+} from '../../hooks/useDialogs';
 import { ConfirmDialog } from './ConfirmDialog';
 import { CustomAlertDialog } from './AlertDialog';
 
@@ -52,7 +57,7 @@ export function DialogProvider({ children }: DialogProviderProps) {
   return (
     <DialogContext.Provider value={dialogMethods}>
       {children}
-      
+
       {/* Confirm Dialog */}
       {dialogState?.type === 'confirm' && (
         <ConfirmDialog
@@ -63,7 +68,7 @@ export function DialogProvider({ children }: DialogProviderProps) {
           onCancel={handleCancel}
         />
       )}
-      
+
       {/* Alert Dialog */}
       {dialogState?.type === 'alert' && (
         <CustomAlertDialog

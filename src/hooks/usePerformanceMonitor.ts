@@ -32,7 +32,7 @@ export function usePerformanceMonitor(componentName: string) {
       const metrics: PerformanceMetrics = {
         renderTime,
         componentName,
-        timestamp: endTime
+        timestamp: endTime,
       };
 
       metricsHistory.current.push(metrics);
@@ -42,7 +42,7 @@ export function usePerformanceMonitor(componentName: string) {
         componentName,
         renderTime,
         memory: getMemoryUsage(),
-        timestamp: endTime
+        timestamp: endTime,
       });
 
       // Keep only last 10 measurements
@@ -63,7 +63,7 @@ export function usePerformanceMonitor(componentName: string) {
       return {
         used: Math.round(memory.usedJSHeapSize / 1024 / 1024),
         total: Math.round(memory.totalJSHeapSize / 1024 / 1024),
-        limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024)
+        limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024),
       };
     }
     return null;
@@ -85,7 +85,7 @@ export function usePerformanceMonitor(componentName: string) {
       avgRenderTime: Number(avgRenderTime.toFixed(2)),
       maxRenderTime: Number(maxRenderTime.toFixed(2)),
       minRenderTime: Number(minRenderTime.toFixed(2)),
-      memory: getMemoryUsage()
+      memory: getMemoryUsage(),
     };
   }, [componentName, getMemoryUsage]);
 
@@ -126,6 +126,6 @@ export function usePerformanceMonitor(componentName: string) {
     endMeasurement,
     getMemoryUsage,
     getPerformanceSummary,
-    reportMetrics
+    reportMetrics,
   };
 }

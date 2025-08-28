@@ -21,7 +21,7 @@ export enum PermissionLevel {
   GUEST = 0,
   MEMBER = 1,
   ADMIN = 2,
-  SUPER_ADMIN = 3
+  SUPER_ADMIN = 3,
 }
 
 export interface UsePermissionsReturn {
@@ -185,7 +185,7 @@ export const usePermissions = (): UsePermissionsReturn => {
       if (!isLoggedIn) {
         return {
           allowed: false,
-          reason: 'Authentication required'
+          reason: 'Authentication required',
         };
       }
 
@@ -200,14 +200,14 @@ export const usePermissions = (): UsePermissionsReturn => {
           case 'delete_matches':
             return {
               allowed: false,
-              reason: 'Administrator privileges required'
+              reason: 'Administrator privileges required',
             };
 
           case 'submit_matches':
             if (!currentUser?.currentGroup) {
               return {
                 allowed: false,
-                reason: 'Must be a member of a group to submit matches'
+                reason: 'Must be a member of a group to submit matches',
               };
             }
             break;
@@ -215,7 +215,7 @@ export const usePermissions = (): UsePermissionsReturn => {
           default:
             return {
               allowed: false,
-              reason: 'Insufficient permissions'
+              reason: 'Insufficient permissions',
             };
         }
       }

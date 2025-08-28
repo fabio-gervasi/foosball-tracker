@@ -6,7 +6,11 @@ const isServer = typeof Deno !== 'undefined';
 const isBrowser = typeof window !== 'undefined';
 
 export function generateAvatar(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
 }
 
 export function generateGroupCode(): string {
@@ -26,7 +30,7 @@ export function usernameToEmail(username: string): string {
   }
 
   // Use the more robust server version of sanitization
-  let sanitizedUsername = username
+  const sanitizedUsername = username
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '.') // Replace spaces with dots

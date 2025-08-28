@@ -17,30 +17,41 @@ interface CustomAlertDialogProps {
   onAction: () => void;
 }
 
-export function CustomAlertDialog({ 
-  open, 
-  onOpenChange, 
-  config, 
-  onAction 
+export function CustomAlertDialog({
+  open,
+  onOpenChange,
+  config,
+  onAction,
 }: CustomAlertDialogProps) {
-  const {
-    title,
-    description,
-    variant = 'info',
-    actionText = 'OK'
-  } = config;
+  const { title, description, variant = 'info', actionText = 'OK' } = config;
 
   const getVariantIcon = () => {
     switch (variant) {
       case 'success':
-        return <span className="text-green-500" role="img" aria-label="Success">✅</span>;
+        return (
+          <span className='text-green-500' role='img' aria-label='Success'>
+            ✅
+          </span>
+        );
       case 'error':
-        return <span className="text-red-500" role="img" aria-label="Error">❌</span>;
+        return (
+          <span className='text-red-500' role='img' aria-label='Error'>
+            ❌
+          </span>
+        );
       case 'warning':
-        return <span className="text-yellow-500" role="img" aria-label="Warning">⚠️</span>;
+        return (
+          <span className='text-yellow-500' role='img' aria-label='Warning'>
+            ⚠️
+          </span>
+        );
       case 'info':
       default:
-        return <span className="text-blue-500" role="img" aria-label="Information">ℹ️</span>;
+        return (
+          <span className='text-blue-500' role='img' aria-label='Information'>
+            ℹ️
+          </span>
+        );
     }
   };
 
@@ -60,21 +71,16 @@ export function CustomAlertDialog({
 
   return (
     <ShadcnAlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-md">
+      <AlertDialogContent className='sm:max-w-md'>
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
+          <AlertDialogTitle className='flex items-center gap-2'>
             {getVariantIcon()}
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-left">
-            {description}
-          </AlertDialogDescription>
+          <AlertDialogDescription className='text-left'>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction
-            onClick={onAction}
-            className={getVariantStyles()}
-          >
+          <AlertDialogAction onClick={onAction} className={getVariantStyles()}>
             {actionText}
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -1,0 +1,5 @@
+# Run lint-staged (prettier + eslint on staged files)
+npx lint-staged
+
+# Run tests to ensure nothing is broken
+npm run test:run

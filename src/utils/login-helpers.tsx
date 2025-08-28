@@ -43,7 +43,7 @@ export const validateEmail = (email: string): string | null => {
   return null; // Valid email
 };
 
-export const checkServerStatus = async (): Promise<{ isHealthy: boolean, isLoading: boolean }> => {
+export const checkServerStatus = async (): Promise<{ isHealthy: boolean; isLoading: boolean }> => {
   try {
     logger.debug('Starting Server Status Check', { baseUrl: API_BASE_URL });
 
@@ -64,8 +64,8 @@ export const checkServerStatus = async (): Promise<{ isHealthy: boolean, isLoadi
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`
-          }
+            Authorization: `Bearer ${publicAnonKey}`,
+          },
         });
         logger.debug('Direct health check completed', { status: directResponse.status });
 
@@ -74,8 +74,13 @@ export const checkServerStatus = async (): Promise<{ isHealthy: boolean, isLoadi
           logger.info('Direct health check successful', { hasData: !!healthData });
           return { isHealthy: true, isLoading: false };
         } else {
-          const errorData = await directResponse.json().catch(() => ({ error: 'Unable to parse error' }));
-          logger.error('Direct health check failed', { status: directResponse.status, error: errorData });
+          const errorData = await directResponse
+            .json()
+            .catch(() => ({ error: 'Unable to parse error' }));
+          logger.error('Direct health check failed', {
+            status: directResponse.status,
+            error: errorData,
+          });
         }
       } catch (directError) {
         logger.error('Direct fetch also failed', directError);
@@ -83,7 +88,6 @@ export const checkServerStatus = async (): Promise<{ isHealthy: boolean, isLoadi
 
       throw apiError;
     }
-
   } catch (error) {
     logger.error('All server checks failed', error);
     return { isHealthy: false, isLoading: false };
@@ -98,7 +102,10 @@ export const transformErrorMessage = (errorMessage: string, isSignup: boolean): 
     return isSignup
       ? 'Failed to create account. Please try a different username.'
       : 'Invalid username or password. Please check your credentials.';
-  } else if (errorMessage.includes('User already registered') || errorMessage.includes('Username already exists')) {
+  } else if (
+    errorMessage.includes('User already registered') ||
+    errorMessage.includes('Username already exists')
+  ) {
     return 'This username is already taken. Try signing in or choose a different username.';
   } else if (errorMessage.includes('validation_failed')) {
     return 'Invalid username format. Use only letters, numbers, spaces, dots, underscores, hyphens, and apostrophes.';
