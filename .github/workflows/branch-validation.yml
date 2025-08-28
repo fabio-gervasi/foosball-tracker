@@ -1,0 +1,296 @@
+# Foosball Tracker - Branch Naming and PR Target Validation
+# Feature Branch Workflow Automation - REQ-5.2 Enhancement
+# Enforces branch naming conventions and validates PR targets
+
+name: Branch Validation
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, dev]
+
+# Permissions needed for the workflow
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+# Cancel previous runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Clean CI logging
+  NO_COLOR: 1
+  CI: true
+
+jobs:
+  # Phase 1: Branch Naming Convention Validation
+  validate-branch-name:
+    name: 🌿 Branch Naming Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only run on push events (not PRs, as we validate PR source branch separately)
+    if: github.event_name == 'push'
+
+    steps:
+      - name: 🔍 Validate Branch Name
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "🌿 Validating branch name: $BRANCH_NAME"
+
+          # Define acceptable branch patterns
+          VALID_PATTERNS=(
+            "^feature/.+"
+            "^bugfix/.+"
+            "^hotfix/.+"
+            "^req-[0-9]+-[0-9]+-.+"
+          )
+
+          # Check if branch matches any valid pattern
+          VALID=false
+          MATCHED_PATTERN=""
+
+          for pattern in "${VALID_PATTERNS[@]}"; do
+            if [[ $BRANCH_NAME =~ $pattern ]]; then
+              VALID=true
+              MATCHED_PATTERN=$pattern
+              break
+            fi
+          done
+
+          if [ "$VALID" = true ]; then
+            echo "✅ Branch name '$BRANCH_NAME' follows naming convention"
+            echo "📋 Matched pattern: $MATCHED_PATTERN"
+
+            # Provide guidance based on branch type
+            if [[ $BRANCH_NAME =~ ^feature/.+ ]]; then
+              echo "🎯 Feature branch detected - should target 'dev' branch for PRs"
+            elif [[ $BRANCH_NAME =~ ^bugfix/.+ ]]; then
+              echo "🐛 Bugfix branch detected - should target 'dev' branch for PRs"
+            elif [[ $BRANCH_NAME =~ ^hotfix/.+ ]]; then
+              echo "🚨 Hotfix branch detected - can target 'main' or 'dev' branch for PRs"
+            elif [[ $BRANCH_NAME =~ ^req-[0-9]+-[0-9]+-.+ ]]; then
+              echo "📋 REQ implementation branch detected - should target 'dev' branch for PRs"
+            fi
+          else
+            echo "❌ Branch name '$BRANCH_NAME' does not follow naming conventions"
+            echo ""
+            echo "📋 Acceptable branch naming patterns:"
+            echo "  - feature/{description}        # New features"
+            echo "  - bugfix/{description}         # Bug fixes"
+            echo "  - hotfix/{description}         # Emergency fixes"
+            echo "  - req-{x}-{x}-{description}    # REQ implementation branches"
+            echo ""
+            echo "📝 Examples:"
+            echo "  - feature/user-authentication"
+            echo "  - feature/enhanced-dashboard"
+            echo "  - bugfix/login-validation-error"
+            echo "  - hotfix/security-patch"
+            echo "  - req-5-2-branch-workflow-automation"
+            echo ""
+            echo "🔧 To fix this:"
+            echo "  1. Create a new branch with proper naming: git checkout -b feature/your-feature-name"
+            echo "  2. Copy your changes to the new branch"
+            echo "  3. Delete this branch and push the new one"
+            echo ""
+            exit 1
+          fi
+
+  # Phase 2: Pull Request Target Validation
+  validate-pr-target:
+    name: 🎯 PR Target Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only run on pull request events
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: 🎯 Validate PR Target Branch
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          TARGET_BRANCH="${{ github.base_ref }}"
+
+          echo "🔍 Validating PR target:"
+          echo "  Source: $SOURCE_BRANCH"
+          echo "  Target: $TARGET_BRANCH"
+
+          # Validate PR target based on source branch pattern
+          VALID_TARGET=false
+          ERROR_MESSAGE=""
+
+          if [[ $SOURCE_BRANCH =~ ^feature/.+ ]]; then
+            if [[ $TARGET_BRANCH == "dev" ]]; then
+              VALID_TARGET=true
+              echo "✅ Feature branch correctly targeting 'dev' branch"
+            else
+              ERROR_MESSAGE="❌ Feature branches must target 'dev' branch (not '$TARGET_BRANCH')"
+            fi
+
+          elif [[ $SOURCE_BRANCH =~ ^bugfix/.+ ]]; then
+            if [[ $TARGET_BRANCH == "dev" ]]; then
+              VALID_TARGET=true
+              echo "✅ Bugfix branch correctly targeting 'dev' branch"
+            else
+              ERROR_MESSAGE="❌ Bugfix branches must target 'dev' branch (not '$TARGET_BRANCH')"
+            fi
+
+          elif [[ $SOURCE_BRANCH =~ ^req-[0-9]+-[0-9]+-.+ ]]; then
+            if [[ $TARGET_BRANCH == "dev" ]]; then
+              VALID_TARGET=true
+              echo "✅ REQ implementation branch correctly targeting 'dev' branch"
+            else
+              ERROR_MESSAGE="❌ REQ implementation branches must target 'dev' branch (not '$TARGET_BRANCH')"
+            fi
+
+          elif [[ $SOURCE_BRANCH =~ ^hotfix/.+ ]]; then
+            if [[ $TARGET_BRANCH == "main" || $TARGET_BRANCH == "dev" ]]; then
+              VALID_TARGET=true
+              echo "✅ Hotfix branch correctly targeting '$TARGET_BRANCH' branch"
+              if [[ $TARGET_BRANCH == "main" ]]; then
+                echo "🚨 Emergency hotfix detected - ensure proper review and testing"
+              fi
+            else
+              ERROR_MESSAGE="❌ Hotfix branches must target 'main' or 'dev' branch (not '$TARGET_BRANCH')"
+            fi
+
+          elif [[ $SOURCE_BRANCH == "dev" ]]; then
+            if [[ $TARGET_BRANCH == "main" ]]; then
+              VALID_TARGET=true
+              echo "✅ Dev branch correctly targeting 'main' branch for production deployment"
+              echo "🚀 Production deployment PR detected"
+            else
+              ERROR_MESSAGE="❌ Dev branch must target 'main' branch for production deployment (not '$TARGET_BRANCH')"
+            fi
+
+          else
+            # Branch name doesn't follow conventions - this should be caught by branch naming validation
+            echo "⚠️ Source branch '$SOURCE_BRANCH' doesn't follow naming conventions"
+            echo "   This should be caught by branch naming validation"
+            VALID_TARGET=true  # Don't fail here, let branch naming validation handle it
+          fi
+
+          if [ "$VALID_TARGET" = false ]; then
+            echo "$ERROR_MESSAGE"
+            echo ""
+            echo "📋 Correct PR Target Rules:"
+            echo "  - feature/* branches    → dev branch"
+            echo "  - bugfix/* branches     → dev branch"
+            echo "  - req-*-*-* branches    → dev branch"
+            echo "  - hotfix/* branches     → main or dev branch"
+            echo "  - dev branch            → main branch"
+            echo ""
+            echo "🔧 To fix this PR:"
+            echo "  1. Close this PR"
+            echo "  2. Create a new PR with the correct target branch"
+            echo "  3. Or change the base branch of this PR in GitHub UI"
+            echo ""
+            echo "💡 Why these rules exist:"
+            echo "  - Feature/bugfix changes should be tested on dev first"
+            echo "  - Only dev branch should merge to main (production)"
+            echo "  - Hotfixes can go directly to main in emergencies"
+            echo ""
+            exit 1
+          fi
+
+  # Phase 3: Workflow Guidance
+  provide-guidance:
+    name: 📚 Workflow Guidance
+    runs-on: ubuntu-latest
+    needs: [validate-branch-name, validate-pr-target]
+    if: always() && github.event_name == 'pull_request'
+    timeout-minutes: 5
+
+    steps:
+      - name: 💬 Comment PR with Workflow Guidance
+        if: ${{ (needs.validate-branch-name.result == 'failure') || (needs.validate-pr-target.result == 'failure') }}
+        run: |
+          echo "🎯 Feature branch workflow validation failed - providing guidance"
+          echo "Source branch: ${{ github.head_ref }}"
+          echo "Target branch: ${{ github.base_ref }}"
+          echo "Branch naming result: ${{ needs.validate-branch-name.result }}"
+          echo "PR target result: ${{ needs.validate-pr-target.result }}"
+
+          # This step provides guidance in the workflow logs
+          # In a production environment, you could add a GitHub API call here
+          # to comment on the PR with detailed guidance
+
+  # Phase 4: Success Summary
+  validation-summary:
+    name: 📊 Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-branch-name, validate-pr-target]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: 📊 Generate Validation Summary
+        run: |
+          echo "# 🌿 Feature Branch Workflow Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Branch naming results
+          if [ "${{ needs.validate-branch-name.result }}" == "success" ]; then
+            echo "✅ **Branch Naming**: Follows conventions" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.validate-branch-name.result }}" == "skipped" ]; then
+            echo "⏭️ **Branch Naming**: Skipped (PR event)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Branch Naming**: Validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # PR target results
+          if [ "${{ needs.validate-pr-target.result }}" == "success" ]; then
+            echo "✅ **PR Target**: Correct target branch" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.validate-pr-target.result }}" == "skipped" ]; then
+            echo "⏭️ **PR Target**: Skipped (push event)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **PR Target**: Invalid target branch" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "- Ensure all validation checks pass" >> $GITHUB_STEP_SUMMARY
+            echo "- Wait for quality gates and preview testing" >> $GITHUB_STEP_SUMMARY
+            echo "- Request code review from team members" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Create a pull request with proper target branch" >> $GITHUB_STEP_SUMMARY
+            echo "- Follow feature branch workflow guidelines" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Generated by Feature Branch Workflow Automation v0.8.1_" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🎯 Final Status Check
+        run: |
+          BRANCH_NAME_RESULT="${{ needs.validate-branch-name.result }}"
+          PR_TARGET_RESULT="${{ needs.validate-pr-target.result }}"
+
+          # Determine overall success
+          SUCCESS=true
+
+          if [ "$BRANCH_NAME_RESULT" == "failure" ]; then
+            SUCCESS=false
+            echo "❌ Branch naming validation failed"
+          fi
+
+          if [ "$PR_TARGET_RESULT" == "failure" ]; then
+            SUCCESS=false
+            echo "❌ PR target validation failed"
+          fi
+
+          if [ "$SUCCESS" = true ]; then
+            echo "🎉 All feature branch workflow validations passed!"
+            echo "✅ Ready for quality gates and code review"
+          else
+            echo "❌ Feature branch workflow validation failed"
+            echo "📋 Please review the errors above and fix the issues"
+            echo "💡 See workflow guidance for detailed instructions"
+            exit 1
+          fi

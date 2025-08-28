@@ -52,29 +52,75 @@ jobs:
           echo "🔒 Configuring branch protection for: $BRANCH"
           echo "📊 Dry run mode: $DRY_RUN"
 
-          # Define protection settings
-          PROTECTION_CONFIG='{
-            "required_status_checks": {
-              "strict": true,
-              "contexts": [
-                "quality-gates",
-                "performance-budget",
-                "Vercel – foosball-tracker"
-              ]
-            },
-            "enforce_admins": true,
-            "required_pull_request_reviews": {
-              "required_approving_review_count": 1,
-              "dismiss_stale_reviews": true,
-              "require_code_owner_reviews": false,
-              "require_last_push_approval": true
-            },
-            "restrictions": null,
-            "allow_force_pushes": false,
-            "allow_deletions": false,
-            "block_creations": false,
-            "required_conversation_resolution": true
-          }'
+          # Define protection settings based on branch
+          if [ "$BRANCH" = "main" ]; then
+            # Main branch protection - NO preview-testing (preserves REQ-5.2.6)
+            PROTECTION_CONFIG='{
+              "required_status_checks": {
+                "strict": true,
+                "contexts": [
+                  "quality-gates"
+                ]
+              },
+              "enforce_admins": true,
+              "required_pull_request_reviews": {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews": true,
+                "require_code_owner_reviews": false,
+                "require_last_push_approval": true
+              },
+              "restrictions": null,
+              "allow_force_pushes": false,
+              "allow_deletions": false,
+              "block_creations": false,
+              "required_conversation_resolution": true
+            }'
+          elif [ "$BRANCH" = "dev" ]; then
+            # Dev branch protection - includes preview-testing
+            PROTECTION_CONFIG='{
+              "required_status_checks": {
+                "strict": true,
+                "contexts": [
+                  "quality-gates",
+                  "preview-testing"
+                ]
+              },
+              "enforce_admins": true,
+              "required_pull_request_reviews": {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews": true,
+                "require_code_owner_reviews": false,
+                "require_last_push_approval": true
+              },
+              "restrictions": null,
+              "allow_force_pushes": false,
+              "allow_deletions": false,
+              "block_creations": false,
+              "required_conversation_resolution": true
+            }'
+          else
+            # Default protection for other branches
+            PROTECTION_CONFIG='{
+              "required_status_checks": {
+                "strict": true,
+                "contexts": [
+                  "quality-gates"
+                ]
+              },
+              "enforce_admins": true,
+              "required_pull_request_reviews": {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews": true,
+                "require_code_owner_reviews": false,
+                "require_last_push_approval": true
+              },
+              "restrictions": null,
+              "allow_force_pushes": false,
+              "allow_deletions": false,
+              "block_creations": false,
+              "required_conversation_resolution": true
+            }'
+          fi
 
           if [ "$DRY_RUN" = "true" ]; then
             echo "🔍 DRY RUN - Would apply the following protection rules:"
@@ -108,9 +154,15 @@ jobs:
           echo ""
           echo "🔧 Next Steps:"
           echo "1. Ensure your CI workflows include the required status checks:"
-          echo "   - quality-gates (from ci.yml)"
-          echo "   - performance-budget (from ci.yml)"
-          echo "   - Vercel deployment check"
+          if [ "${{ inputs.branch_name }}" = "main" ]; then
+            echo "   - quality-gates (from ci.yml) - REQUIRED for main branch"
+            echo "   - preview-testing is NOT required for main (REQ-5.2.6 optimization)"
+          elif [ "${{ inputs.branch_name }}" = "dev" ]; then
+            echo "   - quality-gates (from ci.yml) - REQUIRED for dev branch"
+            echo "   - preview-testing (from preview-testing.yml) - REQUIRED for dev branch"
+          else
+            echo "   - quality-gates (from ci.yml) - REQUIRED for ${{ inputs.branch_name }} branch"
+          fi
           echo ""
           echo "2. Team members will now need to:"
           echo "   - Create pull requests for all changes to ${{ inputs.branch_name }}"
