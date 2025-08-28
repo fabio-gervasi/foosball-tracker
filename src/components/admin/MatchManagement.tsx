@@ -47,7 +47,7 @@ export function MatchManagement({
       await showSuccess('Match deleted successfully!');
     } catch (error) {
       console.error('Failed to delete match:', error);
-      onError('Failed to delete match: ' + error.message);
+      onError(`Failed to delete match: ${  error.message}`);
     }
   };
 

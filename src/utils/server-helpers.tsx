@@ -50,7 +50,7 @@ export function usernameToEmail(username: string): string {
   
   // Ensure minimum length
   if (sanitizedUsername.length < 2) {
-    sanitizedUsername = sanitizedUsername + '01'; // Add numbers to make it longer
+    sanitizedUsername = `${sanitizedUsername  }01`; // Add numbers to make it longer
   }
   
   // Convert username to fake email format for Supabase using a valid domain

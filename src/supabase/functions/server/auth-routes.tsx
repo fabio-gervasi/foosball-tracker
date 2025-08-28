@@ -271,7 +271,7 @@ export function createAuthRoutes(supabase: any) {
       // Create user in Supabase Auth using service role
       console.log('Creating user in Supabase auth...');
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: email,
+        email,
         password,
         user_metadata: { name: username },
         // Automatically confirm the user's email since an email server hasn't been configured.
@@ -290,7 +290,7 @@ export function createAuthRoutes(supabase: any) {
         id: authData.user.id,
         name: username, // Use username as the display name
         username,
-        email: email, // Store the real email provided by the user
+        email, // Store the real email provided by the user
         singlesWins: 0,
         singlesLosses: 0,
         doublesWins: 0,

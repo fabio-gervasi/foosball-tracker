@@ -56,7 +56,7 @@ export function AdminPanel({
       logger.info('Admin matches loaded', { matchCount: matchesResponse.matches?.length || 0 });
     } catch (error) {
       logger.error('Failed to load admin data', error);
-      setError('Failed to load admin data: ' + error.message);
+      setError(`Failed to load admin data: ${  error.message}`);
     } finally {
       setLoading(false);
     }

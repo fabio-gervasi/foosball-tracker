@@ -20,34 +20,32 @@ describe('AppRouter Rendering Bug Prevention', () => {
     // Test the pattern we use in AppRouter
     const mockDependencies = ['dashboard', 'user', 'token'];
 
-    // This is the CORRECT pattern (what we fixed it to):
-    const correctUseMemoPattern = () => {
+    // Mock the patterns we test (without using hooks in regular functions)
+    const correctPatternExample = `
       const renderContent = React.useMemo(() => {
         // Return JSX directly, not a function
         return <div>Dashboard Content</div>;
-      }, mockDependencies);
+      }, dependencies);
 
       // Use the memoized value directly (NOT as a function call)
       return <main>{renderContent}</main>;
-    };
+    `;
 
-    // This would be the INCORRECT pattern (the bug we fixed):
-    const incorrectUseMemoPattern = () => {
+    const incorrectPatternExample = `
       const renderContent = React.useMemo(() => {
         // Return JSX directly
         return <div>Dashboard Content</div>;
-      }, mockDependencies);
+      }, dependencies);
 
       // ❌ WRONG: Trying to call memoized value as function
-      // return <main>{renderContent()}</main>;
+      return <main>{renderContent()}</main>;
+    `;
 
-      // ✅ CORRECT: Use memoized value directly
-      return <main>{renderContent}</main>;
-    };
-
-    // Verify the patterns are functions
-    expect(typeof correctUseMemoPattern).toBe('function');
-    expect(typeof incorrectUseMemoPattern).toBe('function');
+    // Verify the pattern examples are strings (code examples)
+    expect(typeof correctPatternExample).toBe('string');
+    expect(typeof incorrectPatternExample).toBe('string');
+    expect(correctPatternExample).toContain('renderContent');
+    expect(incorrectPatternExample).toContain('renderContent()');
   });
 
   it('should document the renderCurrentView pattern', () => {

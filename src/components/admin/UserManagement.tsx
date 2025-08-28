@@ -49,7 +49,7 @@ export function UserManagement({
       await showSuccess(`User admin status ${!currentAdminStatus ? 'granted' : 'revoked'} successfully!`);
     } catch (error) {
       console.error('Failed to update admin status:', error);
-      onError('Failed to update admin status: ' + error.message);
+      onError(`Failed to update admin status: ${  error.message}`);
     }
   };
 
@@ -71,7 +71,7 @@ export function UserManagement({
       await showSuccess('User deleted successfully!');
     } catch (error) {
       console.error('Failed to delete user:', error);
-      onError('Failed to delete user: ' + error.message);
+      onError(`Failed to delete user: ${  error.message}`);
     }
   };
 

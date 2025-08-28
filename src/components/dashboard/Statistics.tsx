@@ -1086,7 +1086,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
           {monthlyStats.length > 0 ? monthlyStats.map(([month, stats]) => {
             const monthTotal = stats.wins + stats.losses;
             const monthWinRate = monthTotal > 0 ? (stats.wins / monthTotal * 100).toFixed(1) : '0';
-            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            const monthName = new Date(`${month  }-01`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
             return (
               <div key={month} className="bg-white border border-amber-100 rounded-lg p-3">

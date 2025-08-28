@@ -26,7 +26,7 @@ export function usernameToEmail(username: string): string {
   }
 
   // Use the more robust server version of sanitization
-  let sanitizedUsername = username
+  const sanitizedUsername = username
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '.') // Replace spaces with dots

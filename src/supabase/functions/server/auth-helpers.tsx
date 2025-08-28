@@ -20,7 +20,7 @@ export async function validateUserAuth(c: any, supabase: any) {
     return { error: 'Unauthorized', status: 401 };
   }
 
-  console.log('Token received - length:', accessToken.length, 'starts with:', accessToken.substring(0, 20) + '...');
+  console.log('Token received - length:', accessToken.length, 'starts with:', `${accessToken.substring(0, 20)  }...`);
 
 
 

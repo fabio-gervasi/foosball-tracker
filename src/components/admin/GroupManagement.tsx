@@ -158,7 +158,7 @@ export function GroupManagement({
 
     } catch (error) {
       console.error('Failed to upload group icon:', error);
-      onError('Failed to upload group icon: ' + error.message);
+      onError(`Failed to upload group icon: ${  error.message}`);
     } finally {
       setIsUploadingIcon(false);
       // Reset the file input
@@ -187,7 +187,7 @@ export function GroupManagement({
 
     } catch (error) {
       console.error('Failed to delete group:', error);
-      onError('Failed to delete group: ' + error.message);
+      onError(`Failed to delete group: ${  error.message}`);
       setGroupDeleteConfirm(false);
       setGroupDeleteInput('');
     }

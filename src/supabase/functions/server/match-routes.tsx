@@ -195,8 +195,8 @@ export function createMatchRoutes(supabase: any) {
       console.log('Match recorded successfully:', matchId);
       return c.json({ 
         message: 'Match recorded successfully',
-        match: match,
-        eloChanges: eloChanges
+        match,
+        eloChanges
       });
     } catch (error) {
       console.error('=== Record match error ===', error);
@@ -524,7 +524,7 @@ export function createMatchRoutes(supabase: any) {
       console.log('Match deleted successfully:', matchId);
       return c.json({ 
         message: 'Match deleted successfully',
-        matchId: matchId
+        matchId
       });
     } catch (error) {
       console.error('=== Delete match error ===', error);

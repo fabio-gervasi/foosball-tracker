@@ -1,0 +1,120 @@
+# Foosball Tracker - Branch Protection Setup Workflow
+# REQ-5.2.2: Branch Protection Strategy
+# This workflow helps setup branch protection rules via GitHub CLI
+
+name: Setup Branch Protection
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch to protect (default: main)'
+        required: false
+        default: 'main'
+        type: string
+      dry_run:
+        description: 'Dry run - show what would be configured without applying'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  configure-branch-protection:
+    name: 🔒 Configure Branch Protection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔧 Setup GitHub CLI
+        run: |
+          # GitHub CLI is pre-installed on GitHub runners
+          gh --version
+
+      - name: 📋 Display Current Branch Protection
+        run: |
+          echo "🔍 Current branch protection rules for: ${{ inputs.branch_name }}"
+          gh api repos/${{ github.repository }}/branches/${{ inputs.branch_name }}/protection \
+            --jq '.required_status_checks.contexts[]' || echo "No protection rules found"
+
+      - name: 🛡️ Configure Branch Protection Rules
+        run: |
+          BRANCH="${{ inputs.branch_name }}"
+          DRY_RUN="${{ inputs.dry_run }}"
+
+          echo "🔒 Configuring branch protection for: $BRANCH"
+          echo "📊 Dry run mode: $DRY_RUN"
+
+          # Define protection settings
+          PROTECTION_CONFIG='{
+            "required_status_checks": {
+              "strict": true,
+              "contexts": [
+                "quality-gates",
+                "performance-budget",
+                "Vercel – foosball-tracker"
+              ]
+            },
+            "enforce_admins": true,
+            "required_pull_request_reviews": {
+              "required_approving_review_count": 1,
+              "dismiss_stale_reviews": true,
+              "require_code_owner_reviews": false,
+              "require_last_push_approval": true
+            },
+            "restrictions": null,
+            "allow_force_pushes": false,
+            "allow_deletions": false,
+            "block_creations": false,
+            "required_conversation_resolution": true
+          }'
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🔍 DRY RUN - Would apply the following protection rules:"
+            echo "$PROTECTION_CONFIG" | jq .
+            echo ""
+            echo "📝 To apply these rules, run this workflow with dry_run=false"
+          else
+            echo "✅ Applying branch protection rules..."
+            echo "$PROTECTION_CONFIG" | gh api \
+              --method PUT \
+              repos/${{ github.repository }}/branches/$BRANCH/protection \
+              --input -
+            echo "🎉 Branch protection rules applied successfully!"
+          fi
+
+      - name: 📊 Verify Configuration
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          echo "🔍 Verifying branch protection configuration..."
+          gh api repos/${{ github.repository }}/branches/${{ inputs.branch_name }}/protection \
+            --jq '{
+              "required_status_checks": .required_status_checks.contexts,
+              "required_reviews": .required_pull_request_reviews.required_approving_review_count,
+              "enforce_admins": .enforce_admins.enabled,
+              "dismiss_stale_reviews": .required_pull_request_reviews.dismiss_stale_reviews
+            }'
+
+      - name: 📚 Setup Instructions
+        run: |
+          echo "📋 Branch Protection Setup Complete!"
+          echo ""
+          echo "🔧 Next Steps:"
+          echo "1. Ensure your CI workflows include the required status checks:"
+          echo "   - quality-gates (from ci.yml)"
+          echo "   - performance-budget (from ci.yml)"
+          echo "   - Vercel deployment check"
+          echo ""
+          echo "2. Team members will now need to:"
+          echo "   - Create pull requests for all changes to ${{ inputs.branch_name }}"
+          echo "   - Get at least 1 approval before merging"
+          echo "   - Ensure all status checks pass"
+          echo ""
+          echo "3. Consider setting up CODEOWNERS file for automatic review requests"

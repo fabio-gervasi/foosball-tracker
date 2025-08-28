@@ -209,7 +209,7 @@ describe('ErrorBoundary Component', () => {
       expect(screen.getByText(/Try Again/)).toBeInTheDocument();
 
       // Click retry button multiple times to exceed max retries
-      let retryButton = screen.getByText(/Try Again/);
+      const retryButton = screen.getByText(/Try Again/);
 
       // Click 3 times (max retries)
       fireEvent.click(retryButton);

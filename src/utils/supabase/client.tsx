@@ -26,7 +26,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   logger.apiRequest(endpoint, options.method || 'GET');
 
   // All Supabase Edge Functions require either the anon key or a user access token
-  let headers = {
+  const headers = {
     // Default to public anon key for Supabase Edge Functions
     'Authorization': `Bearer ${publicAnonKey}`,
     ...options.headers,
@@ -41,7 +41,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   // For authenticated endpoints, use the user's access token instead
   const authenticatedEndpoints = ['/user', '/profile', '/groups', '/groups/current', '/groups/join', '/users', '/matches', '/promote-admin', '/admin'];
   const needsUserAuth = authenticatedEndpoints.some(authEndpoint =>
-    endpoint === authEndpoint || endpoint.startsWith(authEndpoint + '/')
+    endpoint === authEndpoint || endpoint.startsWith(`${authEndpoint  }/`)
   );
 
   if (needsUserAuth) {

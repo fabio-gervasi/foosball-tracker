@@ -76,7 +76,7 @@ export function createDebugRoutes(supabase: any) {
         server: 'foosball-tracker-debug-users',
         totalUsernames: usernames.length,
         totalEmails: emails.length,
-        usernames: usernames,
+        usernames,
         emails: emails.slice(0, 10), // Limit emails for brevity
         timestamp: new Date().toISOString()
       });
@@ -321,7 +321,7 @@ export function createDebugRoutes(supabase: any) {
       return c.json({
         success: true,
         message: 'Email configuration appears to be working',
-        testEmail: testEmail,
+        testEmail,
         config: {
           supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
           serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
@@ -365,8 +365,8 @@ export function createDebugRoutes(supabase: any) {
 
       // Get all username mappings
       const allUserKeys = await kv.getByPrefix('user:username:');
-      let orphanedUsers = [];
-      let validUsers = [];
+      const orphanedUsers = [];
+      const validUsers = [];
 
       for (const userKey of allUserKeys) {
         const username = userKey.key.replace('user:username:', '');
@@ -401,8 +401,8 @@ export function createDebugRoutes(supabase: any) {
         message: 'Cleanup completed',
         orphanedUsersRemoved: orphanedUsers.length,
         validUsersRemaining: validUsers.length,
-        orphanedUsers: orphanedUsers,
-        validUsers: validUsers,
+        orphanedUsers,
+        validUsers,
         timestamp: new Date().toISOString()
       });
     } catch (error) {

@@ -68,7 +68,7 @@ export function createGroupRoutes(supabase: any) {
         // Add group to user's groups list
         userProfile.groups.push({
           code: groupCode,
-          name: name,
+          name,
           joinedAt: new Date().toISOString()
         });
 
@@ -163,7 +163,7 @@ export function createGroupRoutes(supabase: any) {
       console.log('User joined group successfully:', groupCode, 'Member count:', group.memberCount);
       return c.json({ 
         message: isAlreadyMember ? 'Already a member of this group' : 'Joined group successfully', 
-        group: group,
+        group,
         isNewMember: !isAlreadyMember,
         setAsCurrent: setAsCurrent || !userProfile.currentGroup
       });
@@ -194,7 +194,7 @@ export function createGroupRoutes(supabase: any) {
       }
 
       return c.json({ 
-        group: group
+        group
       });
     } catch (error) {
       console.error('=== Get current group error ===', error);
@@ -297,7 +297,7 @@ export function createGroupRoutes(supabase: any) {
       console.log('User switched to group successfully:', groupCodeUpper);
       return c.json({ 
         message: 'Switched to group successfully',
-        group: group
+        group
       });
     } catch (error) {
       console.error('=== Switch group error ===', error);
@@ -333,7 +333,7 @@ export function createGroupRoutes(supabase: any) {
         return c.json({ error: 'Group not found' }, 404);
       }
 
-      let updatedGroup = { ...group };
+      const updatedGroup = { ...group };
 
       // Update name if provided
       if (name !== undefined) {
@@ -434,7 +434,7 @@ export function createGroupRoutes(supabase: any) {
       });
     } catch (error) {
       console.error('Icon test endpoint error:', error);
-      return c.json({ error: 'Test endpoint failed: ' + error.message }, 500);
+      return c.json({ error: `Test endpoint failed: ${  error.message}` }, 500);
     }
   });
 
@@ -481,7 +481,7 @@ export function createGroupRoutes(supabase: any) {
           message: formError.message,
           stack: formError.stack?.substring(0, 500)
         });
-        return c.json({ error: 'Failed to parse form data: ' + formError.message }, 400);
+        return c.json({ error: `Failed to parse form data: ${  formError.message}` }, 400);
       }
 
       console.log('Step 4: Extracting file from FormData...');
@@ -530,12 +530,12 @@ export function createGroupRoutes(supabase: any) {
         listError = listResult.error;
       } catch (storageError) {
         console.error('Exception listing buckets:', storageError);
-        return c.json({ error: 'Storage service unavailable: ' + storageError.message }, 500);
+        return c.json({ error: `Storage service unavailable: ${  storageError.message}` }, 500);
       }
       
       if (listError) {
         console.error('Failed to list buckets:', listError);
-        return c.json({ error: 'Failed to access storage: ' + listError.message }, 500);
+        return c.json({ error: `Failed to access storage: ${  listError.message}` }, 500);
       }
       
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
@@ -551,12 +551,12 @@ export function createGroupRoutes(supabase: any) {
           });
           if (bucketError) {
             console.error('Failed to create bucket:', bucketError);
-            return c.json({ error: 'Failed to create storage bucket: ' + bucketError.message }, 500);
+            return c.json({ error: `Failed to create storage bucket: ${  bucketError.message}` }, 500);
           }
           console.log('✅ Bucket created successfully');
         } catch (createError) {
           console.error('Exception creating bucket:', createError);
-          return c.json({ error: 'Failed to create storage bucket: ' + createError.message }, 500);
+          return c.json({ error: `Failed to create storage bucket: ${  createError.message}` }, 500);
         }
       } else {
         console.log('✅ Bucket already exists');
@@ -576,13 +576,13 @@ export function createGroupRoutes(supabase: any) {
         console.log('✅ File converted to buffer, size:', fileBuffer.byteLength, 'bytes');
       } catch (bufferError) {
         console.error('❌ Failed to convert file to buffer:', bufferError);
-        return c.json({ error: 'Failed to process file: ' + bufferError.message }, 500);
+        return c.json({ error: `Failed to process file: ${  bufferError.message}` }, 500);
       }
       
       console.log('Step 8: Uploading file to storage...');
       console.log('Upload params:', {
         bucket: bucketName,
-        fileName: fileName,
+        fileName,
         bufferSize: fileBuffer.byteLength,
         contentType: file.type
       });
@@ -599,13 +599,13 @@ export function createGroupRoutes(supabase: any) {
         uploadError = uploadResult.error;
       } catch (uploadException) {
         console.error('❌ Exception during upload:', uploadException);
-        return c.json({ error: 'Upload service error: ' + uploadException.message }, 500);
+        return c.json({ error: `Upload service error: ${  uploadException.message}` }, 500);
       }
 
       if (uploadError) {
         console.error('❌ Upload failed:', uploadError);
         console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
-        return c.json({ error: 'Failed to upload image: ' + uploadError.message }, 500);
+        return c.json({ error: `Failed to upload image: ${  uploadError.message}` }, 500);
       }
       
       console.log('✅ File uploaded successfully:', uploadData?.path || fileName);
@@ -620,13 +620,13 @@ export function createGroupRoutes(supabase: any) {
         urlError = urlResult.error;
       } catch (urlException) {
         console.error('❌ Exception creating signed URL:', urlException);
-        return c.json({ error: 'URL service error: ' + urlException.message }, 500);
+        return c.json({ error: `URL service error: ${  urlException.message}` }, 500);
       }
 
       if (urlError) {
         console.error('❌ Failed to create signed URL:', urlError);
         console.error('Signed URL error details:', JSON.stringify(urlError, null, 2));
-        return c.json({ error: 'Failed to get image URL: ' + urlError.message }, 500);
+        return c.json({ error: `Failed to get image URL: ${  urlError.message}` }, 500);
       }
       
       if (!signedUrlData?.signedUrl) {
@@ -642,7 +642,7 @@ export function createGroupRoutes(supabase: any) {
         group = await kv.get(`group:${userProfile.currentGroup}`);
       } catch (kvError) {
         console.error('❌ Failed to get group from KV store:', kvError);
-        return c.json({ error: 'Failed to access group data: ' + kvError.message }, 500);
+        return c.json({ error: `Failed to access group data: ${  kvError.message}` }, 500);
       }
       
       if (!group) {
@@ -659,7 +659,7 @@ export function createGroupRoutes(supabase: any) {
         console.log('✅ Group updated with new icon successfully');
       } catch (updateError) {
         console.error('❌ Failed to update group with icon:', updateError);
-        return c.json({ error: 'Failed to update group with icon: ' + updateError.message }, 500);
+        return c.json({ error: `Failed to update group with icon: ${  updateError.message}` }, 500);
       }
 
       console.log('🎉 Group icon upload completed successfully!');
@@ -679,15 +679,15 @@ export function createGroupRoutes(supabase: any) {
       let errorMessage = 'Internal server error while uploading group icon';
       
       if (error.message?.includes('FormData')) {
-        errorMessage = 'Failed to process upload data: ' + error.message;
+        errorMessage = `Failed to process upload data: ${  error.message}`;
       } else if (error.message?.includes('storage') || error.message?.includes('bucket')) {
-        errorMessage = 'Storage service error: ' + error.message;
+        errorMessage = `Storage service error: ${  error.message}`;
       } else if (error.message?.includes('auth') || error.message?.includes('token')) {
-        errorMessage = 'Authentication error: ' + error.message;
+        errorMessage = `Authentication error: ${  error.message}`;
       } else if (error.message?.includes('kv') || error.message?.includes('database')) {
-        errorMessage = 'Database error: ' + error.message;
+        errorMessage = `Database error: ${  error.message}`;
       } else if (error.message) {
-        errorMessage = 'Upload failed: ' + error.message;
+        errorMessage = `Upload failed: ${  error.message}`;
       }
       
       return c.json({ 

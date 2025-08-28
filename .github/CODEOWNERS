@@ -1,0 +1,56 @@
+# Foosball Tracker - Code Ownership Rules
+# REQ-5.2.2: Branch Protection Strategy
+# Defines who needs to review changes to specific parts of the codebase
+
+# Global fallback - require review from repository maintainers
+* @foosball-tracker-maintainers
+
+# CI/CD Pipeline Configuration - Critical Infrastructure
+/.github/workflows/ @foosball-tracker-maintainers @foosball-tracker-devops
+/vercel.json @foosball-tracker-maintainers @foosball-tracker-devops
+/performance-budget.config.js @foosball-tracker-maintainers @foosball-tracker-devops
+/CI_CD_PIPELINE_GUIDE.md @foosball-tracker-maintainers @foosball-tracker-devops
+
+# Security and Authentication
+/src/contexts/AuthContext.tsx @foosball-tracker-maintainers @foosball-tracker-security
+/src/utils/supabase/ @foosball-tracker-maintainers @foosball-tracker-security
+/src/supabase/functions/server/auth-*.tsx @foosball-tracker-maintainers @foosball-tracker-security
+
+# Build and Configuration
+/package.json @foosball-tracker-maintainers
+/package-lock.json @foosball-tracker-maintainers
+/vite.config.ts @foosball-tracker-maintainers
+/tsconfig.json @foosball-tracker-maintainers
+/eslint.config.js @foosball-tracker-maintainers
+
+# Database and Server Functions
+/src/supabase/functions/server/ @foosball-tracker-maintainers @foosball-tracker-backend
+
+# Testing Infrastructure
+/src/tests/ @foosball-tracker-maintainers @foosball-tracker-qa
+/src/tests/setup.ts @foosball-tracker-maintainers
+/src/tests/__mocks__/ @foosball-tracker-maintainers @foosball-tracker-qa
+
+# Core Business Logic - ELO System
+/src/shared/elo-system.tsx @foosball-tracker-maintainers @foosball-tracker-backend
+/src/supabase/functions/server/elo-system.tsx @foosball-tracker-maintainers @foosball-tracker-backend
+
+# Documentation
+/*.md @foosball-tracker-maintainers @foosball-tracker-docs
+/src/docs/ @foosball-tracker-maintainers @foosball-tracker-docs
+
+# Performance Monitoring
+/src/utils/analytics.ts @foosball-tracker-maintainers @foosball-tracker-performance
+/src/hooks/usePerformanceMonitor.ts @foosball-tracker-maintainers @foosball-tracker-performance
+
+# Frontend Components (less critical, can be reviewed by any maintainer)
+/src/components/ @foosball-tracker-maintainers
+
+# NOTE: Update team assignments in GitHub repository settings:
+# - @foosball-tracker-maintainers: Core project maintainers
+# - @foosball-tracker-devops: DevOps/Infrastructure specialists
+# - @foosball-tracker-security: Security specialists
+# - @foosball-tracker-backend: Backend/API specialists
+# - @foosball-tracker-qa: Quality assurance specialists
+# - @foosball-tracker-docs: Documentation specialists
+# - @foosball-tracker-performance: Performance specialists
