@@ -8,15 +8,21 @@ interface AvatarProps {
   textClassName?: string;
 }
 
-export function Avatar({ src, alt = "Profile", fallback, className = "", textClassName = "" }: AvatarProps) {
+export function Avatar({
+  src,
+  alt = 'Profile',
+  fallback,
+  className = '',
+  textClassName = '',
+}: AvatarProps) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {src ? (
-        <img 
-          src={src} 
+        <img
+          src={src}
           alt={alt}
-          className="w-full h-full object-cover"
-          onError={(e) => {
+          className='w-full h-full object-cover'
+          onError={e => {
             // Fallback to text avatar if image fails to load
             e.currentTarget.style.display = 'none';
             const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
@@ -26,7 +32,7 @@ export function Avatar({ src, alt = "Profile", fallback, className = "", textCla
           }}
         />
       ) : null}
-      <span 
+      <span
         className={`${src ? 'hidden' : 'flex'} items-center justify-center w-full h-full absolute inset-0 ${textClassName}`}
       >
         {fallback}

@@ -52,45 +52,47 @@ export const useAuth = (): UseAuthReturn => {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Enhanced login function with email/password
-  const login = useCallback(async (email: string, password: string): Promise<void> => {
-    try {
-      logger.authEvent('Login attempt started', { email });
+  const login = useCallback(
+    async (email: string, password: string): Promise<void> => {
+      try {
+        logger.authEvent('Login attempt started', { email });
 
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+        // Sign in with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        logger.error('Supabase login failed', error);
-        throw new Error(error.message);
+        if (error) {
+          logger.error('Supabase login failed', error);
+          throw new Error(error.message);
+        }
+
+        if (!data.session?.access_token) {
+          throw new Error('No access token received from login');
+        }
+
+        // Validate session with our server
+        const response = await apiRequest('/user', {
+          headers: {
+            Authorization: `Bearer ${data.session.access_token}`,
+          },
+        });
+
+        logger.authEvent('Login successful', {
+          userId: response.user.id,
+          userName: response.user.name,
+        });
+
+        // Use the context's login method to update state
+        await authContext.login(response.user, data.session.access_token);
+      } catch (error) {
+        logger.error('Login failed', error);
+        throw error;
       }
-
-      if (!data.session?.access_token) {
-        throw new Error('No access token received from login');
-      }
-
-      // Validate session with our server
-      const response = await apiRequest('/user', {
-        headers: {
-          Authorization: `Bearer ${data.session.access_token}`,
-        },
-      });
-
-      logger.authEvent('Login successful', {
-        userId: response.user.id,
-        userName: response.user.name
-      });
-
-      // Use the context's login method to update state
-      await authContext.login(response.user, data.session.access_token);
-
-    } catch (error) {
-      logger.error('Login failed', error);
-      throw error;
-    }
-  }, [authContext]);
+    },
+    [authContext]
+  );
 
   // Enhanced logout function
   const logout = useCallback(async (): Promise<void> => {
@@ -126,38 +128,40 @@ export const useAuth = (): UseAuthReturn => {
   }, []);
 
   // Profile update function
-  const updateProfile = useCallback(async (data: ProfileUpdateData): Promise<void> => {
-    if (!authContext.accessToken) {
-      throw new Error('No access token available');
-    }
-
-    setIsUpdatingProfile(true);
-    try {
-      logger.debug('Updating user profile', { fields: Object.keys(data) });
-
-      const response = await apiRequest('/user', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${authContext.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      logger.info('Profile updated successfully');
-
-      // Update the current user in context
-      if (authContext.currentUser && response.user) {
-        await authContext.login(response.user, authContext.accessToken);
+  const updateProfile = useCallback(
+    async (data: ProfileUpdateData): Promise<void> => {
+      if (!authContext.accessToken) {
+        throw new Error('No access token available');
       }
 
-    } catch (error) {
-      logger.error('Profile update failed', error);
-      throw error;
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  }, [authContext]);
+      setIsUpdatingProfile(true);
+      try {
+        logger.debug('Updating user profile', { fields: Object.keys(data) });
+
+        const response = await apiRequest('/user', {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${authContext.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        logger.info('Profile updated successfully');
+
+        // Update the current user in context
+        if (authContext.currentUser && response.user) {
+          await authContext.login(response.user, authContext.accessToken);
+        }
+      } catch (error) {
+        logger.error('Profile update failed', error);
+        throw error;
+      } finally {
+        setIsUpdatingProfile(false);
+      }
+    },
+    [authContext]
+  );
 
   // Session management functions
   const checkSession = useCallback(async (): Promise<void> => {
@@ -181,7 +185,6 @@ export const useAuth = (): UseAuthReturn => {
       if (authContext.currentUser && data.session.access_token !== authContext.accessToken) {
         await authContext.login(authContext.currentUser, data.session.access_token);
       }
-
     } catch (error) {
       logger.error('Token refresh failed', error);
       throw error;
@@ -193,20 +196,23 @@ export const useAuth = (): UseAuthReturn => {
     return authContext.currentUser?.isAdmin === true;
   }, [authContext.currentUser]);
 
-  const hasPermission = useCallback((permission: string): boolean => {
-    if (!authContext.currentUser) return false;
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!authContext.currentUser) return false;
 
-    switch (permission) {
-      case 'admin':
-      case 'manage_users':
-      case 'manage_groups':
-      case 'view_admin_panel':
-        return isAdmin;
-      default:
-        logger.warn('Unknown permission requested', { permission });
-        return false;
-    }
-  }, [isAdmin]);
+      switch (permission) {
+        case 'admin':
+        case 'manage_users':
+        case 'manage_groups':
+        case 'view_admin_panel':
+          return isAdmin;
+        default:
+          logger.warn('Unknown permission requested', { permission });
+          return false;
+      }
+    },
+    [isAdmin]
+  );
 
   // Clear error function
   const clearError = useCallback((): void => {

@@ -7,10 +7,17 @@ import {
   useGroupSwitchMutation,
   useJoinGroupMutation,
   useCreateGroupMutation,
-  useRefreshDataMutation
+  useRefreshDataMutation,
 } from './useMutations';
 import { logger } from '../utils/logger';
-import type { User, Group, Match, MatchSubmissionData, ProfileUpdateData, GroupCreationData } from '../types';
+import type {
+  User,
+  Group,
+  Match,
+  MatchSubmissionData,
+  ProfileUpdateData,
+  GroupCreationData,
+} from '../types';
 
 // Enhanced app data hook interface
 export interface UseAppDataReturn {
@@ -144,129 +151,156 @@ export const useAppData = (): UseAppDataReturn => {
   }, [currentGroupQuery]);
 
   // Mutation wrapper functions
-  const submitMatch = useCallback(async (matchData: MatchData): Promise<any> => {
-    try {
-      logger.debug('Submitting match via useAppData hook');
-      const result = await submitMatchMutation.mutateAsync(matchData);
-      return result;
-    } catch (error) {
-      logger.error('Failed to submit match in useAppData', error);
-      throw error;
-    }
-  }, [submitMatchMutation]);
+  const submitMatch = useCallback(
+    async (matchData: MatchData): Promise<any> => {
+      try {
+        logger.debug('Submitting match via useAppData hook');
+        const result = await submitMatchMutation.mutateAsync(matchData);
+        return result;
+      } catch (error) {
+        logger.error('Failed to submit match in useAppData', error);
+        throw error;
+      }
+    },
+    [submitMatchMutation]
+  );
 
-  const updateUserProfile = useCallback(async (profileData: ProfileData): Promise<void> => {
-    try {
-      logger.debug('Updating profile via useAppData hook');
-      await updateProfileMutation.mutateAsync(profileData);
-    } catch (error) {
-      logger.error('Failed to update profile in useAppData', error);
-      throw error;
-    }
-  }, [updateProfileMutation]);
+  const updateUserProfile = useCallback(
+    async (profileData: ProfileData): Promise<void> => {
+      try {
+        logger.debug('Updating profile via useAppData hook');
+        await updateProfileMutation.mutateAsync(profileData);
+      } catch (error) {
+        logger.error('Failed to update profile in useAppData', error);
+        throw error;
+      }
+    },
+    [updateProfileMutation]
+  );
 
-  const switchGroup = useCallback(async (groupCode: string): Promise<void> => {
-    try {
-      logger.debug('Switching group via useAppData hook', { groupCode });
-      await groupSwitchMutation.mutateAsync({ groupCode });
-    } catch (error) {
-      logger.error('Failed to switch group in useAppData', error);
-      throw error;
-    }
-  }, [groupSwitchMutation]);
+  const switchGroup = useCallback(
+    async (groupCode: string): Promise<void> => {
+      try {
+        logger.debug('Switching group via useAppData hook', { groupCode });
+        await groupSwitchMutation.mutateAsync({ groupCode });
+      } catch (error) {
+        logger.error('Failed to switch group in useAppData', error);
+        throw error;
+      }
+    },
+    [groupSwitchMutation]
+  );
 
-  const joinGroup = useCallback(async (groupCode: string): Promise<void> => {
-    try {
-      logger.debug('Joining group via useAppData hook', { code: groupCode });
-      await joinGroupMutation.mutateAsync({ code: groupCode });
-    } catch (error) {
-      logger.error('Failed to join group in useAppData', error);
-      throw error;
-    }
-  }, [joinGroupMutation]);
+  const joinGroup = useCallback(
+    async (groupCode: string): Promise<void> => {
+      try {
+        logger.debug('Joining group via useAppData hook', { code: groupCode });
+        await joinGroupMutation.mutateAsync({ code: groupCode });
+      } catch (error) {
+        logger.error('Failed to join group in useAppData', error);
+        throw error;
+      }
+    },
+    [joinGroupMutation]
+  );
 
-  const createGroup = useCallback(async (groupData: GroupData): Promise<void> => {
-    try {
-      logger.debug('Creating group via useAppData hook', { name: groupData.name });
-      await createGroupMutation.mutateAsync(groupData);
-    } catch (error) {
-      logger.error('Failed to create group in useAppData', error);
-      throw error;
-    }
-  }, [createGroupMutation]);
+  const createGroup = useCallback(
+    async (groupData: GroupData): Promise<void> => {
+      try {
+        logger.debug('Creating group via useAppData hook', { name: groupData.name });
+        await createGroupMutation.mutateAsync(groupData);
+      } catch (error) {
+        logger.error('Failed to create group in useAppData', error);
+        throw error;
+      }
+    },
+    [createGroupMutation]
+  );
 
   // Utility functions
-  const getUserById = useCallback((id: string): User | undefined => {
-    return users.find(user => user.id === id);
-  }, [users]);
+  const getUserById = useCallback(
+    (id: string): User | undefined => {
+      return users.find(user => user.id === id);
+    },
+    [users]
+  );
 
-  const getMatchById = useCallback((id: string): Match | undefined => {
-    return matches.find(match => match.id === id);
-  }, [matches]);
+  const getMatchById = useCallback(
+    (id: string): Match | undefined => {
+      return matches.find(match => match.id === id);
+    },
+    [matches]
+  );
 
-  const getUserStats = useCallback((userId: string): UserStats => {
-    const user = getUserById(userId);
-    if (!user) {
+  const getUserStats = useCallback(
+    (userId: string): UserStats => {
+      const user = getUserById(userId);
+      if (!user) {
+        return {
+          wins: 0,
+          losses: 0,
+          winRate: 0,
+          totalGames: 0,
+          elo: 1000,
+          singlesWins: 0,
+          singlesLosses: 0,
+          doublesWins: 0,
+          doublesLosses: 0,
+          singlesElo: 1000,
+          doublesElo: 1000,
+          singlesWinRate: 0,
+          doublesWinRate: 0,
+          rank: users.length + 1,
+        };
+      }
+
+      const wins = user.wins || 0;
+      const losses = user.losses || 0;
+      const totalGames = wins + losses;
+      const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+
+      const singlesWins = user.singlesWins || 0;
+      const singlesLosses = user.singlesLosses || 0;
+      const singlesTotalGames = singlesWins + singlesLosses;
+      const singlesWinRate = singlesTotalGames > 0 ? (singlesWins / singlesTotalGames) * 100 : 0;
+
+      const doublesWins = user.doublesWins || 0;
+      const doublesLosses = user.doublesLosses || 0;
+      const doublesTotalGames = doublesWins + doublesLosses;
+      const doublesWinRate = doublesTotalGames > 0 ? (doublesWins / doublesTotalGames) * 100 : 0;
+
+      // Calculate rank based on ELO
+      const sortedUsers = [...users].sort((a, b) => (b.elo || 1000) - (a.elo || 1000));
+      const rank = sortedUsers.findIndex(u => u.id === userId) + 1;
+
       return {
-        wins: 0,
-        losses: 0,
-        winRate: 0,
-        totalGames: 0,
-        elo: 1000,
-        singlesWins: 0,
-        singlesLosses: 0,
-        doublesWins: 0,
-        doublesLosses: 0,
-        singlesElo: 1000,
-        doublesElo: 1000,
-        singlesWinRate: 0,
-        doublesWinRate: 0,
-        rank: users.length + 1,
+        wins,
+        losses,
+        winRate,
+        totalGames,
+        elo: user.elo || 1000,
+        singlesWins,
+        singlesLosses,
+        doublesWins,
+        doublesLosses,
+        singlesElo: user.singlesElo || 1000,
+        doublesElo: user.doublesElo || 1000,
+        singlesWinRate,
+        doublesWinRate,
+        rank,
       };
-    }
+    },
+    [users, getUserById]
+  );
 
-    const wins = user.wins || 0;
-    const losses = user.losses || 0;
-    const totalGames = wins + losses;
-    const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-
-    const singlesWins = user.singlesWins || 0;
-    const singlesLosses = user.singlesLosses || 0;
-    const singlesTotalGames = singlesWins + singlesLosses;
-    const singlesWinRate = singlesTotalGames > 0 ? (singlesWins / singlesTotalGames) * 100 : 0;
-
-    const doublesWins = user.doublesWins || 0;
-    const doublesLosses = user.doublesLosses || 0;
-    const doublesTotalGames = doublesWins + doublesLosses;
-    const doublesWinRate = doublesTotalGames > 0 ? (doublesWins / doublesTotalGames) * 100 : 0;
-
-    // Calculate rank based on ELO
-    const sortedUsers = [...users].sort((a, b) => (b.elo || 1000) - (a.elo || 1000));
-    const rank = sortedUsers.findIndex(u => u.id === userId) + 1;
-
-    return {
-      wins,
-      losses,
-      winRate,
-      totalGames,
-      elo: user.elo || 1000,
-      singlesWins,
-      singlesLosses,
-      doublesWins,
-      doublesLosses,
-      singlesElo: user.singlesElo || 1000,
-      doublesElo: user.doublesElo || 1000,
-      singlesWinRate,
-      doublesWinRate,
-      rank,
-    };
-  }, [users, getUserById]);
-
-  const isUserInCurrentGroup = useCallback((userId: string): boolean => {
-    if (!currentGroup) return false;
-    const user = getUserById(userId);
-    return user?.currentGroup === currentGroup.code;
-  }, [currentGroup, getUserById]);
+  const isUserInCurrentGroup = useCallback(
+    (userId: string): boolean => {
+      if (!currentGroup) return false;
+      const user = getUserById(userId);
+      return user?.currentGroup === currentGroup.code;
+    },
+    [currentGroup, getUserById]
+  );
 
   const getCurrentUserStats = useCallback((): UserStats => {
     if (!currentUser) {

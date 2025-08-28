@@ -6,7 +6,7 @@ import {
   useSubmitMatchMutation,
   useUpdateProfileMutation,
   useGroupSwitchMutation,
-  useRefreshDataMutation
+  useRefreshDataMutation,
 } from '../hooks/useMutations';
 import type { User, Group, Match, MatchSubmissionData, ProfileUpdateData } from '../types';
 
@@ -163,11 +163,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     refetchAll,
   };
 
-  return (
-    <AppDataContext.Provider value={value}>
-      {children}
-    </AppDataContext.Provider>
-  );
+  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 };
 
 export const useAppData = (): AppDataContextType => {

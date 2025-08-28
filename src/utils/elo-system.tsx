@@ -4,13 +4,21 @@ function calculateExpectedScore(playerRating: number, opponentRating: number): n
   return 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));
 }
 
-function calculateNewELO(currentRating: number, expectedScore: number, actualScore: number): number {
+function calculateNewELO(
+  currentRating: number,
+  expectedScore: number,
+  actualScore: number
+): number {
   const newRating = currentRating + K_FACTOR * (actualScore - expectedScore);
   return Math.round(newRating);
 }
 
 // For 1v1 matches
-export function calculateELOChanges(player1Rating: number, player2Rating: number, player1Won: boolean) {
+export function calculateELOChanges(
+  player1Rating: number,
+  player2Rating: number,
+  player1Won: boolean
+) {
   const player1Expected = calculateExpectedScore(player1Rating, player2Rating);
   const player2Expected = calculateExpectedScore(player2Rating, player1Rating);
 
@@ -24,13 +32,13 @@ export function calculateELOChanges(player1Rating: number, player2Rating: number
     player1: {
       oldRating: player1Rating,
       newRating: newPlayer1Rating,
-      change: newPlayer1Rating - player1Rating
+      change: newPlayer1Rating - player1Rating,
     },
     player2: {
       oldRating: player2Rating,
       newRating: newPlayer2Rating,
-      change: newPlayer2Rating - player2Rating
-    }
+      change: newPlayer2Rating - player2Rating,
+    },
   };
 }
 
@@ -61,22 +69,22 @@ export function calculateTeamELOChanges(
     team1Player1: {
       oldRating: team1Player1Rating,
       newRating: team1Player1Rating + team1Change,
-      change: team1Change
+      change: team1Change,
     },
     team1Player2: {
       oldRating: team1Player2Rating,
       newRating: team1Player2Rating + team1Change,
-      change: team1Change
+      change: team1Change,
     },
     team2Player1: {
       oldRating: team2Player1Rating,
       newRating: team2Player1Rating + team2Change,
-      change: team2Change
+      change: team2Change,
     },
     team2Player2: {
       oldRating: team2Player2Rating,
       newRating: team2Player2Rating + team2Change,
-      change: team2Change
-    }
+      change: team2Change,
+    },
   };
 }

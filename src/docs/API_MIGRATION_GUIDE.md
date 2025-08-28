@@ -18,6 +18,7 @@ This guide helps migrate existing API calls to use the new standardized API requ
 ### Pattern 1: Basic API Request Migration
 
 **Before (old pattern):**
+
 ```typescript
 import { apiRequest } from '../utils/supabase/client';
 
@@ -52,6 +53,7 @@ const MyComponent = () => {
 ```
 
 **After (new pattern):**
+
 ```typescript
 import { useApiRequest } from '../hooks';
 
@@ -78,17 +80,18 @@ const MyComponent = () => {
 ### Pattern 2: POST Request with Error Handling
 
 **Before:**
+
 ```typescript
-const submitData = async (formData) => {
+const submitData = async formData => {
   setSubmitting(true);
   try {
     await apiRequest('/users', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(formData),
     });
     alert('Success!');
   } catch (error) {
@@ -100,14 +103,15 @@ const submitData = async (formData) => {
 ```
 
 **After:**
+
 ```typescript
 const { loading: submitting, error, execute } = useApiRequest();
 
-const submitData = async (formData) => {
+const submitData = async formData => {
   try {
     await execute('/users', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
     // Success handled automatically
   } catch (error) {
@@ -119,20 +123,22 @@ const submitData = async (formData) => {
 ### Pattern 3: React Query Migration
 
 **Before (manual React Query):**
+
 ```typescript
 const { data, isLoading, error } = useQuery({
   queryKey: ['users'],
   queryFn: async () => {
     const response = await apiRequest('/users', {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     return response;
   },
-  enabled: !!accessToken
+  enabled: !!accessToken,
 });
 ```
 
 **After (use existing optimized hooks):**
+
 ```typescript
 import { useUsersQuery } from '../hooks';
 
@@ -142,25 +148,27 @@ const { data, isLoading, error } = useUsersQuery(accessToken);
 ### Pattern 4: Mutation with Optimistic Updates
 
 **Before:**
+
 ```typescript
 const updateProfile = useMutation({
-  mutationFn: async (profileData) => {
+  mutationFn: async profileData => {
     return apiRequest('/user', {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(profileData)
+      body: JSON.stringify(profileData),
     });
   },
   onSuccess: () => {
     queryClient.invalidateQueries(['user']);
-  }
+  },
 });
 ```
 
 **After:**
+
 ```typescript
 import { useUpdateProfileMutation } from '../hooks';
 
@@ -183,7 +191,7 @@ const { execute } = useApiRequest({
 await execute('/users', {
   method: 'POST',
   body: userData,
-  params: { include: 'profile' }
+  params: { include: 'profile' },
 });
 ```
 
@@ -275,15 +283,17 @@ return (
 ## Common Pitfalls to Avoid
 
 ### ❌ Don't do this:
+
 ```typescript
 // Manual auth header injection (redundant)
 const { execute } = useApiRequest();
 await execute('/users', {
-  headers: { Authorization: `Bearer ${token}` } // ❌ Redundant
+  headers: { Authorization: `Bearer ${token}` }, // ❌ Redundant
 });
 ```
 
 ### ✅ Do this instead:
+
 ```typescript
 // Auth headers are automatic
 const { execute } = useApiRequest();
@@ -291,6 +301,7 @@ await execute('/users'); // ✅ Auth headers added automatically
 ```
 
 ### ❌ Don't do this:
+
 ```typescript
 // Manual error processing
 try {
@@ -301,6 +312,7 @@ try {
 ```
 
 ### ✅ Do this instead:
+
 ```typescript
 // Use processed error from hook state
 const { error, execute } = useApiRequest();
@@ -311,6 +323,7 @@ await execute('/users');
 ## Testing Your Migration
 
 ### 1. Functional Testing
+
 - [ ] All existing API calls work as before
 - [ ] Loading states display correctly
 - [ ] Error messages are user-friendly
@@ -318,6 +331,7 @@ await execute('/users');
 - [ ] Optimistic updates work (where applicable)
 
 ### 2. Error Scenario Testing
+
 - [ ] Network failures show appropriate messages
 - [ ] Authentication errors trigger proper handling
 - [ ] Server errors display user-friendly messages
@@ -325,6 +339,7 @@ await execute('/users');
 - [ ] Request cancellation works properly
 
 ### 3. Performance Testing
+
 - [ ] No performance regressions
 - [ ] Request deduplication works
 - [ ] Caching behaves as expected
@@ -333,12 +348,14 @@ await execute('/users');
 ## Support and Documentation
 
 ### Key Files:
+
 - `src/hooks/useApiRequest.ts` - Main API request hook
 - `src/utils/errorHandler.ts` - Centralized error handling
 - `src/utils/apiInterceptors.ts` - Request/response interceptors
 - `src/components/examples/ApiRequestExample.tsx` - Usage examples
 
 ### Getting Help:
+
 - Check the example component for usage patterns
 - Review existing query/mutation hooks for patterns
 - Test with the development server running
@@ -346,4 +363,4 @@ await execute('/users');
 
 ---
 
-*This migration guide ensures a smooth transition to the new standardized API request patterns while maintaining all existing functionality and improving error handling throughout the application.*
+_This migration guide ensures a smooth transition to the new standardized API request patterns while maintaining all existing functionality and improving error handling throughout the application._

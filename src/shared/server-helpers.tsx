@@ -6,7 +6,11 @@ const isServer = typeof Deno !== 'undefined';
 const isBrowser = typeof window !== 'undefined';
 
 export function generateAvatar(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
 }
 
 export function generateGroupCode(): string {

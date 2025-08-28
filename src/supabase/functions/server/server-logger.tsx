@@ -7,7 +7,7 @@ export enum ServerLogLevel {
   ERROR = 0,
   WARN = 1,
   INFO = 2,
-  DEBUG = 3
+  DEBUG = 3,
 }
 
 interface SanitizedData {
@@ -27,7 +27,7 @@ const SENSITIVE_FIELDS = [
   'session',
   'secret',
   'key',
-  'credentials'
+  'credentials',
 ];
 
 // Email regex for sanitization
@@ -109,10 +109,7 @@ class ServerLogger {
     );
 
     // Sanitize bearer tokens
-    sanitized = sanitized.replace(
-      /Bearer\s+[A-Za-z0-9-._~+/]+=*/gi,
-      'Bearer [REDACTED]'
-    );
+    sanitized = sanitized.replace(/Bearer\s+[A-Za-z0-9-._~+/]+=*/gi, 'Bearer [REDACTED]');
 
     return sanitized;
   }
@@ -188,7 +185,7 @@ class ServerLogger {
     if (this.shouldLog(ServerLogLevel.INFO)) {
       this.info(`API Request: ${method} ${endpoint}`, {
         hasAuth,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -201,7 +198,7 @@ class ServerLogger {
       this.info(`API Response: ${endpoint}`, {
         status,
         success,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -222,7 +219,7 @@ class ServerLogger {
     if (this.shouldLog(ServerLogLevel.INFO)) {
       this.info(`DB ${operation}: ${table}`, {
         success,
-        recordCount: recordCount || 0
+        recordCount: recordCount || 0,
       });
     }
   }
@@ -246,7 +243,8 @@ class ServerLogger {
 export const serverLogger = new ServerLogger();
 
 // Export convenience functions
-export const logError = (message: string, error?: Error | any) => serverLogger.error(message, error);
+export const logError = (message: string, error?: Error | any) =>
+  serverLogger.error(message, error);
 export const logWarn = (message: string, data?: any) => serverLogger.warn(message, data);
 export const logInfo = (message: string, data?: any) => serverLogger.info(message, data);
 export const logDebug = (message: string, data?: any) => serverLogger.debug(message, data);

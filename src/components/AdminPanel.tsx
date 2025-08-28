@@ -22,7 +22,7 @@ export function AdminPanel({
   group,
   users,
   onDataChange,
-  onGroupDeleted
+  onGroupDeleted,
 }: AdminPanelProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export function AdminPanel({
   logger.debug('AdminPanel initialized', {
     usersCount: users?.length || 0,
     currentUserName: currentUser?.name,
-    groupName: group?.name
+    groupName: group?.name,
   });
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function AdminPanel({
       logger.info('Admin matches loaded', { matchCount: matchesResponse.matches?.length || 0 });
     } catch (error) {
       logger.error('Failed to load admin data', error);
-      setError(`Failed to load admin data: ${  error.message}`);
+      setError(`Failed to load admin data: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -64,10 +64,10 @@ export function AdminPanel({
 
   if (!currentUser?.isAdmin) {
     return (
-      <div className="p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-5 h-5" />
+      <div className='p-4'>
+        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg'>
+          <div className='flex items-center space-x-2'>
+            <AlertTriangle className='w-5 h-5' />
             <span>Access Denied: Admin privileges required</span>
           </div>
         </div>
@@ -76,16 +76,16 @@ export function AdminPanel({
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="text-center py-4">
-        <Shield className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-        <h2 className="text-2xl text-gray-800">Admin Panel</h2>
-        <p className="text-gray-600">Manage matches and users for {group?.name || 'your group'}</p>
+    <div className='p-4 space-y-6'>
+      <div className='text-center py-4'>
+        <Shield className='w-16 h-16 text-purple-600 mx-auto mb-4' />
+        <h2 className='text-2xl text-gray-800'>Admin Panel</h2>
+        <p className='text-gray-600'>Manage matches and users for {group?.name || 'your group'}</p>
       </div>
 
       {/* Tab Selection */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="grid grid-cols-3 gap-2">
+      <div className='bg-white rounded-lg border border-gray-200 p-4'>
+        <div className='grid grid-cols-3 gap-2'>
           <button
             onClick={() => setActiveTab('matches')}
             className={`px-4 py-3 rounded-lg text-center transition-colors ${
@@ -94,9 +94,9 @@ export function AdminPanel({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <div className="flex flex-col items-center space-y-1">
-              <Trophy className="w-5 h-5" />
-              <span className="text-sm">Matches ({matches.length})</span>
+            <div className='flex flex-col items-center space-y-1'>
+              <Trophy className='w-5 h-5' />
+              <span className='text-sm'>Matches ({matches.length})</span>
             </div>
           </button>
           <button
@@ -107,9 +107,9 @@ export function AdminPanel({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <div className="flex flex-col items-center space-y-1">
-              <Users className="w-5 h-5" />
-              <span className="text-sm">Users ({users.length})</span>
+            <div className='flex flex-col items-center space-y-1'>
+              <Users className='w-5 h-5' />
+              <span className='text-sm'>Users ({users.length})</span>
             </div>
           </button>
           <button
@@ -120,9 +120,9 @@ export function AdminPanel({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <div className="flex flex-col items-center space-y-1">
-              <Building2 className="w-5 h-5" />
-              <span className="text-sm">Group</span>
+            <div className='flex flex-col items-center space-y-1'>
+              <Building2 className='w-5 h-5' />
+              <span className='text-sm'>Group</span>
             </div>
           </button>
         </div>
@@ -130,11 +130,11 @@ export function AdminPanel({
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-          <p className="text-sm">{error}</p>
+        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg'>
+          <p className='text-sm'>{error}</p>
           <button
             onClick={() => setError('')}
-            className="text-red-500 hover:text-red-700 text-xs mt-1"
+            className='text-red-500 hover:text-red-700 text-xs mt-1'
           >
             Dismiss
           </button>

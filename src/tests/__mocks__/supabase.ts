@@ -11,7 +11,7 @@ export const mockUser: User = {
   app_metadata: {},
   user_metadata: {
     name: 'Test User',
-    username: 'testuser'
+    username: 'testuser',
   },
   aud: 'authenticated',
   confirmation_sent_at: '2024-01-01T00:00:00.000Z',
@@ -28,7 +28,7 @@ export const mockUser: User = {
   updated_at: '2024-01-01T00:00:00.000Z',
   identities: [],
   factors: [],
-  is_anonymous: false
+  is_anonymous: false,
 };
 
 // Mock session data
@@ -38,7 +38,7 @@ export const mockSession: Session = {
   expires_in: 3600,
   expires_at: Date.now() / 1000 + 3600,
   token_type: 'bearer',
-  user: mockUser
+  user: mockUser,
 };
 
 // Mock Supabase client
@@ -48,10 +48,10 @@ export const mockSupabaseClient = {
     getUser: vi.fn().mockResolvedValue({ data: { user: mockUser }, error: null }),
     signInWithPassword: vi.fn().mockResolvedValue({
       data: { user: mockUser, session: mockSession },
-      error: null
+      error: null,
     }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
-    onAuthStateChange: vi.fn().mockImplementation((callback) => {
+    onAuthStateChange: vi.fn().mockImplementation(callback => {
       // Simulate auth state change
       setTimeout(() => {
         callback('SIGNED_IN' as AuthChangeEvent, mockSession);
@@ -60,16 +60,16 @@ export const mockSupabaseClient = {
       return {
         data: {
           subscription: {
-            unsubscribe: vi.fn()
-          }
-        }
+            unsubscribe: vi.fn(),
+          },
+        },
       };
     }),
     resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
     updateUser: vi.fn().mockResolvedValue({
       data: { user: mockUser },
-      error: null
-    })
+      error: null,
+    }),
   },
   from: vi.fn().mockReturnThis(),
   select: vi.fn().mockReturnThis(),
@@ -80,7 +80,7 @@ export const mockSupabaseClient = {
   order: vi.fn().mockReturnThis(),
   limit: vi.fn().mockReturnThis(),
   single: vi.fn().mockResolvedValue({ data: null, error: null }),
-  then: vi.fn().mockResolvedValue({ data: [], error: null })
+  then: vi.fn().mockResolvedValue({ data: [], error: null }),
 };
 
 // Mock the createClient function
@@ -94,7 +94,7 @@ export const mockApiRequest = vi.fn().mockImplementation((endpoint: string, opti
       id: mockUser.id,
       email: mockUser.email,
       name: mockUser.user_metadata?.name,
-      username: mockUser.user_metadata?.username
+      username: mockUser.user_metadata?.username,
     });
   }
 
@@ -103,7 +103,7 @@ export const mockApiRequest = vi.fn().mockImplementation((endpoint: string, opti
       id: 'test-group-id',
       name: 'Test Group',
       code: 'TEST123',
-      adminIds: [mockUser.id]
+      adminIds: [mockUser.id],
     });
   }
 
@@ -115,8 +115,8 @@ export const mockApiRequest = vi.fn().mockImplementation((endpoint: string, opti
         username: mockUser.user_metadata?.username,
         rating: 1200,
         wins: 10,
-        losses: 5
-      }
+        losses: 5,
+      },
     ]);
   }
 
@@ -129,8 +129,8 @@ export const mockApiRequest = vi.fn().mockImplementation((endpoint: string, opti
         player2: { id: 'other-user', name: 'Other User' },
         score1: 10,
         score2: 8,
-        createdAt: '2024-01-01T00:00:00.000Z'
-      }
+        createdAt: '2024-01-01T00:00:00.000Z',
+      },
     ]);
   }
 

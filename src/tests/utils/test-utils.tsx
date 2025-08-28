@@ -14,7 +14,7 @@ const mockGroup: Group = {
   name: 'Test Group',
   code: 'TEST123',
   adminIds: ['test-user-id'],
-  createdAt: '2024-01-01T00:00:00.000Z'
+  createdAt: '2024-01-01T00:00:00.000Z',
 };
 
 const mockUsers: User[] = [
@@ -28,8 +28,8 @@ const mockUsers: User[] = [
     avatar: null,
     isAdmin: true,
     createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z'
-  }
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
 ];
 
 const mockMatches: Match[] = [
@@ -41,8 +41,8 @@ const mockMatches: Match[] = [
     score1: 10,
     score2: 8,
     groupId: 'test-group-id',
-    createdAt: '2024-01-01T00:00:00.000Z'
-  }
+    createdAt: '2024-01-01T00:00:00.000Z',
+  },
 ];
 
 // Default mock contexts
@@ -55,7 +55,7 @@ const defaultAuthContext: AuthContextType = {
   login: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn().mockResolvedValue(undefined),
   checkSession: vi.fn().mockResolvedValue(undefined),
-  clearError: vi.fn()
+  clearError: vi.fn(),
 };
 
 const defaultAppDataContext: AppDataContextType = {
@@ -65,7 +65,7 @@ const defaultAppDataContext: AppDataContextType = {
   isLoadingData: false,
   error: null,
   refreshData: vi.fn().mockResolvedValue(undefined),
-  clearError: vi.fn()
+  clearError: vi.fn(),
 };
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -77,25 +77,22 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 // Custom render function with providers
 function customRender(
   ui: ReactElement,
-  {
-    authContext = {},
-    appDataContext = {},
-    queryClient,
-    ...renderOptions
-  }: CustomRenderOptions = {}
+  { authContext = {}, appDataContext = {}, queryClient, ...renderOptions }: CustomRenderOptions = {}
 ) {
   // Create a fresh query client for each test if not provided
-  const testQueryClient = queryClient || new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
+  const testQueryClient =
+    queryClient ||
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: 0,
+        },
+        mutations: {
+          retry: false,
+        },
       },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
+    });
 
   const mergedAuthContext = { ...defaultAuthContext, ...authContext };
   const mergedAppDataContext = { ...defaultAppDataContext, ...appDataContext };
@@ -105,9 +102,7 @@ function customRender(
       <QueryClientProvider client={testQueryClient}>
         <AuthContext.Provider value={mergedAuthContext}>
           <AppDataContext.Provider value={mergedAppDataContext}>
-            <DialogProvider>
-              {children}
-            </DialogProvider>
+            <DialogProvider>{children}</DialogProvider>
           </AppDataContext.Provider>
         </AuthContext.Provider>
       </QueryClientProvider>

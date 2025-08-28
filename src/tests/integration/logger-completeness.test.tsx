@@ -19,7 +19,7 @@ describe('Logger Completeness Integration', () => {
 
       // API-specific methods
       'apiEvent',
-      'apiRequest',  // Used in src/utils/supabase/client.tsx:26
+      'apiRequest', // Used in src/utils/supabase/client.tsx:26
       'apiResponse', // Used in src/utils/supabase/client.tsx:132
     ];
 
@@ -112,13 +112,20 @@ describe('Logger Completeness Integration', () => {
 
     const loggerKeys = Object.keys(logger);
     const requiredMethods = [
-      'debug', 'info', 'warn', 'error',
-      'authEvent', 'sessionEvent', 'apiEvent',
-      'apiRequest', 'apiResponse'
+      'debug',
+      'info',
+      'warn',
+      'error',
+      'authEvent',
+      'sessionEvent',
+      'apiEvent',
+      'apiRequest',
+      'apiResponse',
     ];
 
     requiredMethods.forEach(method => {
-      expect(loggerKeys).toContain(method,
+      expect(loggerKeys).toContain(
+        method,
         `Logger is missing the '${method}' method. This will cause "logger.${method} is not a function" errors at runtime.`
       );
     });

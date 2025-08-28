@@ -7,4 +7,3 @@ export const K_FACTOR = 32;
 
 // API route prefix (used by client for API calls)
 export const API_PREFIX = '/make-server-171cbf6f';
-

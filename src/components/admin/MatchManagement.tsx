@@ -22,7 +22,7 @@ export function MatchManagement({
   loading,
   onDataChange,
   onError,
-  onLoadAdminData
+  onLoadAdminData,
 }: MatchManagementProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const { showSuccess, showError } = useDialogContext();
@@ -47,103 +47,114 @@ export function MatchManagement({
       await showSuccess('Match deleted successfully!');
     } catch (error) {
       console.error('Failed to delete match:', error);
-      onError(`Failed to delete match: ${  error.message}`);
+      onError(`Failed to delete match: ${error.message}`);
     }
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading admin data...</p>
+      <div className='text-center py-8'>
+        <div className='w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+        <p className='text-gray-600'>Loading admin data...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h3 className="text-lg text-gray-800 mb-4 flex items-center">
-          <Trophy className="w-5 h-5 mr-2 text-purple-600" />
+    <div className='space-y-4'>
+      <div className='bg-white rounded-lg border border-gray-200 p-4'>
+        <h3 className='text-lg text-gray-800 mb-4 flex items-center'>
+          <Trophy className='w-5 h-5 mr-2 text-purple-600' />
           Match Management
         </h3>
 
         {matches.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No matches found in this group.</p>
+          <div className='text-center py-8'>
+            <p className='text-gray-500'>No matches found in this group.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {matches.filter(match => match && match.id).map((match) => {
-              const matchDisplay = formatMatchDisplay(match, users);
+          <div className='space-y-3'>
+            {matches
+              .filter(match => match && match.id)
+              .map(match => {
+                const matchDisplay = formatMatchDisplay(match, users);
 
-              return (
-                <div key={match.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          matchDisplay.type === '2v2'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {matchDisplay.type}
-                        </span>
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {match.date || 'Unknown date'}
-                        </span>
+                return (
+                  <div key={match.id} className='border border-gray-200 rounded-lg p-4'>
+                    <div className='flex items-start justify-between'>
+                      <div className='flex-1'>
+                        <div className='flex items-center space-x-2 mb-2'>
+                          <span
+                            className={`px-2 py-1 rounded text-xs ${
+                              matchDisplay.type === '2v2'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {matchDisplay.type}
+                          </span>
+                          <span className='text-xs text-gray-500 flex items-center'>
+                            <Calendar className='w-3 h-3 mr-1' />
+                            {match.date || 'Unknown date'}
+                          </span>
+                        </div>
+
+                        <p className='text-sm text-gray-700 mb-1'>
+                          <strong>Players:</strong> {matchDisplay.participants}
+                        </p>
+                        <p className='text-sm text-gray-700 mb-2'>
+                          <strong>Winner:</strong> {matchDisplay.winner}
+                        </p>
+
+                        {match.eloChanges && (
+                          <div className='text-xs text-gray-600'>
+                            <strong>ELO Changes:</strong>{' '}
+                            {Object.entries(match.eloChanges).map(
+                              ([email, change]: [string, any]) => (
+                                <span
+                                  key={email}
+                                  className={`ml-2 ${change.change > 0 ? 'text-green-600' : 'text-red-600'}`}
+                                >
+                                  {users.find(u => u.email === email)?.name || email}:{' '}
+                                  {change.change > 0 ? '+' : ''}
+                                  {change.change}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      <p className="text-sm text-gray-700 mb-1">
-                        <strong>Players:</strong> {matchDisplay.participants}
-                      </p>
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Winner:</strong> {matchDisplay.winner}
-                      </p>
-
-                      {match.eloChanges && (
-                        <div className="text-xs text-gray-600">
-                          <strong>ELO Changes:</strong>{' '}
-                          {Object.entries(match.eloChanges).map(([email, change]: [string, any]) => (
-                            <span key={email} className={`ml-2 ${change.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {users.find(u => u.email === email)?.name || email}: {change.change > 0 ? '+' : ''}{change.change}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="ml-4">
-                      {deleteConfirm === match.id ? (
-                        <div className="flex flex-col space-y-2">
+                      <div className='ml-4'>
+                        {deleteConfirm === match.id ? (
+                          <div className='flex flex-col space-y-2'>
+                            <button
+                              onClick={() => handleDeleteMatch(match.id)}
+                              className='px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700'
+                            >
+                              Confirm Delete
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(null)}
+                              className='px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400'
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={() => handleDeleteMatch(match.id)}
-                            className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                            onClick={() => setDeleteConfirm(match.id)}
+                            className='p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors'
+                            title='Delete Match'
                           >
-                            Confirm Delete
+                            <Trash2 className='w-4 h-4' />
                           </button>
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirm(match.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete Match"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         )}
       </div>

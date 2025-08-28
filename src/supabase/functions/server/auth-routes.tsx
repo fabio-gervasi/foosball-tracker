@@ -1,17 +1,13 @@
 import { Hono } from 'npm:hono';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as kv from './kv_store.tsx';
-import {
-  INITIAL_ELO,
-  ADMIN_SECRET,
-  API_PREFIX
-} from './server-constants.tsx';
+import { INITIAL_ELO, ADMIN_SECRET, API_PREFIX } from './server-constants.tsx';
 import {
   generateAvatar,
   usernameToEmail,
   emailToUsername,
   validateUsername,
-  validateEmail
+  validateEmail,
 } from './server-helpers.tsx';
 import { serverLogger } from './server-logger.tsx';
 import { validateUserAuth, validateAdminAuth } from './auth-helpers.tsx';
@@ -20,14 +16,16 @@ export function createAuthRoutes(supabase: any) {
   const app = new Hono();
 
   // User signin with username instead of email
-  app.post('/signin', async (c) => {
+  app.post('/signin', async c => {
     try {
       serverLogger.info('Signin request received');
       const authHeader = c.req.header('Authorization');
       serverLogger.debug('Auth header present', { hasAuth: !!authHeader });
 
       const { username, password } = await c.req.json();
-      serverLogger.info('Signin attempt', { username: username ? '[USERNAME_PROVIDED]' : '[NO_USERNAME]' });
+      serverLogger.info('Signin attempt', {
+        username: username ? '[USERNAME_PROVIDED]' : '[NO_USERNAME]',
+      });
 
       if (!username || !password) {
         serverLogger.warn('Missing username or password');
@@ -63,19 +61,28 @@ export function createAuthRoutes(supabase: any) {
 
         // Get all username keys to help debug (but don't expose to client)
         const allUserKeys = await kv.getByPrefix('user:username:');
-        console.log('Available usernames:', allUserKeys.map(item => item.key.replace('user:username:', '')));
+        console.log(
+          'Available usernames:',
+          allUserKeys.map(item => item.key.replace('user:username:', ''))
+        );
 
         // Check if this might be a commonly attempted demo username
         const demoUsernames = ['Demo Player', 'Tsubasa', 'demo', 'demo.player'];
         if (demoUsernames.some(demo => demo.toLowerCase() === username.toLowerCase())) {
-          return c.json({
-            error: `Demo accounts are no longer available. Please create a new account by clicking "Sign Up".`
-          }, 401);
+          return c.json(
+            {
+              error: `Demo accounts are no longer available. Please create a new account by clicking "Sign Up".`,
+            },
+            401
+          );
         }
 
-        return c.json({
-          error: `User '${username}' not found. Please check your username and try again, or create a new account by clicking "Sign Up".`
-        }, 401);
+        return c.json(
+          {
+            error: `User '${username}' not found. Please check your username and try again, or create a new account by clicking "Sign Up".`,
+          },
+          401
+        );
       }
 
       // Get user profile
@@ -95,7 +102,7 @@ export function createAuthRoutes(supabase: any) {
         userId,
         username: userProfile.username,
         email: userProfile.email ? 'present' : 'missing',
-        hasCurrentGroup: !!userProfile.currentGroup
+        hasCurrentGroup: !!userProfile.currentGroup,
       });
 
       // For other users, try Supabase auth if ANON_KEY is available
@@ -108,16 +115,17 @@ export function createAuthRoutes(supabase: any) {
       console.log('Attempting Supabase auth signin with anon key...');
 
       // Create a client-side Supabase client for authentication
-      const clientSupabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        anonKey
-      );
+      const clientSupabase = createClient(Deno.env.get('SUPABASE_URL')!, anonKey);
 
       // Build list of emails to try for authentication
       const emailsToTry = [];
 
       // 1. First priority: real email from user profile (new users)
-      if (userProfile.email && userProfile.email !== username && !userProfile.email.endsWith('@foosball.app')) {
+      if (
+        userProfile.email &&
+        userProfile.email !== username &&
+        !userProfile.email.endsWith('@foosball.app')
+      ) {
         emailsToTry.push(userProfile.email);
         console.log('Will try real email from profile:', userProfile.email);
       }
@@ -145,7 +153,10 @@ export function createAuthRoutes(supabase: any) {
         console.log('Will try stored profile email:', userProfile.email);
       }
 
-      console.log(`Attempting authentication with ${emailsToTry.length} email formats for user:`, userId);
+      console.log(
+        `Attempting authentication with ${emailsToTry.length} email formats for user:`,
+        userId
+      );
 
       let authSuccess = false;
       let authData = null;
@@ -195,27 +206,26 @@ export function createAuthRoutes(supabase: any) {
         console.log('Authentication successful, returning session');
         return c.json({
           user: userProfile,
-          session: { access_token: authData.session.access_token }
+          session: { access_token: authData.session.access_token },
         });
       } else {
         console.error('All authentication attempts failed for username:', username);
         console.error('Last error:', lastError?.message);
         return c.json({ error: 'Invalid login credentials' }, 401);
       }
-
     } catch (error) {
       console.error('=== Signin error ===', error);
       console.error('Error details:', {
         name: error.name,
         message: error.message,
-        stack: error.stack?.substring(0, 500) // Truncate stack trace
+        stack: error.stack?.substring(0, 500), // Truncate stack trace
       });
       return c.json({ error: 'Internal server error during signin' }, 500);
     }
   });
 
   // User signup with username and email
-  app.post('/signup', async (c) => {
+  app.post('/signup', async c => {
     try {
       console.log('=== Signup request received ===');
       const authHeader = c.req.header('Authorization');
@@ -275,7 +285,7 @@ export function createAuthRoutes(supabase: any) {
         password,
         user_metadata: { name: username },
         // Automatically confirm the user's email since an email server hasn't been configured.
-        email_confirm: true
+        email_confirm: true,
       });
 
       if (authError) {
@@ -304,7 +314,7 @@ export function createAuthRoutes(supabase: any) {
         avatar: generateAvatar(username),
         currentGroup: null, // User starts without a group
         isAdmin: false, // Regular users are not admin by default
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       console.log('Storing user profile in KV...');
@@ -322,7 +332,7 @@ export function createAuthRoutes(supabase: any) {
   });
 
   // Get current user info
-  app.get('/user', async (c) => {
+  app.get('/user', async c => {
     try {
       console.log('=== User info request received ===');
 
@@ -344,7 +354,7 @@ export function createAuthRoutes(supabase: any) {
   });
 
   // Endpoint to help users check if they need to create a new account
-  app.post('/check-user-exists', async (c) => {
+  app.post('/check-user-exists', async c => {
     try {
       console.log('=== Check user exists request ===');
 
@@ -358,7 +368,7 @@ export function createAuthRoutes(supabase: any) {
       if (!userId) {
         return c.json({
           exists: false,
-          message: 'User not found. Please create a new account.'
+          message: 'User not found. Please create a new account.',
         });
       }
 
@@ -371,19 +381,20 @@ export function createAuthRoutes(supabase: any) {
           return c.json({
             exists: false,
             orphaned: true,
-            message: 'This account needs to be recreated. Please sign up with a new account using your email.'
+            message:
+              'This account needs to be recreated. Please sign up with a new account using your email.',
           });
         }
 
         return c.json({
           exists: true,
-          message: 'User exists. You can sign in.'
+          message: 'User exists. You can sign in.',
         });
       } catch (authError) {
         console.error('Error checking auth user:', authError);
         return c.json({
           exists: false,
-          message: 'Unable to verify account. Please try creating a new account.'
+          message: 'Unable to verify account. Please try creating a new account.',
         });
       }
     } catch (error) {

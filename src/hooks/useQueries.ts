@@ -9,7 +9,7 @@ import type {
   GroupResponse,
   UsersResponse,
   MatchesResponse,
-  GroupsResponse
+  GroupsResponse,
 } from '../types';
 
 // Query key factory for consistent cache keys
@@ -36,9 +36,9 @@ export const useUserQuery = (accessToken: string | null): UseQueryResult<User, E
 
       logger.debug('Fetching current user data');
 
-      const response = await apiRequest('/user', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }) as UserResponse;
+      const response = (await apiRequest('/user', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })) as UserResponse;
 
       return response.user;
     },
@@ -66,9 +66,9 @@ export const useCurrentGroupQuery = (accessToken: string | null): UseQueryResult
 
       logger.debug('Fetching current group data');
 
-      const response = await apiRequest('/groups/current', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }) as GroupResponse;
+      const response = (await apiRequest('/groups/current', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })) as GroupResponse;
 
       return response.group;
     },
@@ -96,9 +96,9 @@ export const useUsersQuery = (accessToken: string | null): UseQueryResult<User[]
 
       logger.debug('Fetching users data');
 
-      const response = await apiRequest('/users', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }) as UsersResponse;
+      const response = (await apiRequest('/users', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })) as UsersResponse;
 
       return response.users || [];
     },
@@ -126,9 +126,9 @@ export const useMatchesQuery = (accessToken: string | null): UseQueryResult<Matc
 
       logger.debug('Fetching matches data');
 
-      const response = await apiRequest('/matches', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }) as MatchesResponse;
+      const response = (await apiRequest('/matches', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })) as MatchesResponse;
 
       return response.matches || [];
     },
@@ -156,9 +156,9 @@ export const useUserGroupsQuery = (accessToken: string | null): UseQueryResult<G
 
       logger.debug('Fetching user groups data');
 
-      const response = await apiRequest('/groups/user-groups', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }) as GroupsResponse;
+      const response = (await apiRequest('/groups/user-groups', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })) as GroupsResponse;
 
       return response.groups || [];
     },
@@ -183,16 +183,25 @@ export const useAppDataQueries = (accessToken: string | null) => {
   const matchesQuery = useMatchesQuery(accessToken);
 
   // Determine overall loading state
-  const isLoading = userQuery.isLoading || currentGroupQuery.isLoading ||
-                   usersQuery.isLoading || matchesQuery.isLoading;
+  const isLoading =
+    userQuery.isLoading ||
+    currentGroupQuery.isLoading ||
+    usersQuery.isLoading ||
+    matchesQuery.isLoading;
 
   // Determine if any initial load is pending
-  const isLoadingInitial = userQuery.isLoading || currentGroupQuery.isLoading ||
-                          usersQuery.isLoading || matchesQuery.isLoading;
+  const isLoadingInitial =
+    userQuery.isLoading ||
+    currentGroupQuery.isLoading ||
+    usersQuery.isLoading ||
+    matchesQuery.isLoading;
 
   // Determine if any data is being fetched (including background)
-  const isFetching = userQuery.isFetching || currentGroupQuery.isFetching ||
-                    usersQuery.isFetching || matchesQuery.isFetching;
+  const isFetching =
+    userQuery.isFetching ||
+    currentGroupQuery.isFetching ||
+    usersQuery.isFetching ||
+    matchesQuery.isFetching;
 
   // Collect any errors
   const errors = [

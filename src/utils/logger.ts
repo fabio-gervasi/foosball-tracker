@@ -46,5 +46,5 @@ export const logger = {
       const statusType = ok ? 'SUCCESS' : 'ERROR';
       console.log(`[API RESPONSE] ${statusType} ${status} ${endpoint}`, data);
     }
-  }
+  },
 };

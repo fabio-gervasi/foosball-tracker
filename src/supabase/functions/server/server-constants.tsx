@@ -14,7 +14,9 @@ export const API_PREFIX = '/make-server-171cbf6f';
 
 // Environment validation
 if (!Deno.env.get('ADMIN_SECRET')) {
-  console.warn('WARNING: ADMIN_SECRET not found in environment variables, using default value. Set ADMIN_SECRET environment variable for production.');
+  console.warn(
+    'WARNING: ADMIN_SECRET not found in environment variables, using default value. Set ADMIN_SECRET environment variable for production.'
+  );
 } else {
   console.log('✅ ADMIN_SECRET loaded from environment variables');
 }

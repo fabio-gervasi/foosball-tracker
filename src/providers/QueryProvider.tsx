@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
         return failureCount < 3;
       },
       // Retry delay with exponential backoff
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
       // Refetch on window focus for fresh data
       refetchOnWindowFocus: true,
       // Refetch when coming back online
@@ -46,7 +46,7 @@ const queryClient = new QueryClient({
         return failureCount < 1;
       },
       // Log mutation errors
-      onError: (error) => {
+      onError: error => {
         logger.error('Mutation error', error);
       },
     },
@@ -62,12 +62,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
     <QueryClientProvider client={queryClient}>
       {children}
       {/* Only show devtools in development */}
-      {import.meta.env.DEV && (
-        <ReactQueryDevtools
-          initialIsOpen={false}
-          position="bottom-right"
-        />
-      )}
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} position='bottom-right' />}
     </QueryClientProvider>
   );
 }
