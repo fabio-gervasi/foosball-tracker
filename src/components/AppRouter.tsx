@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
 import { User } from 'lucide-react';
-import { Dashboard } from './dashboard/Dashboard';
-import { Profile } from './Profile';
-import { MatchEntry } from './dashboard/MatchEntry';
-import { MatchConfirmation } from './MatchConfirmation';
-import { Statistics } from './dashboard/Statistics';
-import { Leaderboard } from './dashboard/Leaderboard';
-import { MatchHistory } from './MatchHistory';
-import { AdminPanel } from './AdminPanel';
-import { PlayerProfile } from './PlayerProfile';
 import { Navigation } from './common/Navigation';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { LoadingScreen } from './common/LoadingScreen';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppData } from '../contexts/AppDataContext';
 import foosballIcon from '../assets/foosball-icon.png';
+
+// Lazy load components for better performance
+const Dashboard = lazy(() => import('./dashboard/Dashboard').then(module => ({ default: module.Dashboard })));
+const Profile = lazy(() => import('./Profile').then(module => ({ default: module.Profile })));
+const MatchEntry = lazy(() => import('./dashboard/MatchEntry').then(module => ({ default: module.MatchEntry })));
+const MatchConfirmation = lazy(() => import('./MatchConfirmation').then(module => ({ default: module.MatchConfirmation })));
+const Statistics = lazy(() => import('./dashboard/Statistics').then(module => ({ default: module.Statistics })));
+const Leaderboard = lazy(() => import('./dashboard/Leaderboard').then(module => ({ default: module.Leaderboard })));
+const MatchHistory = lazy(() => import('./MatchHistory').then(module => ({ default: module.MatchHistory })));
+const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
+const PlayerProfile = lazy(() => import('./PlayerProfile').then(module => ({ default: module.PlayerProfile })));
 
 export const AppRouter: React.FC = () => {
   // Router state
@@ -25,17 +28,18 @@ export const AppRouter: React.FC = () => {
   const { currentUser, accessToken } = useAuth();
   const { users, matches, currentGroup, error, handleMatchSubmit, handleProfileUpdate, handleGroupChanged, refreshData } = useAppData();
 
+  // Memoized navigation handlers for better performance
+  const handleNavigate = useCallback((event: any) => {
+    setCurrentView(event.detail);
+  }, []);
+
+  const handlePlayerSelect = useCallback((event: any) => {
+    setSelectedPlayerId(event.detail.playerId);
+    setCurrentView('playerProfile');
+  }, []);
+
   // Listen for navigation events from components
   useEffect(() => {
-    const handleNavigate = (event: any) => {
-      setCurrentView(event.detail);
-    };
-
-    const handlePlayerSelect = (event: any) => {
-      setSelectedPlayerId(event.detail.playerId);
-      setCurrentView('playerProfile');
-    };
-
     window.addEventListener('navigate', handleNavigate);
     window.addEventListener('showPlayerProfile', handlePlayerSelect);
 
@@ -43,9 +47,9 @@ export const AppRouter: React.FC = () => {
       window.removeEventListener('navigate', handleNavigate);
       window.removeEventListener('showPlayerProfile', handlePlayerSelect);
     };
-  }, []);
+  }, [handleNavigate, handlePlayerSelect]);
 
-  const handleMatchSubmitWithNavigation = async (matchData: any) => {
+  const handleMatchSubmitWithNavigation = useCallback(async (matchData: any) => {
     try {
       const response = await handleMatchSubmit(matchData);
 
@@ -59,138 +63,162 @@ export const AppRouter: React.FC = () => {
     } catch (error) {
       throw error;
     }
-  };
+  }, [handleMatchSubmit]);
 
-  const renderCurrentView = () => {
+  const renderCurrentView = useMemo(() => {
     switch (currentView) {
       case 'dashboard':
         return (
-          <Dashboard
-            user={currentUser}
-            matches={matches}
-            users={users}
-            group={currentGroup}
-            error={error}
-            accessToken={accessToken}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Dashboard..." />}>
+            <Dashboard
+              user={currentUser}
+              matches={matches}
+              users={users}
+              group={currentGroup}
+              error={error}
+              accessToken={accessToken}
+            />
+          </Suspense>
         );
 
       case 'profile':
         return (
-          <Profile
-            user={currentUser}
-            group={currentGroup}
-            accessToken={accessToken}
-            onUpdateProfile={handleProfileUpdate}
-            onDataChange={refreshData}
-            onGroupChanged={handleGroupChanged}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Profile..." />}>
+            <Profile
+              user={currentUser}
+              group={currentGroup}
+              accessToken={accessToken}
+              onUpdateProfile={handleProfileUpdate}
+              onDataChange={refreshData}
+              onGroupChanged={handleGroupChanged}
+            />
+          </Suspense>
         );
 
       case 'match':
         return (
-          <MatchEntry
-            users={users}
-            onMatchSubmit={handleMatchSubmitWithNavigation}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Match Entry..." />}>
+            <MatchEntry
+              users={users}
+              onMatchSubmit={handleMatchSubmitWithNavigation}
+            />
+          </Suspense>
         );
 
       case 'matchConfirmation':
         return lastMatchResult ? (
-          <MatchConfirmation
-            matchResult={lastMatchResult}
-            currentUser={currentUser}
-            accessToken={accessToken}
-            onBack={() => {
-              setLastMatchResult(null);
-              setCurrentView('dashboard');
-            }}
-            onDataChange={refreshData}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Match Confirmation..." />}>
+            <MatchConfirmation
+              matchResult={lastMatchResult}
+              currentUser={currentUser}
+              accessToken={accessToken}
+              onBack={() => {
+                setLastMatchResult(null);
+                setCurrentView('dashboard');
+              }}
+              onDataChange={refreshData}
+            />
+          </Suspense>
         ) : (
-          <Dashboard
-            user={currentUser}
-            matches={matches}
-            users={users}
-            group={currentGroup}
-            error={error}
-            accessToken={accessToken}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Dashboard..." />}>
+            <Dashboard
+              user={currentUser}
+              matches={matches}
+              users={users}
+              group={currentGroup}
+              error={error}
+              accessToken={accessToken}
+            />
+          </Suspense>
         );
 
       case 'statistics':
         return (
-          <Statistics
-            user={currentUser}
-            matches={matches}
-            group={currentGroup}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Statistics..." />}>
+            <Statistics
+              user={currentUser}
+              matches={matches}
+              group={currentGroup}
+            />
+          </Suspense>
         );
 
       case 'leaderboard':
         return (
-          <Leaderboard
-            users={users}
-            group={currentGroup}
-            currentUser={currentUser}
-            accessToken={accessToken}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Leaderboard..." />}>
+            <Leaderboard
+              users={users}
+              group={currentGroup}
+              currentUser={currentUser}
+              accessToken={accessToken}
+            />
+          </Suspense>
         );
 
       case 'history':
         return (
-          <MatchHistory
-            currentUser={currentUser}
-            accessToken={accessToken}
-            group={currentGroup}
-            users={users}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Match History..." />}>
+            <MatchHistory
+              currentUser={currentUser}
+              accessToken={accessToken}
+              group={currentGroup}
+              users={users}
+            />
+          </Suspense>
         );
 
       case 'admin':
         return (
-          <AdminPanel
-            currentUser={currentUser}
-            accessToken={accessToken}
-            group={currentGroup}
-            users={users}
-            onDataChange={refreshData}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Admin Panel..." />}>
+            <AdminPanel
+              currentUser={currentUser}
+              accessToken={accessToken}
+              group={currentGroup}
+              users={users}
+              onDataChange={refreshData}
+            />
+          </Suspense>
         );
 
       case 'playerProfile':
         return selectedPlayerId ? (
-          <PlayerProfile
-            playerId={selectedPlayerId}
-            currentUser={currentUser}
-            group={currentGroup}
-            accessToken={accessToken}
-            onBack={() => setCurrentView('dashboard')}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Player Profile..." />}>
+            <PlayerProfile
+              playerId={selectedPlayerId}
+              currentUser={currentUser}
+              group={currentGroup}
+              accessToken={accessToken}
+              onBack={() => setCurrentView('dashboard')}
+            />
+          </Suspense>
         ) : (
-          <Dashboard
-            user={currentUser}
-            matches={matches}
-            users={users}
-            group={currentGroup}
-            error={error}
-            accessToken={accessToken}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Dashboard..." />}>
+            <Dashboard
+              user={currentUser}
+              matches={matches}
+              users={users}
+              group={currentGroup}
+              error={error}
+              accessToken={accessToken}
+            />
+          </Suspense>
         );
 
       default:
         return (
-          <Dashboard
-            user={currentUser}
-            matches={matches}
-            users={users}
-            group={currentGroup}
-            error={error}
-            accessToken={accessToken}
-          />
+          <Suspense fallback={<LoadingScreen message="Loading Dashboard..." />}>
+            <Dashboard
+              user={currentUser}
+              matches={matches}
+              users={users}
+              group={currentGroup}
+              error={error}
+              accessToken={accessToken}
+            />
+          </Suspense>
         );
     }
-  };
+  }, [currentView, currentUser, matches, users, currentGroup, error, accessToken, lastMatchResult, handleMatchSubmitWithNavigation, handleProfileUpdate, refreshData, handleGroupChanged, selectedPlayerId]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -240,7 +268,7 @@ export const AppRouter: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 pb-20">
-        {renderCurrentView()}
+        {renderCurrentView}
       </main>
     </div>
   );

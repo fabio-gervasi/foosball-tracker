@@ -2,6 +2,42 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { logger } from '../../utils/logger';
 
+// Performance monitoring utilities
+const performanceMonitor = {
+  measureRender: (componentName: string, startTime: number) => {
+    const endTime = performance.now();
+    const renderTime = endTime - startTime;
+
+    if (renderTime > 16) { // More than 16ms (60fps threshold)
+      logger.warn(`Slow render detected: ${componentName} took ${renderTime.toFixed(2)}ms`);
+    }
+
+    return renderTime;
+  },
+
+  measureMemory: () => {
+    if ('memory' in performance && (performance as any).memory) {
+      const memory = (performance as any).memory;
+      return {
+        used: Math.round(memory.usedJSHeapSize / 1024 / 1024),
+        total: Math.round(memory.totalJSHeapSize / 1024 / 1024),
+        limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024)
+      };
+    }
+    return null;
+  },
+
+  reportPerformanceMetrics: () => {
+    const memory = performanceMonitor.measureMemory();
+    if (memory) {
+      logger.info('Performance metrics', {
+        memory: `${memory.used}MB / ${memory.total}MB (limit: ${memory.limit}MB)`,
+        memoryUsagePercent: Math.round((memory.used / memory.limit) * 100)
+      });
+    }
+  }
+};
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
