@@ -1,4 +1,5 @@
 # Foosball Tracker - Branch Protection Configuration
+
 # REQ-5.2.2: Branch Protection Strategy
 
 This document provides the configuration for GitHub branch protection rules that should be applied to the repository.
@@ -13,11 +14,7 @@ Apply these settings to the `main` branch in GitHub repository settings:
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": [
-      "quality-gates",
-      "performance-budget",
-      "Vercel – foosball-tracker"
-    ]
+    "contexts": ["quality-gates"]
   },
   "enforce_admins": true,
   "required_pull_request_reviews": {
@@ -34,6 +31,8 @@ Apply these settings to the `main` branch in GitHub repository settings:
   "restrictions": null
 }
 ```
+
+**⚠️ CRITICAL**: Main branch does NOT require `preview-testing` status check (REQ-5.2.6 optimization). Preview testing is skipped when merging to main because code has already been tested on the dev branch.
 
 ### Manual Setup Instructions
 
@@ -68,31 +67,40 @@ Apply these settings to the `main` branch in GitHub repository settings:
 
 ## Development Branch Protection Rules
 
-For the `dev` branch (if used), apply similar but slightly more relaxed rules:
+For the `dev` branch, apply these rules to ensure proper feature branch testing:
 
 ```json
 {
   "required_status_checks": {
-    "strict": false,
-    "contexts": [
-      "quality-gates"
-    ]
+    "strict": true,
+    "contexts": ["quality-gates", "preview-testing"]
   },
-  "enforce_admins": false,
+  "enforce_admins": true,
   "required_pull_request_reviews": {
     "required_approving_review_count": 1,
-    "dismiss_stale_reviews": false
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "require_last_push_approval": true
   },
+  "required_linear_history": false,
   "allow_force_pushes": false,
-  "allow_deletions": false
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": true,
+  "restrictions": null
 }
 ```
 
+**✅ IMPORTANT**: Dev branch DOES require `preview-testing` status check because feature branches need comprehensive testing before merging to dev.
+
 ## Status Check Requirements
+
+### Main Branch Requirements
 
 The following status checks must pass before merging to `main`:
 
-### 1. Quality Gates (`quality-gates`)
+#### 1. Quality Gates (`quality-gates`)
+
 - ✅ ESLint validation passes
 - ✅ Prettier formatting check passes
 - ✅ TypeScript compilation succeeds
@@ -100,15 +108,33 @@ The following status checks must pass before merging to `main`:
 - ✅ Security audit passes (no high/critical vulnerabilities)
 - ✅ Build completes successfully
 
-### 2. Performance Budget (`performance-budget`)
-- ✅ Bundle size within limits (<1MB)
-- ✅ Performance budget validation
-- ✅ No significant performance regressions
+**Note**: `preview-testing` is NOT required for main branch (REQ-5.2.6 optimization)
 
-### 3. Vercel Deployment (`Vercel – foosball-tracker`)
+### Dev Branch Requirements
+
+The following status checks must pass before merging to `dev`:
+
+#### 1. Quality Gates (`quality-gates`)
+
+- ✅ Same requirements as main branch
+
+#### 2. Preview Testing (`preview-testing`)
+
 - ✅ Preview deployment succeeds
-- ✅ Build completes on Vercel
-- ✅ No deployment errors
+- ✅ End-to-end testing passes
+- ✅ Lighthouse performance audit passes
+- ✅ Security headers validation passes
+- ✅ Analytics integration testing passes
+
+### Feature Branch Workflow
+
+| Branch Pattern | Target Branch   | Required Status Checks                                 |
+| -------------- | --------------- | ------------------------------------------------------ |
+| `feature/*`    | `dev`           | `quality-gates`, `preview-testing`                     |
+| `bugfix/*`     | `dev`           | `quality-gates`, `preview-testing`                     |
+| `req-*-*-*`    | `dev`           | `quality-gates`, `preview-testing`                     |
+| `hotfix/*`     | `main` or `dev` | `quality-gates` (+ `preview-testing` if targeting dev) |
+| `dev`          | `main`          | `quality-gates` only                                   |
 
 ## Pull Request Template
 
@@ -118,59 +144,71 @@ Create `.github/pull_request_template.md`:
 ## 📋 Pull Request Checklist
 
 ### Changes Made
+
 - [ ] Describe the changes made in this PR
 - [ ] Link to related issues or requirements
 
 ### Testing
+
 - [ ] All existing tests pass
 - [ ] New tests added for new functionality
 - [ ] Manual testing completed
 - [ ] Preview deployment tested
 
 ### Code Quality
+
 - [ ] Code follows project style guidelines
 - [ ] No console.log statements in production code
 - [ ] TypeScript types are properly defined
 - [ ] Documentation updated if needed
 
 ### Performance
+
 - [ ] No significant performance regressions
 - [ ] Bundle size impact considered
 - [ ] Core Web Vitals maintained
 
 ### Security
+
 - [ ] No hardcoded secrets or credentials
 - [ ] Input validation implemented where needed
 - [ ] Security headers maintained
 
 ### Deployment
+
 - [ ] Changes are backward compatible
 - [ ] Database migrations included if needed
 - [ ] Environment variables documented if added
 
 ### Review Requirements
+
 - [ ] Code has been reviewed by at least one team member
 - [ ] All conversations resolved
 - [ ] CI checks pass
 
 ---
+
 **Deployment Notes:**
+
 <!-- Add any special deployment considerations -->
 ```
 
 ## Enforcement Strategy
 
 ### Phase 1: Warning Mode (First 2 weeks)
+
 - Branch protection enabled but not strictly enforced
 - Failed checks generate warnings but don't block merges
 - Team gets familiar with new process
 
 ### Phase 2: Soft Enforcement (Weeks 3-4)
+
 - Most checks required but admins can override
 - Focus on education and process refinement
 - Monitor for false positives
 
 ### Phase 3: Full Enforcement (Week 5+)
+
 - All protection rules strictly enforced
 - No admin overrides except for emergencies
 - Full CI/CD pipeline operational
@@ -178,6 +216,7 @@ Create `.github/pull_request_template.md`:
 ## Emergency Procedures
 
 ### Emergency Hotfix Process
+
 1. Create hotfix branch from `main`
 2. Make minimal necessary changes
 3. Create PR with `[HOTFIX]` prefix
@@ -186,13 +225,16 @@ Create `.github/pull_request_template.md`:
 6. Follow up with comprehensive testing
 
 ### Admin Override Guidelines
+
 Admin overrides should only be used for:
+
 - Critical security fixes
 - Production outages requiring immediate fixes
 - CI system failures (not code issues)
 - Emergency rollbacks
 
 All admin overrides must be:
+
 - Documented in the PR
 - Followed up with proper process compliance
 - Reviewed in retrospective meetings
@@ -202,12 +244,14 @@ All admin overrides must be:
 Track these metrics to measure branch protection effectiveness:
 
 ### Success Metrics
+
 - **PR Merge Success Rate**: >95% of PRs pass all checks
 - **Time to Merge**: <24 hours for standard PRs
 - **Defect Escape Rate**: <2% of merged PRs require hotfixes
 - **CI Reliability**: >98% CI success rate
 
 ### Quality Metrics
+
 - **Test Coverage**: Maintain >80% coverage
 - **Performance Regressions**: <5% of PRs cause performance issues
 - **Security Issues**: 0 critical security issues merged
@@ -218,29 +262,37 @@ Track these metrics to measure branch protection effectiveness:
 ### Common Issues and Solutions
 
 #### 1. Status Check Not Found
+
 **Problem**: Required status check doesn't appear
 **Solution**:
+
 - Ensure workflow runs on PR events
 - Check workflow file syntax
 - Verify status check names match exactly
 
 #### 2. Tests Failing in CI but Passing Locally
+
 **Problem**: Environment differences causing test failures
 **Solution**:
+
 - Check Node.js version consistency
 - Verify environment variables
 - Review test setup and mocks
 
 #### 3. Performance Budget Failures
+
 **Problem**: Bundle size or performance regressions
 **Solution**:
+
 - Analyze bundle size changes
 - Check for unnecessary dependencies
 - Review code splitting strategy
 
 #### 4. Vercel Deployment Failures
+
 **Problem**: Preview deployments failing
 **Solution**:
+
 - Check Vercel configuration
 - Verify environment variables
 - Review build logs
@@ -248,12 +300,14 @@ Track these metrics to measure branch protection effectiveness:
 ## Updates and Maintenance
 
 ### Monthly Review Process
+
 - Review branch protection effectiveness
 - Analyze CI/CD metrics and performance
 - Update rules based on team feedback
 - Refine automation and thresholds
 
 ### Quarterly Updates
+
 - Update required Node.js version
 - Review and update dependencies
 - Assess new GitHub features
@@ -261,4 +315,4 @@ Track these metrics to measure branch protection effectiveness:
 
 ---
 
-*This configuration ensures that all code merged to main meets our quality, security, and performance standards while maintaining development velocity.*
+_This configuration ensures that all code merged to main meets our quality, security, and performance standards while maintaining development velocity._
