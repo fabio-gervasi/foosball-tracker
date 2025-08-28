@@ -208,7 +208,7 @@ jobs:
               BYPASS_SECRET=$(echo "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" | tr -d '\n\r\t ')
               SECRET_LENGTH=$(echo -n "${BYPASS_SECRET}" | wc -c | tr -d ' ')
               echo "🔍 Secret length after cleaning: ${SECRET_LENGTH} characters"
-              
+
               # Debug: Show first and last few characters of secret (for troubleshooting)
               if [[ ${SECRET_LENGTH} -gt 6 ]]; then
                 SECRET_START=$(echo "${BYPASS_SECRET}" | cut -c1-3)
@@ -216,13 +216,20 @@ jobs:
                 echo "🔍 Secret format: ${SECRET_START}...${SECRET_END} (${SECRET_LENGTH} chars)"
               fi
               
+              # Additional troubleshooting info
+              echo "🔍 Troubleshooting checklist:"
+              echo "   - Vercel Project: foosball-tracker (prj_RJA7Jix0AFT9NsxZpMoM8LDdCBzT)"
+              echo "   - Team: fabio-gervasis-projects (team_4eUDZF86BrlrUxYqCt256ncL)"
+              echo "   - Deployment URL: ${PREVIEW_URL}"
+
               # Method 1: Try with headers (recommended approach)
               echo "🔄 Testing bypass with headers..."
               BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
                 --max-time 30 \
                 --location \
+                --user-agent "GitHub-Actions-E2E-Tests/1.0" \
                 -H "x-vercel-protection-bypass: ${BYPASS_SECRET}" \
-                -H "x-vercel-set-bypass-cookie: true" \
+                -H "x-vercel-set-bypass-cookie: samesitenone" \
                 "${PREVIEW_URL}" 2>/dev/null || echo "000")
               # Clean the status code to ensure it's just the number
               BYPASS_STATUS=$(echo "$BYPASS_STATUS" | tr -d '\n\r\t ' | grep -o '[0-9]\{3\}' | head -1)
