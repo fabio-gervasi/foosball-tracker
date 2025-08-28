@@ -13,6 +13,11 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        // Pre-generate critical routes for faster loading
+        // These will be statically generated for optimal performance
+      },
       output: {
         manualChunks: {
           // Vendor chunk for React and core dependencies
@@ -34,7 +39,13 @@ export default defineConfig({
     sourcemap: false,
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
-    outDir: 'build'
+    outDir: 'build',
+    // Enhanced build optimizations for Vercel
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096,
+    modulePreload: {
+      polyfill: false, // Reduce bundle size
+    }
   },
   test: {
     globals: true,

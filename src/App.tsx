@@ -8,6 +8,7 @@ import { DialogProvider } from './components/common/DialogProvider';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppDataProvider, useAppData } from './contexts/AppDataContext';
+import { AnalyticsProvider } from './providers/AnalyticsProvider';
 
 // Main App Content Component (uses contexts)
 const AppContent: React.FC = () => {
@@ -120,13 +121,15 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <ErrorBoundary level="page" showErrorDetails={import.meta.env.DEV}>
-      <AuthProvider>
-        <AppDataProvider>
-          <DialogProvider>
-            <AppContent />
-          </DialogProvider>
-        </AppDataProvider>
-      </AuthProvider>
+      <AnalyticsProvider>
+        <AuthProvider>
+          <AppDataProvider>
+            <DialogProvider>
+              <AppContent />
+            </DialogProvider>
+          </AppDataProvider>
+        </AuthProvider>
+      </AnalyticsProvider>
     </ErrorBoundary>
   );
 }

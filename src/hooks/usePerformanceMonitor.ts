@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { logger } from '../utils/logger';
+import { trackPerformanceData } from '../utils/analytics';
 
 interface PerformanceMetrics {
   renderTime: number;
@@ -35,6 +36,14 @@ export function usePerformanceMonitor(componentName: string) {
       };
 
       metricsHistory.current.push(metrics);
+
+      // Track performance data with analytics
+      trackPerformanceData({
+        componentName,
+        renderTime,
+        memory: getMemoryUsage(),
+        timestamp: endTime
+      });
 
       // Keep only last 10 measurements
       if (metricsHistory.current.length > 10) {
