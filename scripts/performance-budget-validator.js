@@ -518,14 +518,18 @@ async function main() {
 
       // Set output for other workflow steps
       const overallSuccess = results.overall.failed === 0;
-      console.log(`::set-output name=success::${overallSuccess}`);
-      console.log(`::set-output name=violations::${results.overall.failed}`);
-      console.log(`::set-output name=warnings::${results.overall.warnings}`);
+      // Set outputs for GitHub Actions
+      if (process.env.GITHUB_OUTPUT) {
+        const fs = require('fs');
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `success=${overallSuccess}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `violations=${results.overall.failed}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `warnings=${results.overall.warnings}\n`);
 
-      // Create performance budget comment for PR
-      if (process.env.GITHUB_EVENT_NAME === 'pull_request') {
-        const comment = generatePRComment(results);
-        console.log('::set-output name=pr-comment::' + comment.replace(/\n/g, '%0A'));
+        // Create performance budget comment for PR
+        if (process.env.GITHUB_EVENT_NAME === 'pull_request') {
+          const comment = generatePRComment(results);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `pr-comment=${comment.replace(/\n/g, '%0A')}\n`);
+        }
       }
     }
 

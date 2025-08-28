@@ -18,49 +18,49 @@ class GitHubDeploymentFinder {
    */
   async findDeploymentUrl(commitSha, environment = 'Preview') {
     console.log(`🔍 Searching GitHub deployments for commit: ${commitSha.substring(0, 8)}`);
-    
+
     try {
       const deployments = await this.fetchDeployments();
-      
+
       // Find deployment matching our commit and environment
-      const matchingDeployment = deployments.find(deployment => 
-        deployment.sha === commitSha && 
+      const matchingDeployment = deployments.find(deployment =>
+        deployment.sha === commitSha &&
         (deployment.environment === environment || deployment.environment.includes('preview'))
       );
-      
+
       if (matchingDeployment) {
         console.log(`✅ Found matching deployment: ${matchingDeployment.id}`);
-        
+
         // Get deployment statuses to find the Vercel URL
         const statuses = await this.fetchDeploymentStatuses(matchingDeployment.id);
-        
+
         // Look for successful Vercel deployment status
-        const vercelStatus = statuses.find(status => 
-          status.state === 'success' && 
-          status.target_url && 
+        const vercelStatus = statuses.find(status =>
+          status.state === 'success' &&
+          status.target_url &&
           status.target_url.includes('vercel.app')
         );
-        
+
         if (vercelStatus) {
           console.log(`✅ Found Vercel deployment URL: ${vercelStatus.target_url}`);
           return vercelStatus.target_url;
         }
       }
-      
+
       // If no exact match, try to find the latest deployment
       const latestDeployment = deployments.find(d => d.environment.includes('preview'));
       if (latestDeployment) {
         console.log(`⚠️ Using latest preview deployment: ${latestDeployment.id}`);
         const statuses = await this.fetchDeploymentStatuses(latestDeployment.id);
-        const vercelStatus = statuses.find(status => 
+        const vercelStatus = statuses.find(status =>
           status.state === 'success' && status.target_url && status.target_url.includes('vercel.app')
         );
-        
+
         if (vercelStatus) {
           return vercelStatus.target_url;
         }
       }
-      
+
       throw new Error('No Vercel deployment URL found in GitHub deployments');
     } catch (error) {
       console.error(`❌ Error fetching from GitHub API: ${error.message}`);
@@ -144,11 +144,13 @@ async function main() {
   try {
     const finder = new GitHubDeploymentFinder(repoOwner, repoName, githubToken);
     const url = await finder.findDeploymentUrl(commitSha);
-    
+
     // Output for GitHub Actions
     console.log(`PREVIEW_URL=${url}`);
-    console.log(`::set-output name=url::${url}`);
-    
+    if (process.env.GITHUB_OUTPUT) {
+      require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `url=${url}\n`);
+    }
+
     process.exit(0);
   } catch (error) {
     console.error('💥 Failed to find deployment URL:', error.message);

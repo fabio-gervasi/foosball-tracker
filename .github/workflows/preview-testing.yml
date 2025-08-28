@@ -9,6 +9,13 @@ on:
     types: [opened, synchronize, reopened]
     branches: [main, dev]
 
+# Permissions needed for the workflow
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  deployments: read
+
 # Ensure only one preview test runs per PR
 concurrency:
   group: preview-${{ github.event.pull_request.number }}

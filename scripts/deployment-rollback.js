@@ -650,8 +650,12 @@ async function main() {
       console.log(JSON.stringify(results, null, 2));
       console.log('::endgroup::');
 
-      console.log(`::set-output name=success::${results.success}`);
-      console.log(`::set-output name=action::${command}`);
+      // Set outputs for GitHub Actions
+      if (process.env.GITHUB_OUTPUT) {
+        const fs = require('fs');
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `success=${results.success}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `action=${command}\n`);
+      }
     }
 
     // Exit with appropriate code

@@ -572,10 +572,13 @@ async function main() {
 
       // Set output for other workflow steps
       const overallSuccess = results.overall.failed === 0;
-      console.log(`::set-output name=success::${overallSuccess}`);
-      console.log(`::set-output name=passed::${results.overall.passed}`);
-      console.log(`::set-output name=failed::${results.overall.failed}`);
-      console.log(`::set-output name=warnings::${results.overall.warnings}`);
+      if (process.env.GITHUB_OUTPUT) {
+        const fs = require('fs');
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `success=${overallSuccess}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `passed=${results.overall.passed}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `failed=${results.overall.failed}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `warnings=${results.overall.warnings}\n`);
+      }
     }
 
     // Exit with appropriate code

@@ -247,8 +247,10 @@ async function main() {
     const url = await finder.findDeploymentByCommit(commitSha, branchName);
 
     // Output for GitHub Actions
-    console.log(`::set-output name=url::${url}`);
     console.log(`PREVIEW_URL=${url}`);
+    if (process.env.GITHUB_OUTPUT) {
+      require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `url=${url}\n`);
+    }
 
     process.exit(0);
   } catch (error) {

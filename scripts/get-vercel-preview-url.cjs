@@ -24,10 +24,10 @@ class VercelDeploymentFinder {
     try {
       // Try known URL patterns based on recent deployments
       const urlPatterns = this.generateUrlPatterns();
-      
+
       for (const url of urlPatterns) {
         console.log(`🔗 Testing: ${url}`);
-        
+
         if (await this.testUrl(url)) {
           console.log(`✅ Found accessible deployment: ${url}`);
           return url;
@@ -50,23 +50,23 @@ class VercelDeploymentFinder {
    */
   generateUrlPatterns() {
     const patterns = [];
-    
+
     // Pattern 1: Branch alias (most common for PR deployments)
     if (this.branchName) {
       const safeBranchName = this.branchName.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
       patterns.push(`https://foosball-tracker-git-${safeBranchName}-fabio-gervasis-projects.vercel.app`);
     }
-    
+
     // Pattern 2: Commit-based URLs (Vercel generates these)
     const shortCommit = this.commitSha.substring(0, 8);
     patterns.push(`https://foosball-tracker-${shortCommit}-fabio-gervasis-projects.vercel.app`);
-    
+
     // Pattern 3: Recent working deployment (fallback)
     patterns.push('https://foosball-tracker-qqgxlmhoi-fabio-gervasis-projects.vercel.app');
-    
+
     // Pattern 4: Alternative recent deployment
     patterns.push('https://foosball-tracker-pcvdha6bg-fabio-gervasis-projects.vercel.app');
-    
+
     return patterns;
   }
 
@@ -107,9 +107,9 @@ class VercelDeploymentFinder {
   async waitForDeployment(maxWaitTime = 180000) { // 3 minutes
     const startTime = Date.now();
     const retryInterval = 15000; // 15 seconds
-    
+
     console.log(`⏳ Waiting for deployment (max ${maxWaitTime / 1000}s)...`);
-    
+
     while (Date.now() - startTime < maxWaitTime) {
       try {
         const url = await this.findDeploymentUrl();
@@ -120,11 +120,11 @@ class VercelDeploymentFinder {
       } catch (error) {
         console.log(`⚠️ Retry attempt failed: ${error.message}`);
       }
-      
+
       console.log(`🔄 Retrying in ${retryInterval / 1000}s...`);
       await this.sleep(retryInterval);
     }
-    
+
     throw new Error('Deployment not ready within timeout period');
   }
 
@@ -148,17 +148,20 @@ async function main() {
   try {
     const finder = new VercelDeploymentFinder(commitSha, branchName);
     const deploymentUrl = await finder.waitForDeployment();
-    
+
     console.log('');
     console.log('🎯 DEPLOYMENT URL FOUND');
     console.log(`URL: ${deploymentUrl}`);
-    
+
     // Output for GitHub Actions
     if (process.env.GITHUB_ACTIONS) {
-      console.log(`::set-output name=url::${deploymentUrl}`);
-      console.log(`::set-output name=deployment-id::${commitSha.substring(0, 8)}`);
+      if (process.env.GITHUB_OUTPUT) {
+        const fs = require('fs');
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=${deploymentUrl}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `deployment-id=${commitSha.substring(0, 8)}\n`);
+      }
     }
-    
+
     process.exit(0);
   } catch (error) {
     console.error('💥 Failed to find deployment URL:', error.message);

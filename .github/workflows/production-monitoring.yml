@@ -23,6 +23,13 @@ on:
         required: false
         type: string
 
+# Permissions needed for the workflow
+permissions:
+  contents: read
+  deployments: write
+  issues: write
+  pull-requests: write
+
 env:
   NODE_VERSION: '20.x'
   HEALTH_CHECK_TIMEOUT: 60

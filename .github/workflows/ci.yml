@@ -12,6 +12,13 @@ on:
     branches: [main, dev]
   workflow_dispatch: # Allow manual triggering
 
+# Permissions needed for the workflow
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+
 # Cancel previous runs when new commits are pushed
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
