@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
 import { Trophy, Target, TrendingUp, Calendar, RefreshCw, Users, Code, History, BarChart3 } from 'lucide-react';
 import { Avatar } from '../Avatar';
 import { logger } from '../../utils/logger';
@@ -13,7 +13,7 @@ interface DashboardProps {
   accessToken?: string;
 }
 
-export function Dashboard({ user, matches, users, group, error, accessToken }: DashboardProps) {
+export const Dashboard = memo(function Dashboard({ user, matches, users, group, error, accessToken }: DashboardProps) {
   // Add debugging logs
   logger.debug('Dashboard Data - Start');
   logger.debug('Dashboard User Data', {
@@ -29,39 +29,41 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
 
   const userIdentifier = user.username || user.email;
 
-  // Filter matches for this specific user (supports both new and legacy formats)
-  const userMatches = matches.filter(match => {
-    // Handle 1v1 matches
-    if (match.matchType === '1v1' || !match.matchType) {
-      // New format
-      if (match.player1?.id && match.player2?.id) {
-        return match.player1.id === user.id || match.player2.id === user.id;
+  // Memoized expensive match filtering calculation
+  const userMatches = useMemo(() => {
+    return matches.filter(match => {
+      // Handle 1v1 matches
+      if (match.matchType === '1v1' || !match.matchType) {
+        // New format
+        if (match.player1?.id && match.player2?.id) {
+          return match.player1.id === user.id || match.player2.id === user.id;
+        }
+        // Legacy format
+        return match.player1Email === userIdentifier || match.player2Email === userIdentifier ||
+               match.player1Email === user.email || match.player2Email === user.email;
       }
-      // Legacy format
-      return match.player1Email === userIdentifier || match.player2Email === userIdentifier ||
-             match.player1Email === user.email || match.player2Email === user.email;
-    }
-    // Handle 2v2 matches
-    else if (match.matchType === '2v2') {
-      // New format
-      if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
-        return match.team1.player1.id === user.id ||
-               match.team1.player2.id === user.id ||
-               match.team2.player1.id === user.id ||
-               match.team2.player2.id === user.id;
+      // Handle 2v2 matches
+      else if (match.matchType === '2v2') {
+        // New format
+        if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
+          return match.team1.player1.id === user.id ||
+                 match.team1.player2.id === user.id ||
+                 match.team2.player1.id === user.id ||
+                 match.team2.player2.id === user.id;
+        }
+        // Legacy format
+        return match.team1Player1Email === userIdentifier ||
+               match.team1Player2Email === userIdentifier ||
+               match.team2Player1Email === userIdentifier ||
+               match.team2Player2Email === userIdentifier ||
+               match.team1Player1Email === user.email ||
+               match.team1Player2Email === user.email ||
+               match.team2Player1Email === user.email ||
+               match.team2Player2Email === user.email;
       }
-      // Legacy format
-      return match.team1Player1Email === userIdentifier ||
-             match.team1Player2Email === userIdentifier ||
-             match.team2Player1Email === userIdentifier ||
-             match.team2Player2Email === userIdentifier ||
-             match.team1Player1Email === user.email ||
-             match.team1Player2Email === user.email ||
-             match.team2Player1Email === user.email ||
-             match.team2Player2Email === user.email;
-    }
-    return false;
-  });
+      return false;
+    });
+  }, [matches, user.id, user.email, userIdentifier]);
 
   logger.debug('User match filtering', {
     hasUserIdentifier: !!userIdentifier,
@@ -70,56 +72,60 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
     actualMatches: userMatches.length
   });
 
-  // Calculate actual wins and losses from matches instead of using user profile stats
-  let actualWins = 0;
-  let actualLosses = 0;
+  // Memoized expensive statistics calculations
+  const { actualWins, actualLosses } = useMemo(() => {
+    let wins = 0;
+    let losses = 0;
 
-  userMatches.forEach(match => {
-    if (match.matchType === '1v1' || !match.matchType) {
-      // For 1v1 matches - check both new and legacy formats
-      let isWinner = false;
+    userMatches.forEach(match => {
+      if (match.matchType === '1v1' || !match.matchType) {
+        // For 1v1 matches - check both new and legacy formats
+        let isWinner = false;
 
-      // New format
-      if (match.winner?.id) {
-        isWinner = match.winner.id === user.id;
-      }
-      // Legacy format
-      else {
-        isWinner = match.winnerEmail === user.email || match.winnerEmail === userIdentifier;
-      }
+        // New format
+        if (match.winner?.id) {
+          isWinner = match.winner.id === user.id;
+        }
+        // Legacy format
+        else {
+          isWinner = match.winnerEmail === user.email || match.winnerEmail === userIdentifier;
+        }
 
-      if (isWinner) {
-        actualWins++;
-      } else {
-        actualLosses++;
-      }
-    } else if (match.matchType === '2v2') {
-      // For 2v2 matches - check both new and legacy formats
-      let isInTeam1 = false;
-      let isInTeam2 = false;
+        if (isWinner) {
+          wins++;
+        } else {
+          losses++;
+        }
+      } else if (match.matchType === '2v2') {
+        // For 2v2 matches - check both new and legacy formats
+        let isInTeam1 = false;
+        let isInTeam2 = false;
 
-      // New format
-      if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
-        isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-        isInTeam2 = match.team2.player1.id === user.id || match.team2.player2.id === user.id;
-      }
-      // Legacy format
-      else {
-        isInTeam1 = match.team1Player1Email === userIdentifier || match.team1Player2Email === userIdentifier ||
-                    match.team1Player1Email === user.email || match.team1Player2Email === user.email;
-        isInTeam2 = match.team2Player1Email === userIdentifier || match.team2Player2Email === userIdentifier ||
-                    match.team2Player1Email === user.email || match.team2Player2Email === user.email;
-      }
+        // New format
+        if (match.team1?.player1?.id && match.team1?.player2?.id && match.team2?.player1?.id && match.team2?.player2?.id) {
+          isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
+          isInTeam2 = match.team2.player1.id === user.id || match.team2.player2.id === user.id;
+        }
+        // Legacy format
+        else {
+          isInTeam1 = match.team1Player1Email === userIdentifier || match.team1Player2Email === userIdentifier ||
+                      match.team1Player1Email === user.email || match.team1Player2Email === user.email;
+          isInTeam2 = match.team2Player1Email === userIdentifier || match.team2Player2Email === userIdentifier ||
+                      match.team2Player1Email === user.email || match.team2Player2Email === user.email;
+        }
 
-      if (isInTeam1 && match.winningTeam === 'team1') {
-        actualWins++;
-      } else if (isInTeam2 && match.winningTeam === 'team2') {
-        actualWins++;
-      } else if (isInTeam1 || isInTeam2) {
-        actualLosses++;
+        if (isInTeam1 && match.winningTeam === 'team1') {
+          wins++;
+        } else if (isInTeam2 && match.winningTeam === 'team2') {
+          wins++;
+        } else if (isInTeam1 || isInTeam2) {
+          losses++;
+        }
       }
-    }
-  });
+    });
+
+    return { actualWins: wins, actualLosses: losses };
+  }, [userMatches, user.id, user.email, userIdentifier]);
 
   // Use actual calculated stats instead of user profile stats
   const totalGames = actualWins + actualLosses;
@@ -405,4 +411,4 @@ export function Dashboard({ user, matches, users, group, error, accessToken }: D
 
     </div>
   );
-}
+});
