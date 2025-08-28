@@ -407,15 +407,27 @@ class PreviewEnvironmentTester {
   httpRequest(url, headers = {}) {
     return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
+
+      // Check if URL contains Vercel bypass parameters
+      const bypassSecret = urlObj.searchParams.get('x-vercel-protection-bypass');
+      const requestHeaders = {
+        'User-Agent': 'Foosball-Tracker-Preview-Tester/1.0',
+        ...headers,
+      };
+
+      // Add Vercel bypass headers if bypass secret is in URL
+      if (bypassSecret) {
+        requestHeaders['x-vercel-protection-bypass'] = bypassSecret;
+        requestHeaders['x-vercel-set-bypass-cookie'] = 'true';
+        console.log(`🔑 Using Vercel bypass headers for ${urlObj.hostname}`);
+      }
+
       const options = {
         hostname: urlObj.hostname,
         port: urlObj.port || 443,
         path: urlObj.pathname + urlObj.search,
         method: 'GET',
-        headers: {
-          'User-Agent': 'Foosball-Tracker-Preview-Tester/1.0',
-          ...headers,
-        },
+        headers: requestHeaders,
         timeout: this.options.timeout,
         // Handle SSL issues in CI environments
         rejectUnauthorized: false,
