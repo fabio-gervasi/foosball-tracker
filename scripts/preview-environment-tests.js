@@ -408,14 +408,15 @@ class PreviewEnvironmentTester {
     return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
 
-      // Check if URL contains Vercel bypass parameters
-      const bypassSecret = urlObj.searchParams.get('x-vercel-protection-bypass');
+      // Check if URL contains Vercel bypass parameters or if bypass secret is in environment
+      const bypassSecret =
+        urlObj.searchParams.get('x-vercel-protection-bypass') || process.env.VERCEL_BYPASS_SECRET;
       const requestHeaders = {
         'User-Agent': 'Foosball-Tracker-Preview-Tester/1.0',
         ...headers,
       };
 
-      // Add Vercel bypass headers if bypass secret is in URL
+      // Add Vercel bypass headers if bypass secret is available
       if (bypassSecret) {
         requestHeaders['x-vercel-protection-bypass'] = bypassSecret;
         requestHeaders['x-vercel-set-bypass-cookie'] = 'true';

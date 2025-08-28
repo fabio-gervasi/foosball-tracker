@@ -204,26 +204,75 @@ jobs:
             if [[ -n "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" ]]; then
               echo "🔑 Using Vercel Protection Bypass Secret"
               
-              # Test with bypass headers
+              # Method 1: Try with headers (recommended approach)
+              echo "🔄 Testing bypass with headers..."
               BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
                 --max-time 30 \
+                --location \
                 -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" \
                 -H "x-vercel-set-bypass-cookie: true" \
                 "${PREVIEW_URL}" || echo "000")
               
+              echo "   Headers method result: HTTP $BYPASS_STATUS"
+              
+              # Method 2: Try with query parameters (alternative approach)
+              if [[ "$BYPASS_STATUS" != "200" ]]; then
+                echo "🔄 Testing bypass with query parameters..."
+                BYPASS_URL="${PREVIEW_URL}?x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}&x-vercel-set-bypass-cookie=true"
+                BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
+                  --max-time 30 \
+                  --location \
+                  "${BYPASS_URL}" || echo "000")
+                echo "   Query params method result: HTTP $BYPASS_STATUS"
+              fi
+              
+              # Method 3: Try the specific Vercel bypass URL pattern
+              if [[ "$BYPASS_STATUS" != "200" ]]; then
+                echo "🔄 Testing Vercel-specific bypass URL pattern..."
+                BYPASS_URL="${PREVIEW_URL}?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}"
+                BYPASS_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" \
+                  --max-time 30 \
+                  --location \
+                  "${BYPASS_URL}" || echo "000")
+                echo "   Vercel URL pattern result: HTTP $BYPASS_STATUS"
+              fi
+              
               if [[ "$BYPASS_STATUS" == "200" ]]; then
                 echo "✅ Successfully bypassed Vercel protection"
                 
-                # Run comprehensive tests with bypass headers
-                BYPASS_URL="${PREVIEW_URL}?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}"
-                if node scripts/preview-environment-tests.js "${BYPASS_URL}"; then
-                  echo "✅ Full E2E tests passed with bypass"
+                # Run comprehensive tests with the working bypass method
+                if [[ -n "$BYPASS_URL" ]]; then
+                  echo "🧪 Running E2E tests with bypass URL: $BYPASS_URL"
+                  if node scripts/preview-environment-tests.js "${BYPASS_URL}"; then
+                    echo "✅ Full E2E tests passed with bypass"
+                  else
+                    echo "⚠️ Some E2E tests failed, but bypass worked"
+                  fi
                 else
-                  echo "⚠️ Some E2E tests failed, but bypass worked"
+                  echo "🧪 Running E2E tests with bypass headers"
+                  # Set environment variable for the script to use headers
+                  export VERCEL_BYPASS_SECRET="${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}"
+                  if node scripts/preview-environment-tests.js "${PREVIEW_URL}"; then
+                    echo "✅ Full E2E tests passed with bypass headers"
+                  else
+                    echo "⚠️ Some E2E tests failed, but bypass worked"
+                  fi
                 fi
               else
-                echo "⚠️ Bypass failed (HTTP $BYPASS_STATUS), but deployment exists"
-                echo "   Check VERCEL_AUTOMATION_BYPASS_SECRET configuration"
+                echo "⚠️ All bypass methods failed (HTTP $BYPASS_STATUS)"
+                echo "   🔍 Troubleshooting information:"
+                echo "   - Verify VERCEL_AUTOMATION_BYPASS_SECRET is correctly set in GitHub Secrets"
+                echo "   - Check that Deployment Protection is enabled in Vercel project settings"
+                echo "   - Ensure the bypass secret hasn't been regenerated"
+                echo "   - Confirm the secret format is correct (starts with 'bypass_')"
+                
+                # Test the secret format
+                SECRET_PREFIX=$(echo "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" | cut -c1-7)
+                if [[ "$SECRET_PREFIX" == "bypass_" ]]; then
+                  echo "   ✅ Secret format appears correct"
+                else
+                  echo "   ❌ Secret format may be incorrect (should start with 'bypass_')"
+                fi
               fi
             else
               echo "⚠️ No VERCEL_AUTOMATION_BYPASS_SECRET configured"
