@@ -1,5 +1,6 @@
 # Foosball Tracker - Preview Environment Testing
 # REQ-5.2.3: Preview Environment Automation
+# REQ-5.2.6: Optimized to skip preview testing when target branch is main
 # Automated testing on Vercel preview deployments with performance validation
 
 name: Preview Environment Testing
@@ -34,6 +35,8 @@ jobs:
     name: ⏳ Wait for Vercel Preview
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Skip preview testing when target branch is main (REQ-5.2.6 optimization)
+    if: github.base_ref != 'main'
 
     outputs:
       preview-url: ${{ steps.get-preview.outputs.url }}
@@ -127,6 +130,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: wait-for-preview
     timeout-minutes: 15
+    # Skip preview testing when target branch is main (REQ-5.2.6 optimization)
+    if: github.base_ref != 'main'
 
     steps:
       - name: 📥 Checkout Code
@@ -215,7 +220,7 @@ jobs:
                 SECRET_END=$(echo "${BYPASS_SECRET}" | cut -c-3 | tail -c3)
                 echo "🔍 Secret format: ${SECRET_START}...${SECRET_END} (${SECRET_LENGTH} chars)"
               fi
-              
+
               # Additional troubleshooting info
               echo "🔍 Troubleshooting checklist:"
               echo "   - Vercel Project: foosball-tracker (prj_RJA7Jix0AFT9NsxZpMoM8LDdCBzT)"
@@ -346,6 +351,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: wait-for-preview
     timeout-minutes: 10
+    # Skip preview testing when target branch is main (REQ-5.2.6 optimization)
+    if: github.base_ref != 'main'
 
     steps:
       - name: 📥 Checkout Code
@@ -428,6 +435,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: wait-for-preview
     timeout-minutes: 5
+    # Skip preview testing when target branch is main (REQ-5.2.6 optimization)
+    if: github.base_ref != 'main'
 
     steps:
       - name: 🔒 Validate Security Headers
@@ -462,6 +471,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: wait-for-preview
     timeout-minutes: 5
+    # Skip preview testing when target branch is main (REQ-5.2.6 optimization)
+    if: github.base_ref != 'main'
 
     steps:
       - name: 📊 Test Analytics Integration
@@ -516,7 +527,35 @@ jobs:
             // Generate status icons
             const getStatus = (result) => result === 'success' ? '✅' : result === 'failure' ? '❌' : '⚠️';
 
-            const commentBody = `## 🚀 Preview Environment Test Results
+            // Check if this is a main branch PR (preview tests skipped)
+            const isMainBranch = '${{ github.base_ref }}' === 'main';
+
+            const commentBody = isMainBranch ?
+            `## 🚀 Production Deployment - Preview Tests Skipped
+
+            **Target Branch**: \`main\` (Production)
+            **Optimization**: Preview environment testing skipped (REQ-5.2.6)
+
+            ### ⚡ Deployment Optimization Applied
+
+            Preview environment testing has been **automatically skipped** for this main branch merge because:
+            - Main branch creates **Production Deployments** (not preview deployments)
+            - Code has already been tested on the \`dev\` branch
+            - This optimization reduces CI/CD resource usage and deployment time
+
+            ### 🎯 Production Deployment Status
+            - **Branch**: \`main\` → Production Environment
+            - **Testing**: Comprehensive testing completed on \`dev\` branch
+            - **Deployment**: Direct to production (no preview needed)
+
+            ### 🔗 Quick Links
+            - [GitHub Actions Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - [Production Environment](https://foosball-tracker.vercel.app)
+
+            ---
+            *CI/CD Pipeline Optimization: REQ-5.2.6 - Automated by Foosball Tracker v0.7.0*
+            ` :
+            `## 🚀 Preview Environment Test Results
 
             **Preview URL**: [${previewUrl}](${previewUrl})
             **Deployment ID**: \`${deploymentId}\`
