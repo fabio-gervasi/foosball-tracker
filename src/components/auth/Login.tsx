@@ -5,6 +5,7 @@ import foosballIcon from "../../assets/foosball-icon.png";
 import { apiRequest, supabase } from "../../utils/supabase/client";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialogContext } from "../common/DialogProvider";
+import { foosballAnalytics } from "../../utils/analytics";
 import {
   validateUsername,
   validateEmail,
@@ -149,6 +150,7 @@ export function Login({ onLogin }) {
           });
 
           await login(response.user, data.session.access_token);
+          foosballAnalytics.trackUserLogin('email', false);
         } else {
           // Username login: use server endpoint that handles username-to-email conversion
           const response = await apiRequest("/signin", {
@@ -161,6 +163,7 @@ export function Login({ onLogin }) {
 
           // The server response includes both user profile and session token
           await login(response.user, response.session.access_token);
+          foosballAnalytics.trackUserLogin('username', false);
         }
       } else {
         // Step 1: Create account via our server
@@ -186,6 +189,7 @@ export function Login({ onLogin }) {
         }
 
         await login(response.user, data.session.access_token);
+        foosballAnalytics.trackUserRegistration('email');
       }
     } catch (error) {
       const friendlyError = transformErrorMessage(error.message, !isLogin);
