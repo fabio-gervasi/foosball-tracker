@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Shield, AlertTriangle, Trophy, Users, Building2 } from 'lucide-react';
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
@@ -38,9 +38,9 @@ export function AdminPanel({
 
   useEffect(() => {
     loadAdminData();
-  }, []);
+  }, [loadAdminData]);
 
-  const loadAdminData = async () => {
+  const loadAdminData = useCallback(async () => {
     try {
       setError('');
       setLoading(true);
@@ -60,7 +60,7 @@ export function AdminPanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
 
   if (!currentUser?.isAdmin) {
     return (

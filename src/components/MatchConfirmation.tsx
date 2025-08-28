@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Calendar, User, ArrowLeft, Trash2, CheckCircle, Users } from 'lucide-react';
+import { Trophy, ArrowLeft, Trash2, CheckCircle } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
 import { useDialogContext } from './common/DialogProvider';
@@ -44,7 +44,7 @@ interface MatchConfirmationProps {
   onDataChange: () => void;
 }
 
-export function MatchConfirmation({ matchResult, currentUser, accessToken, onBack, onDataChange }: MatchConfirmationProps) {
+export function MatchConfirmation({ matchResult, currentUser: _currentUser, accessToken, onBack, onDataChange }: MatchConfirmationProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const { showConfirmDialog } = useDialogContext();

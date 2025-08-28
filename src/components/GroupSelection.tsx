@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Code, ArrowRight, AlertCircle } from 'lucide-react';
 import { apiRequest, supabase } from '../utils/supabase/client';
+import { logger } from '../utils/logger';
 
 interface GroupSelectionProps {
   onGroupSelected: () => void;
@@ -82,7 +83,7 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
         }),
       });
 
-      console.log('GroupSelection: Group created successfully');
+      logger.info('GroupSelection: Group created successfully');
       onGroupSelected();
     } catch (error) {
       console.error('GroupSelection: Create group error:', error);
@@ -131,7 +132,7 @@ export function GroupSelection({ onGroupSelected, accessToken: propAccessToken }
         }),
       });
 
-      console.log('GroupSelection: Group joined successfully');
+      logger.info('GroupSelection: Group joined successfully');
       onGroupSelected();
     } catch (error) {
       console.error('GroupSelection: Join group error:', error);

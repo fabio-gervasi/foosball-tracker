@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   History,
-  Filter,
   Calendar,
   User,
   Users,
   Search,
   Trophy,
   Crown,
-  TrendingUp,
-  TrendingDown,
   X,
   RefreshCw,
   UserCheck,
