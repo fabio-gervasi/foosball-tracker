@@ -79,8 +79,11 @@ Ensure your Vercel project has deployment protection enabled:
 
 ### Issue: "Secret format may be incorrect"
 
-- **Cause**: Secret doesn't start with `bypass_`
-- **Fix**: Regenerate secret in Vercel dashboard, update GitHub secret
+- **Cause**: Secret format has changed in newer Vercel versions
+- **Note**: Modern Vercel secrets are 32-character alphanumeric strings (e.g., `1AmUSJSr3jp2T7StRXxYqGILykkqGIRZ`)
+- **Old format**: Used to start with `bypass_` (deprecated)
+- **New format**: Plain alphanumeric string without prefix
+- **Fix**: Use the exact secret from Vercel dashboard, no modifications needed
 
 ### Issue: "All bypass methods failed"
 

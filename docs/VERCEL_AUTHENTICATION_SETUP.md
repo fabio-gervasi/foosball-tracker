@@ -25,7 +25,9 @@ The E2E tests are now **fully implemented** with proper Vercel Protection Bypass
 1. Go to your **Vercel Project Dashboard**
 2. Navigate to **Settings** → **Deployment Protection**
 3. Under **Protection Bypass for Automation**, click **Create Secret** or **Regenerate**
-4. Copy the generated secret (it looks like: `bypass_abc123def456...`)
+4. Copy the generated secret (it looks like: `1AmUSJSr3jp2T7StRXxYqGILykkqGIRZ`)
+   - **Note**: Modern Vercel secrets are 32-character alphanumeric strings
+   - **No prefix needed**: Use the exact secret as provided by Vercel
 
 ### Step 2: Add Secret to GitHub
 

@@ -264,14 +264,21 @@ jobs:
                 echo "   - Verify VERCEL_AUTOMATION_BYPASS_SECRET is correctly set in GitHub Secrets"
                 echo "   - Check that Deployment Protection is enabled in Vercel project settings"
                 echo "   - Ensure the bypass secret hasn't been regenerated"
-                echo "   - Confirm the secret format is correct (starts with 'bypass_')"
+                echo "   - Confirm the secret format is correct (32-character alphanumeric string)"
                 
                 # Test the secret format
-                SECRET_PREFIX=$(echo "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" | cut -c1-7)
-                if [[ "$SECRET_PREFIX" == "bypass_" ]]; then
-                  echo "   ✅ Secret format appears correct"
+                SECRET_LENGTH=$(echo "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" | wc -c)
+                if [[ $SECRET_LENGTH -gt 20 && $SECRET_LENGTH -lt 50 ]]; then
+                  echo "   ✅ Secret format appears correct (${SECRET_LENGTH} characters)"
                 else
-                  echo "   ❌ Secret format may be incorrect (should start with 'bypass_')"
+                  echo "   ❌ Secret format may be incorrect (${SECRET_LENGTH} characters, expected 20-50)"
+                fi
+                
+                # Also test if secret is not empty
+                if [[ -n "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" ]]; then
+                  echo "   ✅ Secret is present in GitHub Secrets"
+                else
+                  echo "   ❌ Secret is empty or not set in GitHub Secrets"
                 fi
               fi
             else
