@@ -9,13 +9,15 @@ import type {
   Group,
   MatchSubmissionData,
   ProfileUpdateData,
-  GroupSwitchData
+  GroupSwitchData,
 } from '../types';
 
 /**
  * Hook for submitting matches with optimistic updates
  */
-export const useSubmitMatchMutation = (accessToken: string | null): UseMutationResult<any, Error, MatchSubmissionData> => {
+export const useSubmitMatchMutation = (
+  accessToken: string | null
+): UseMutationResult<any, Error, MatchSubmissionData> => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -37,7 +39,7 @@ export const useSubmitMatchMutation = (accessToken: string | null): UseMutationR
 
       return response;
     },
-    onMutate: async (matchData) => {
+    onMutate: async matchData => {
       // Cancel outgoing refetches so they don't overwrite optimistic update
       await queryClient.cancelQueries({ queryKey: queryKeys.matches() });
       await queryClient.cancelQueries({ queryKey: queryKeys.users() });
@@ -53,21 +55,28 @@ export const useSubmitMatchMutation = (accessToken: string | null): UseMutationR
           matchType: matchData.matchType,
           player1: matchData.player1Email ? { email: matchData.player1Email } : undefined,
           player2: matchData.player2Email ? { email: matchData.player2Email } : undefined,
-          team1: matchData.team1Player1Email ? {
-            player1: { email: matchData.team1Player1Email },
-            player2: { email: matchData.team1Player2Email }
-          } : undefined,
-          team2: matchData.team2Player1Email ? {
-            player1: { email: matchData.team2Player1Email },
-            player2: { email: matchData.team2Player2Email }
-          } : undefined,
+          team1: matchData.team1Player1Email
+            ? {
+                player1: { email: matchData.team1Player1Email },
+                player2: { email: matchData.team1Player2Email },
+              }
+            : undefined,
+          team2: matchData.team2Player1Email
+            ? {
+                player1: { email: matchData.team2Player1Email },
+                player2: { email: matchData.team2Player2Email },
+              }
+            : undefined,
           score1: matchData.score1,
           score2: matchData.score2,
           groupId: 'current', // Will be updated by server response
           createdAt: new Date().toISOString(),
         };
 
-        queryClient.setQueryData<Match[]>(queryKeys.matches(), [optimisticMatch, ...previousMatches]);
+        queryClient.setQueryData<Match[]>(queryKeys.matches(), [
+          optimisticMatch,
+          ...previousMatches,
+        ]);
       }
 
       return { previousMatches, previousUsers };
@@ -105,7 +114,9 @@ export const useSubmitMatchMutation = (accessToken: string | null): UseMutationR
 /**
  * Hook for updating user profile with optimistic updates
  */
-export const useUpdateProfileMutation = (accessToken: string | null): UseMutationResult<any, Error, ProfileUpdateData> => {
+export const useUpdateProfileMutation = (
+  accessToken: string | null
+): UseMutationResult<any, Error, ProfileUpdateData> => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -127,7 +138,7 @@ export const useUpdateProfileMutation = (accessToken: string | null): UseMutatio
 
       return response;
     },
-    onMutate: async (profileData) => {
+    onMutate: async profileData => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.user() });
 
@@ -168,7 +179,9 @@ export const useUpdateProfileMutation = (accessToken: string | null): UseMutatio
 /**
  * Hook for switching groups
  */
-export const useGroupSwitchMutation = (accessToken: string | null): UseMutationResult<any, Error, GroupSwitchData> => {
+export const useGroupSwitchMutation = (
+  accessToken: string | null
+): UseMutationResult<any, Error, GroupSwitchData> => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -209,7 +222,9 @@ export const useGroupSwitchMutation = (accessToken: string | null): UseMutationR
 /**
  * Hook for creating a new group
  */
-export const useCreateGroupMutation = (accessToken: string | null): UseMutationResult<any, Error, { name: string; code: string }> => {
+export const useCreateGroupMutation = (
+  accessToken: string | null
+): UseMutationResult<any, Error, { name: string; code: string }> => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -249,7 +264,9 @@ export const useCreateGroupMutation = (accessToken: string | null): UseMutationR
 /**
  * Hook for joining a group
  */
-export const useJoinGroupMutation = (accessToken: string | null): UseMutationResult<any, Error, { code: string }> => {
+export const useJoinGroupMutation = (
+  accessToken: string | null
+): UseMutationResult<any, Error, { code: string }> => {
   const queryClient = useQueryClient();
 
   return useMutation({

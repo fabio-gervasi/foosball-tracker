@@ -15,7 +15,7 @@ export const supabase = createClient(supabaseUrl, publicAnonKey, {
     storageKey: 'foosball-tracker-auth',
     // Improved flow type for better JWT handling with signing keys
     flowType: 'pkce',
-  }
+  },
 });
 
 // API base URL for our server functions
@@ -26,9 +26,9 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   logger.apiRequest(endpoint, options.method || 'GET');
 
   // All Supabase Edge Functions require either the anon key or a user access token
-  let headers = {
+  const headers = {
     // Default to public anon key for Supabase Edge Functions
-    'Authorization': `Bearer ${publicAnonKey}`,
+    Authorization: `Bearer ${publicAnonKey}`,
     ...options.headers,
   };
 
@@ -39,9 +39,19 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   }
 
   // For authenticated endpoints, use the user's access token instead
-  const authenticatedEndpoints = ['/user', '/profile', '/groups', '/groups/current', '/groups/join', '/users', '/matches', '/promote-admin', '/admin'];
-  const needsUserAuth = authenticatedEndpoints.some(authEndpoint =>
-    endpoint === authEndpoint || endpoint.startsWith(authEndpoint + '/')
+  const authenticatedEndpoints = [
+    '/user',
+    '/profile',
+    '/groups',
+    '/groups/current',
+    '/groups/join',
+    '/users',
+    '/matches',
+    '/promote-admin',
+    '/admin',
+  ];
+  const needsUserAuth = authenticatedEndpoints.some(
+    authEndpoint => endpoint === authEndpoint || endpoint.startsWith(`${authEndpoint}/`)
   );
 
   if (needsUserAuth) {
@@ -57,7 +67,10 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       logger.debug('Getting current session for auth token');
 
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
         if (sessionError) {
           logger.error('Session error', sessionError);
@@ -84,7 +97,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
           logger.error('No access token in session');
           logger.debug('Session missing access token', {
             hasUser: !!session.user?.id,
-            hasExpiry: !!session.expires_at
+            hasExpiry: !!session.expires_at,
           });
           throw new Error('No access token in session');
         } else {
@@ -106,7 +119,6 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
             headers.Authorization = `Bearer ${session.access_token}`;
           }
         }
-
       } catch (sessionError) {
         logger.error('Failed to get session', sessionError);
         throw new Error(`Failed to get authentication session: ${sessionError.message}`);
@@ -120,7 +132,11 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     authType: headers.Authorization?.split(' ')[0] || 'none',
     method: options.method || 'GET',
     hasBody: !!options.body,
-    bodyType: options.body ? (options.body instanceof FormData ? 'FormData' : typeof options.body) : 'none'
+    bodyType: options.body
+      ? options.body instanceof FormData
+        ? 'FormData'
+        : typeof options.body
+      : 'none',
   });
 
   try {
@@ -145,10 +161,18 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
             // Check if it's a common server error format
             if (responseText.includes('404 Not Found')) {
               errorData = { error: `Endpoint not found: ${endpoint}` };
-            } else if (responseText.includes('500') || responseText.includes('Internal Server Error')) {
+            } else if (
+              responseText.includes('500') ||
+              responseText.includes('Internal Server Error')
+            ) {
               errorData = { error: 'Internal server error - please try again later' };
-            } else if (responseText.includes('503') || responseText.includes('Service Unavailable')) {
-              errorData = { error: 'Service temporarily unavailable - please try again in a moment' };
+            } else if (
+              responseText.includes('503') ||
+              responseText.includes('Service Unavailable')
+            ) {
+              errorData = {
+                error: 'Service temporarily unavailable - please try again in a moment',
+              };
             } else {
               errorData = { error: `Server error: ${responseText.substring(0, 100)}` };
             }
@@ -179,7 +203,6 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const responseData = await response.json();
     logger.debug(`Successful response for ${endpoint}`);
     return responseData;
-
   } catch (fetchError) {
     logger.error(`Fetch error for ${endpoint}`, fetchError);
     throw fetchError;

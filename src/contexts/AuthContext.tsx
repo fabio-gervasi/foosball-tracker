@@ -46,40 +46,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let isSubscriptionActive = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // Ignore if subscription is no longer active
-        if (!isSubscriptionActive) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Ignore if subscription is no longer active
+      if (!isSubscriptionActive) return;
 
-        logger.authEvent(`Auth state change: ${event}`);
+      logger.authEvent(`Auth state change: ${event}`);
 
-        if (event === 'SIGNED_OUT') {
-          logger.authEvent('User signed out');
-          setIsLoggedIn(false);
-          setCurrentUser(null);
-          setAccessToken(null);
-        } else if (event === 'SIGNED_IN' && session?.access_token) {
-          logger.authEvent('User signed in via auth state change');
-          // Use functional updates to avoid stale closures
-          setAccessToken(prevToken => {
-            if (prevToken !== session.access_token) {
-              logger.sessionEvent('created', session.user?.id);
-              setIsLoggedIn(prev => prev || true);
-              return session.access_token;
-            }
-            return prevToken;
-          });
-        } else if (event === 'TOKEN_REFRESHED' && session?.access_token) {
-          logger.sessionEvent('refreshed', session.user?.id);
-          setAccessToken(prevToken => {
-            if (prevToken !== session.access_token) {
-              return session.access_token;
-            }
-            return prevToken;
-          });
-        }
+      if (event === 'SIGNED_OUT') {
+        logger.authEvent('User signed out');
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+        setAccessToken(null);
+      } else if (event === 'SIGNED_IN' && session?.access_token) {
+        logger.authEvent('User signed in via auth state change');
+        // Use functional updates to avoid stale closures
+        setAccessToken(prevToken => {
+          if (prevToken !== session.access_token) {
+            logger.sessionEvent('created', session.user?.id);
+            setIsLoggedIn(prev => prev || true);
+            return session.access_token;
+          }
+          return prevToken;
+        });
+      } else if (event === 'TOKEN_REFRESHED' && session?.access_token) {
+        logger.sessionEvent('refreshed', session.user?.id);
+        setAccessToken(prevToken => {
+          if (prevToken !== session.access_token) {
+            return session.access_token;
+          }
+          return prevToken;
+        });
       }
-    );
+    });
 
     return () => {
       isSubscriptionActive = false;
@@ -92,12 +92,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logger.debug('Checking for password reset callback', {
         pathname: window.location.pathname,
         hasHash: !!window.location.hash,
-        hasSearch: !!window.location.search
+        hasSearch: !!window.location.search,
       });
 
       // Check if we're on the password reset callback path
-      const isPasswordResetCallback = window.location.pathname.includes('/password-reset-callback') ||
-                                     window.location.pathname.includes('/auth/confirm');
+      const isPasswordResetCallback =
+        window.location.pathname.includes('/password-reset-callback') ||
+        window.location.pathname.includes('/auth/confirm');
 
       if (isPasswordResetCallback) {
         logger.info('Password reset callback path detected');
@@ -108,7 +109,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Check both hash and query parameters
         const error = hashParams.get('error') || urlParams.get('error');
-        const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
+        const errorDescription =
+          hashParams.get('error_description') || urlParams.get('error_description');
         const errorCode = hashParams.get('error_code') || urlParams.get('error_code');
         const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
@@ -120,14 +122,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           hasAccessToken: !!accessToken,
           hasRefreshToken: !!refreshToken,
           hasTokenHash: !!tokenHash,
-          type
+          type,
         });
 
         // If we have an error in the callback
         if (error) {
           logger.error('Password reset callback error', { error, errorDescription });
 
-          let errorMsg = 'Password reset link is invalid or expired. Please request a new password reset.';
+          let errorMsg =
+            'Password reset link is invalid or expired. Please request a new password reset.';
 
           if (errorCode === 'otp_expired') {
             errorMsg = 'The password reset link has expired. Please request a new password reset.';
@@ -159,7 +162,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             logger.info('Recovery token verified successfully');
 
             // Get the session after verification
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            const {
+              data: { session },
+              error: sessionError,
+            } = await supabase.auth.getSession();
 
             if (sessionError || !session) {
               logger.error('Failed to get session after verification', sessionError);
@@ -184,10 +190,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await supabase.auth.signOut();
             window.history.replaceState({}, document.title, '/');
             return;
-
           } catch (tokenError) {
             logger.error('Error verifying recovery token', tokenError);
-            setError('There was an issue with the password reset link. Please request a new password reset.');
+            setError(
+              'There was an issue with the password reset link. Please request a new password reset.'
+            );
             window.history.replaceState({}, document.title, '/');
             return;
           }
@@ -200,7 +207,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           try {
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
-              refresh_token: refreshToken
+              refresh_token: refreshToken,
             });
 
             if (sessionError) {
@@ -224,10 +231,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // The App component will detect this change and show the password reset form
             setError(null);
             return;
-
           } catch (sessionError) {
             logger.error('Error handling recovery session', sessionError);
-            setError('There was an issue with the password reset link. Please request a new password reset.');
+            setError(
+              'There was an issue with the password reset link. Please request a new password reset.'
+            );
             window.history.replaceState({}, document.title, '/');
             return;
           }
@@ -235,13 +243,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // If we're on the callback path but don't have valid parameters
         logger.warn('On callback path but no valid parameters found');
-        setError('Password reset link appears to be incomplete. Please request a new password reset.');
+        setError(
+          'Password reset link appears to be incomplete. Please request a new password reset.'
+        );
         window.history.replaceState({}, document.title, '/');
         return;
       }
 
       logger.debug('No password reset callback detected');
-
     } catch (error) {
       logger.error('Error checking password reset callback', error);
       setError('An error occurred while processing the password reset. Please try again.');
@@ -253,7 +262,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkSession = async () => {
     try {
       logger.debug('Checking existing session');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
       if (sessionError) {
         logger.error('Session retrieval error', sessionError);
@@ -274,7 +286,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           logger.info('Session validated successfully', {
             userName: response.user.name || response.user.username,
-            hasGroup: !!response.user.currentGroup
+            hasGroup: !!response.user.currentGroup,
           });
           setCurrentUser(response.user);
           setAccessToken(session.access_token);
@@ -285,10 +297,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           logger.error('Session validation failed', validationError);
 
           // Check if this is a token expiration issue - but only try refresh ONCE
-          if (validationError.message.includes('expired') || validationError.message.includes('JWT')) {
+          if (
+            validationError.message.includes('expired') ||
+            validationError.message.includes('JWT')
+          ) {
             logger.info('Token appears expired or invalid, attempting refresh');
             try {
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              const { data: refreshData, error: refreshError } =
+                await supabase.auth.refreshSession();
               if (refreshError || !refreshData.session) {
                 logger.error('Session refresh failed', refreshError);
                 throw refreshError || new Error('Session refresh failed');
@@ -359,11 +375,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     clearError,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

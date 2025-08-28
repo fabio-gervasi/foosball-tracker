@@ -1,16 +1,14 @@
 import { Hono } from 'npm:hono';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as kv from './kv_store.tsx';
-import {
-  API_PREFIX
-} from './server-constants.tsx';
+import { API_PREFIX } from './server-constants.tsx';
 import { validateUserAuth } from './auth-helpers.tsx';
 
 export function createDebugRoutes(supabase: any) {
   const app = new Hono();
 
   // Health check with environment info (public endpoint)
-  app.get('/health', async (c) => {
+  app.get('/health', async c => {
     console.log('Health check endpoint called');
     const authHeader = c.req.header('Authorization');
     console.log('Auth header present:', !!authHeader);
@@ -44,17 +42,17 @@ export function createDebugRoutes(supabase: any) {
       env: {
         supabaseUrl: Deno.env.get('SUPABASE_URL') ? 'configured' : 'missing',
         serviceRoleKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ? 'configured' : 'missing',
-        anonKey: Deno.env.get('SUPABASE_ANON_KEY') ? 'configured' : 'missing'
+        anonKey: Deno.env.get('SUPABASE_ANON_KEY') ? 'configured' : 'missing',
       },
       services: {
         serviceRole: serviceRoleStatus,
-        kvStore: kvStatus
-      }
+        kvStore: kvStatus,
+      },
     });
   });
 
   // Debug endpoint to list all usernames (public endpoint for debugging)
-  app.get('/debug/users', async (c) => {
+  app.get('/debug/users', async c => {
     try {
       console.log('=== Debug users endpoint called ===');
 
@@ -62,23 +60,23 @@ export function createDebugRoutes(supabase: any) {
       const allUserKeys = await kv.getByPrefix('user:username:');
       const usernames = allUserKeys.map(item => ({
         username: item.key.replace('user:username:', ''),
-        userId: item.value
+        userId: item.value,
       }));
 
       // Also get all email mappings for comparison
       const allEmailKeys = await kv.getByPrefix('user:email:');
       const emails = allEmailKeys.map(item => ({
         email: item.key.replace('user:email:', ''),
-        userId: item.value
+        userId: item.value,
       }));
 
       return c.json({
         server: 'foosball-tracker-debug-users',
         totalUsernames: usernames.length,
         totalEmails: emails.length,
-        usernames: usernames,
+        usernames,
         emails: emails.slice(0, 10), // Limit emails for brevity
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Debug users endpoint error:', error);
@@ -86,10 +84,8 @@ export function createDebugRoutes(supabase: any) {
     }
   });
 
-
-
   // Debug endpoint for authenticated users to check their match data
-  app.get('/debug/matches', async (c) => {
+  app.get('/debug/matches', async c => {
     try {
       console.log('=== Debug matches endpoint called ===');
 
@@ -106,7 +102,7 @@ export function createDebugRoutes(supabase: any) {
       console.log('User profile:', {
         id: userProfile.id,
         username: userProfile.username,
-        currentGroup: userProfile.currentGroup
+        currentGroup: userProfile.currentGroup,
       });
 
       // Get all matches with different prefixes to debug
@@ -115,7 +111,7 @@ export function createDebugRoutes(supabase: any) {
         groupMatches: [],
         allMatches: [],
         matchesByGroup: {},
-        rawMatchData: []
+        rawMatchData: [],
       };
 
       if (userProfile.currentGroup) {
@@ -128,7 +124,7 @@ export function createDebugRoutes(supabase: any) {
             key: item.key,
             valueType: typeof item.value,
             hasValue: !!item.value,
-            value: item.value
+            value: item.value,
           });
         });
 
@@ -138,7 +134,7 @@ export function createDebugRoutes(supabase: any) {
           date: item.value?.date,
           createdAt: item.value?.createdAt,
           hasValue: !!item.value,
-          valueType: typeof item.value
+          valueType: typeof item.value,
         }));
         results.rawMatchData = groupMatches.map(item => item.value);
         console.log(`Found ${groupMatches.length} matches for group ${userProfile.currentGroup}`);
@@ -151,7 +147,7 @@ export function createDebugRoutes(supabase: any) {
         groupCode: item.value?.groupCode,
         matchType: item.value?.matchType,
         date: item.value?.date,
-        hasValue: !!item.value
+        hasValue: !!item.value,
       }));
 
       // Group matches by group code
@@ -171,12 +167,8 @@ export function createDebugRoutes(supabase: any) {
     }
   });
 
-
-
-
-
   // User lookup endpoint (for password reset email lookup)
-  app.post('/debug/user-lookup', async (c) => {
+  app.post('/debug/user-lookup', async c => {
     try {
       console.log('=== User lookup request ===');
 
@@ -220,19 +212,16 @@ export function createDebugRoutes(supabase: any) {
       return c.json({
         email: userProfile.email,
         userId: userProfile.id,
-        username: userProfile.username
+        username: userProfile.username,
       });
-
     } catch (error) {
       console.error('=== User lookup error ===', error);
       return c.json({ error: 'Internal server error during user lookup' }, 500);
     }
   });
 
-
-
   // Debug endpoint to list password reset tokens (for debugging)
-  app.get('/debug/password-reset-tokens', async (c) => {
+  app.get('/debug/password-reset-tokens', async c => {
     try {
       console.log('=== Debug password reset tokens ===');
 
@@ -246,14 +235,14 @@ export function createDebugRoutes(supabase: any) {
         email: item.value?.email,
         createdAt: item.value?.createdAt,
         expiresAt: item.value?.expiresAt,
-        isExpired: item.value?.expiresAt ? new Date(item.value.expiresAt) < new Date() : null
+        isExpired: item.value?.expiresAt ? new Date(item.value.expiresAt) < new Date() : null,
       }));
 
       return c.json({
         server: 'foosball-tracker-debug-tokens',
         totalTokens: resetTokens.length,
         tokens: tokenInfo,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Debug password reset tokens error:', error);
@@ -262,7 +251,7 @@ export function createDebugRoutes(supabase: any) {
   });
 
   // Debug endpoint to test email configuration
-  app.post('/debug/test-email-config', async (c) => {
+  app.post('/debug/test-email-config', async c => {
     try {
       console.log('=== Testing email configuration ===');
 
@@ -275,20 +264,20 @@ export function createDebugRoutes(supabase: any) {
       // Test with anon key client (this is what password reset uses)
       const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
       if (!anonKey) {
-        return c.json({
-          error: 'SUPABASE_ANON_KEY not configured',
-          config: {
-            supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
-            serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-            anonKey: false
-          }
-        }, 503);
+        return c.json(
+          {
+            error: 'SUPABASE_ANON_KEY not configured',
+            config: {
+              supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+              serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+              anonKey: false,
+            },
+          },
+          503
+        );
       }
 
-      const clientSupabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        anonKey
-      );
+      const clientSupabase = createClient(Deno.env.get('SUPABASE_URL')!, anonKey);
 
       console.log('Testing password reset email with test address:', testEmail);
 
@@ -296,7 +285,7 @@ export function createDebugRoutes(supabase: any) {
       const { data, error: resetError } = await clientSupabase.auth.resetPasswordForEmail(
         testEmail,
         {
-          redirectTo: 'https://test.example.com/callback' // Use a dummy redirect URL for testing
+          redirectTo: 'https://test.example.com/callback', // Use a dummy redirect URL for testing
         }
       );
 
@@ -311,8 +300,8 @@ export function createDebugRoutes(supabase: any) {
           config: {
             supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
             serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-            anonKey: !!anonKey
-          }
+            anonKey: !!anonKey,
+          },
         });
       }
 
@@ -321,26 +310,28 @@ export function createDebugRoutes(supabase: any) {
       return c.json({
         success: true,
         message: 'Email configuration appears to be working',
-        testEmail: testEmail,
+        testEmail,
         config: {
           supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
           serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-          anonKey: !!anonKey
-        }
+          anonKey: !!anonKey,
+        },
       });
-
     } catch (error) {
       console.error('Email config test error:', error);
-      return c.json({
-        success: false,
-        error: 'Test failed',
-        details: error.message,
-        config: {
-          supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
-          serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-          anonKey: !!Deno.env.get('SUPABASE_ANON_KEY')
-        }
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: 'Test failed',
+          details: error.message,
+          config: {
+            supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+            serviceRoleKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+            anonKey: !!Deno.env.get('SUPABASE_ANON_KEY'),
+          },
+        },
+        500
+      );
     }
 
     function getDiagnosis(error: any) {
@@ -359,14 +350,14 @@ export function createDebugRoutes(supabase: any) {
   });
 
   // Debug endpoint to clean up orphaned demo users
-  app.post('/debug/cleanup-orphaned-users', async (c) => {
+  app.post('/debug/cleanup-orphaned-users', async c => {
     try {
       console.log('=== Cleanup orphaned users ===');
 
       // Get all username mappings
       const allUserKeys = await kv.getByPrefix('user:username:');
-      let orphanedUsers = [];
-      let validUsers = [];
+      const orphanedUsers = [];
+      const validUsers = [];
 
       for (const userKey of allUserKeys) {
         const username = userKey.key.replace('user:username:', '');
@@ -378,7 +369,11 @@ export function createDebugRoutes(supabase: any) {
 
           if (error || !authUser) {
             console.log(`Orphaned user found: ${username} (${userId})`);
-            orphanedUsers.push({ username, userId, reason: error?.message || 'User not found in auth' });
+            orphanedUsers.push({
+              username,
+              userId,
+              reason: error?.message || 'User not found in auth',
+            });
 
             // Clean up the orphaned user data
             await kv.del(`user:username:${username}`);
@@ -401,17 +396,15 @@ export function createDebugRoutes(supabase: any) {
         message: 'Cleanup completed',
         orphanedUsersRemoved: orphanedUsers.length,
         validUsersRemaining: validUsers.length,
-        orphanedUsers: orphanedUsers,
-        validUsers: validUsers,
-        timestamp: new Date().toISOString()
+        orphanedUsers,
+        validUsers,
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Cleanup orphaned users error:', error);
       return c.json({ error: 'Cleanup failed', details: error.message }, 500);
     }
   });
-
-
 
   return app;
 }

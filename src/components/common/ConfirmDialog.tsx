@@ -19,12 +19,12 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-export function ConfirmDialog({ 
-  open, 
-  onOpenChange, 
-  config, 
-  onConfirm, 
-  onCancel 
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  config,
+  onConfirm,
+  onCancel,
 }: ConfirmDialogProps) {
   const {
     title,
@@ -32,7 +32,7 @@ export function ConfirmDialog({
     confirmText = 'Confirm',
     cancelText = 'Cancel',
     variant = 'default',
-    loading = false
+    loading = false,
   } = config;
 
   const handleConfirm = () => {
@@ -55,37 +55,32 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent className="sm:max-w-md">
+      <AlertDialogContent className='sm:max-w-md'>
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
+          <AlertDialogTitle className='flex items-center gap-2'>
             {variant === 'destructive' && (
-              <span className="text-red-500" role="img" aria-label="Warning">⚠️</span>
+              <span className='text-red-500' role='img' aria-label='Warning'>
+                ⚠️
+              </span>
             )}
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-left">
-            {description}
-          </AlertDialogDescription>
+          <AlertDialogDescription className='text-left'>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel 
-            onClick={handleCancel}
-            disabled={loading}
-          >
+          <AlertDialogCancel onClick={handleCancel} disabled={loading}>
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={loading}
             className={
-              variant === 'destructive'
-                ? 'bg-red-600 hover:bg-red-700 focus:ring-red-600'
-                : ''
+              variant === 'destructive' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-600' : ''
             }
           >
             {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className='flex items-center gap-2'>
+                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
                 Loading...
               </div>
             ) : (

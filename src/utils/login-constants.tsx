@@ -1,10 +1,8 @@
-
-
 export const USERNAME_REQUIREMENTS = {
   minLength: 3,
   maxLength: 30,
   regex: /^[a-zA-Z0-9._\-'\s]+$/,
-  examples: ['John Doe', 'player_123', 'O\'Connor', 'demo.user']
+  examples: ['John Doe', 'player_123', "O'Connor", 'demo.user'],
 };
 
 export const LOGIN_MESSAGES = {
@@ -14,7 +12,7 @@ export const LOGIN_MESSAGES = {
   creatingAccount: 'Creating Account...',
   signingIn: 'Signing In...',
   createAccount: 'Create Account',
-  signIn: 'Sign In'
+  signIn: 'Sign In',
 };
 
 export const INSTRUCTIONS = {
@@ -23,11 +21,11 @@ export const INSTRUCTIONS = {
   nextSteps: {
     createGroup: 'Create or join a group to start competing',
     recordMatches: 'Record matches and climb the leaderboard!',
-    becomeAdmin: 'Visit your profile to become an admin if needed'
+    becomeAdmin: 'Visit your profile to become an admin if needed',
   },
   troubleshooting: {
     serverStartup: 'Server may be starting up (try waiting 30 seconds)',
     checkConsole: 'Check browser console for detailed errors',
-    tryRefresh: 'Try refreshing the page'
-  }
+    tryRefresh: 'Try refreshing the page',
+  },
 };

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import ErrorBoundary, { withErrorBoundary, useErrorHandler } from '@/components/common/ErrorBoundary';
+import ErrorBoundary, {
+  withErrorBoundary,
+  useErrorHandler,
+} from '@/components/common/ErrorBoundary';
 
 // Mock the logger
 vi.mock('@/utils/logger', () => ({
@@ -9,8 +12,8 @@ vi.mock('@/utils/logger', () => ({
     error: vi.fn(),
     debug: vi.fn(),
     info: vi.fn(),
-    warn: vi.fn()
-  }
+    warn: vi.fn(),
+  },
 }));
 
 // Mock window.location methods
@@ -27,13 +30,19 @@ Object.defineProperty(window, 'location', {
     set href(value) {
       mockLocationHref(value);
       this._href = value;
-    }
+    },
   },
-  writable: true
+  writable: true,
 });
 
 // Component that throws an error for testing
-const ThrowError = ({ shouldThrow = true, errorMessage = 'Test error' }: { shouldThrow?: boolean, errorMessage?: string }) => {
+const ThrowError = ({
+  shouldThrow = true,
+  errorMessage = 'Test error',
+}: {
+  shouldThrow?: boolean;
+  errorMessage?: string;
+}) => {
   if (shouldThrow) {
     throw new Error(errorMessage);
   }
@@ -45,7 +54,7 @@ const ConditionalError = ({ throwError }: { throwError: boolean }) => {
   if (throwError) {
     throw new Error('Conditional error');
   }
-  return <div data-testid="success">Success</div>;
+  return <div data-testid='success'>Success</div>;
 };
 
 describe('ErrorBoundary Component', () => {
@@ -62,7 +71,7 @@ describe('ErrorBoundary Component', () => {
     it('should render children when there is no error', () => {
       render(
         <ErrorBoundary>
-          <div data-testid="child">Child component</div>
+          <div data-testid='child'>Child component</div>
         </ErrorBoundary>
       );
 
@@ -73,8 +82,8 @@ describe('ErrorBoundary Component', () => {
     it('should render multiple children when there is no error', () => {
       render(
         <ErrorBoundary>
-          <div data-testid="child1">Child 1</div>
-          <div data-testid="child2">Child 2</div>
+          <div data-testid='child1'>Child 1</div>
+          <div data-testid='child2'>Child 2</div>
         </ErrorBoundary>
       );
 
@@ -96,7 +105,7 @@ describe('ErrorBoundary Component', () => {
     });
 
     it('should display custom fallback UI when provided', () => {
-      const customFallback = <div data-testid="custom-fallback">Custom error UI</div>;
+      const customFallback = <div data-testid='custom-fallback'>Custom error UI</div>;
 
       render(
         <ErrorBoundary fallback={customFallback}>
@@ -113,17 +122,17 @@ describe('ErrorBoundary Component', () => {
 
       render(
         <ErrorBoundary onError={onError}>
-          <ThrowError errorMessage="Callback test error" />
+          <ThrowError errorMessage='Callback test error' />
         </ErrorBoundary>
       );
 
       expect(onError).toHaveBeenCalledTimes(1);
       expect(onError).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Callback test error'
+          message: 'Callback test error',
         }),
         expect.objectContaining({
-          componentStack: expect.any(String)
+          componentStack: expect.any(String),
         })
       );
     });
@@ -132,20 +141,22 @@ describe('ErrorBoundary Component', () => {
   describe('Error Levels', () => {
     it('should render page-level error UI', () => {
       render(
-        <ErrorBoundary level="page">
+        <ErrorBoundary level='page'>
           <ThrowError />
         </ErrorBoundary>
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-      expect(screen.getByText(/We're sorry, but something unexpected happened/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/We're sorry, but something unexpected happened/)
+      ).toBeInTheDocument();
       expect(screen.getByText(/Try Again/)).toBeInTheDocument();
       expect(screen.getByText('Go to Home')).toBeInTheDocument();
     });
 
     it('should render section-level error UI', () => {
       render(
-        <ErrorBoundary level="section">
+        <ErrorBoundary level='section'>
           <ThrowError />
         </ErrorBoundary>
       );
@@ -175,11 +186,11 @@ describe('ErrorBoundary Component', () => {
         if (shouldThrow) {
           throw new Error('Conditional error');
         }
-        return <div data-testid="success">Success</div>;
+        return <div data-testid='success'>Success</div>;
       };
 
       render(
-        <ErrorBoundary key="test-boundary">
+        <ErrorBoundary key='test-boundary'>
           <ConditionalError />
         </ErrorBoundary>
       );
@@ -200,7 +211,7 @@ describe('ErrorBoundary Component', () => {
 
     it('should show reload page after max retries', () => {
       render(
-        <ErrorBoundary level="page">
+        <ErrorBoundary level='page'>
           <ThrowError />
         </ErrorBoundary>
       );
@@ -209,7 +220,7 @@ describe('ErrorBoundary Component', () => {
       expect(screen.getByText(/Try Again/)).toBeInTheDocument();
 
       // Click retry button multiple times to exceed max retries
-      let retryButton = screen.getByText(/Try Again/);
+      const retryButton = screen.getByText(/Try Again/);
 
       // Click 3 times (max retries)
       fireEvent.click(retryButton);
@@ -223,7 +234,7 @@ describe('ErrorBoundary Component', () => {
 
     it('should reload page when reload button is clicked', () => {
       render(
-        <ErrorBoundary level="page">
+        <ErrorBoundary level='page'>
           <ThrowError />
         </ErrorBoundary>
       );
@@ -239,7 +250,7 @@ describe('ErrorBoundary Component', () => {
 
     it('should navigate to home when go home button is clicked', () => {
       render(
-        <ErrorBoundary level="page">
+        <ErrorBoundary level='page'>
           <ThrowError />
         </ErrorBoundary>
       );
@@ -258,7 +269,7 @@ describe('ErrorBoundary Component', () => {
 
       render(
         <ErrorBoundary showErrorDetails={true}>
-          <ThrowError errorMessage="Detailed error message" />
+          <ThrowError errorMessage='Detailed error message' />
         </ErrorBoundary>
       );
 
@@ -299,7 +310,7 @@ describe('ErrorBoundary Component', () => {
 
   describe('Higher-Order Component', () => {
     it('should wrap component with error boundary', () => {
-      const TestComponent = () => <div data-testid="wrapped">Wrapped component</div>;
+      const TestComponent = () => <div data-testid='wrapped'>Wrapped component</div>;
       const WrappedComponent = withErrorBoundary(TestComponent);
 
       render(<WrappedComponent />);
@@ -320,11 +331,11 @@ describe('ErrorBoundary Component', () => {
 
     it('should pass props to wrapped component', () => {
       const TestComponent = ({ message }: { message: string }) => (
-        <div data-testid="wrapped">{message}</div>
+        <div data-testid='wrapped'>{message}</div>
       );
       const WrappedComponent = withErrorBoundary(TestComponent);
 
-      render(<WrappedComponent message="Test message" />);
+      render(<WrappedComponent message='Test message' />);
 
       expect(screen.getByText('Test message')).toBeInTheDocument();
     });
@@ -333,7 +344,7 @@ describe('ErrorBoundary Component', () => {
       const ErrorComponent = () => {
         throw new Error('HOC error with custom fallback');
       };
-      const customFallback = <div data-testid="hoc-fallback">HOC Custom fallback</div>;
+      const customFallback = <div data-testid='hoc-fallback'>HOC Custom fallback</div>;
       const WrappedComponent = withErrorBoundary(ErrorComponent, { fallback: customFallback });
 
       render(<WrappedComponent />);
@@ -365,8 +376,8 @@ describe('ErrorBoundary Component', () => {
       const { logger } = await import('@/utils/logger');
 
       render(
-        <ErrorBoundary level="component">
-          <ThrowError errorMessage="Logged error" />
+        <ErrorBoundary level='component'>
+          <ThrowError errorMessage='Logged error' />
         </ErrorBoundary>
       );
 
@@ -377,16 +388,16 @@ describe('ErrorBoundary Component', () => {
           error: expect.objectContaining({
             name: 'Error',
             message: 'Logged error',
-            stack: expect.any(String)
+            stack: expect.any(String),
           }),
           errorInfo: expect.objectContaining({
-            componentStack: expect.any(String)
+            componentStack: expect.any(String),
           }),
           level: 'component',
           retryCount: 0,
           url: expect.any(String),
           userAgent: expect.any(String),
-          timestamp: expect.any(String)
+          timestamp: expect.any(String),
         })
       );
     });

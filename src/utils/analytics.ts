@@ -38,11 +38,13 @@ const sendCustomAnalytics = async (eventName: string, properties?: Record<string
         width: window.innerWidth,
         height: window.innerHeight,
       },
-      connection: (navigator as any).connection ? {
-        effectiveType: (navigator as any).connection.effectiveType,
-        downlink: (navigator as any).connection.downlink,
-        rtt: (navigator as any).connection.rtt,
-      } : null,
+      connection: (navigator as any).connection
+        ? {
+            effectiveType: (navigator as any).connection.effectiveType,
+            downlink: (navigator as any).connection.downlink,
+            rtt: (navigator as any).connection.rtt,
+          }
+        : null,
     };
 
     // Send to our analytics endpoint (fire and forget)
@@ -68,18 +70,23 @@ export const foosballAnalytics = {
       matchType,
       groupCode,
       category: 'match',
-      action: 'create'
+      action: 'create',
     });
   },
 
-  trackMatchCompleted: (matchType: '1v1' | '2v2', score1: number, score2: number, groupCode?: string) => {
+  trackMatchCompleted: (
+    matchType: '1v1' | '2v2',
+    score1: number,
+    score2: number,
+    groupCode?: string
+  ) => {
     trackEvent('Match Completed', {
       matchType,
       score1,
       score2,
       groupCode,
       category: 'match',
-      action: 'complete'
+      action: 'complete',
     });
   },
 
@@ -88,7 +95,7 @@ export const foosballAnalytics = {
       matchType,
       reason,
       category: 'match',
-      action: 'cancel'
+      action: 'cancel',
     });
   },
 
@@ -98,14 +105,14 @@ export const foosballAnalytics = {
       method,
       isNewUser,
       category: 'auth',
-      action: 'login'
+      action: 'login',
     });
   },
 
   trackUserLogout: () => {
     trackEvent('User Logout', {
       category: 'auth',
-      action: 'logout'
+      action: 'logout',
     });
   },
 
@@ -113,7 +120,7 @@ export const foosballAnalytics = {
     trackEvent('User Registration', {
       method,
       category: 'auth',
-      action: 'register'
+      action: 'register',
     });
   },
 
@@ -122,7 +129,7 @@ export const foosballAnalytics = {
     trackEvent('Group Created', {
       groupName,
       category: 'group',
-      action: 'create'
+      action: 'create',
     });
   },
 
@@ -131,7 +138,7 @@ export const foosballAnalytics = {
       groupName,
       groupCode,
       category: 'group',
-      action: 'join'
+      action: 'join',
     });
   },
 
@@ -140,7 +147,7 @@ export const foosballAnalytics = {
       fromGroup,
       toGroup,
       category: 'group',
-      action: 'switch'
+      action: 'switch',
     });
   },
 
@@ -150,7 +157,7 @@ export const foosballAnalytics = {
       pageName,
       previousPage,
       category: 'navigation',
-      action: 'view'
+      action: 'view',
     });
   },
 
@@ -159,7 +166,7 @@ export const foosballAnalytics = {
       from,
       to,
       category: 'navigation',
-      action: 'navigate'
+      action: 'navigate',
     });
   },
 
@@ -170,7 +177,7 @@ export const foosballAnalytics = {
       value,
       componentName,
       category: 'performance',
-      action: 'measure'
+      action: 'measure',
     });
   },
 
@@ -179,7 +186,7 @@ export const foosballAnalytics = {
       componentName,
       renderTime,
       category: 'performance',
-      action: 'slow_render'
+      action: 'slow_render',
     });
   },
 
@@ -190,7 +197,7 @@ export const foosballAnalytics = {
       errorMessage,
       componentName,
       category: 'error',
-      action: 'error'
+      action: 'error',
     });
   },
 
@@ -200,7 +207,7 @@ export const foosballAnalytics = {
       featureName,
       ...context,
       category: 'feature',
-      action: 'use'
+      action: 'use',
     });
   },
 
@@ -211,7 +218,7 @@ export const foosballAnalytics = {
       target,
       ...details,
       category: 'admin',
-      action: 'admin_action'
+      action: 'admin_action',
     });
   },
 };
@@ -296,22 +303,40 @@ export const initializeAnalytics = () => {
     if (typeof window !== 'undefined') {
       // Track initial load performance
       window.addEventListener('load', () => {
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const navigation = performance.getEntriesByType(
+          'navigation'
+        )[0] as PerformanceNavigationTiming;
         if (navigation) {
-          foosballAnalytics.trackPerformanceMetric('Page Load Time', navigation.loadEventEnd - navigation.fetchStart);
-          foosballAnalytics.trackPerformanceMetric('DOM Content Loaded', navigation.domContentLoadedEventEnd - navigation.fetchStart);
-          foosballAnalytics.trackPerformanceMetric('First Contentful Paint', navigation.loadEventEnd - navigation.fetchStart);
+          foosballAnalytics.trackPerformanceMetric(
+            'Page Load Time',
+            navigation.loadEventEnd - navigation.fetchStart
+          );
+          foosballAnalytics.trackPerformanceMetric(
+            'DOM Content Loaded',
+            navigation.domContentLoadedEventEnd - navigation.fetchStart
+          );
+          foosballAnalytics.trackPerformanceMetric(
+            'First Contentful Paint',
+            navigation.loadEventEnd - navigation.fetchStart
+          );
         }
       });
 
       // Track unhandled errors
-      window.addEventListener('error', (event) => {
-        foosballAnalytics.trackError('JavaScript Error', event.error?.message || 'Unknown error', event.filename);
+      window.addEventListener('error', event => {
+        foosballAnalytics.trackError(
+          'JavaScript Error',
+          event.error?.message || 'Unknown error',
+          event.filename
+        );
       });
 
       // Track unhandled promise rejections
-      window.addEventListener('unhandledrejection', (event) => {
-        foosballAnalytics.trackError('Unhandled Promise Rejection', event.reason?.message || 'Unknown reason');
+      window.addEventListener('unhandledrejection', event => {
+        foosballAnalytics.trackError(
+          'Unhandled Promise Rejection',
+          event.reason?.message || 'Unknown reason'
+        );
       });
     }
 

@@ -7,10 +7,10 @@ export function createGroupRoutes(supabase: any) {
   const app = new Hono();
 
   // Create a new group
-  app.post('/groups', async (c) => {
+  app.post('/groups', async c => {
     try {
       console.log('=== Create group request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -18,7 +18,7 @@ export function createGroupRoutes(supabase: any) {
 
       const { name } = await c.req.json();
       console.log('Group creation attempt:', name);
-      
+
       if (!name) {
         return c.json({ error: 'Group name is required' }, 400);
       }
@@ -29,7 +29,7 @@ export function createGroupRoutes(supabase: any) {
 
       // Generate a unique group code
       let groupCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
+
       // Check if group code already exists (very unlikely but possible)
       const existingGroup = await kv.get(`group:${groupCode}`);
       if (existingGroup) {
@@ -49,9 +49,9 @@ export function createGroupRoutes(supabase: any) {
         createdAt: new Date().toISOString(),
         members: [authResult.user.id], // Creator is automatically a member
         memberCount: 1,
-        admins: [authResult.user.id] // Creator is automatically an admin
+        admins: [authResult.user.id], // Creator is automatically an admin
       };
-      
+
       await kv.set(`group:${groupCode}`, groupData);
 
       // Create group-user relationship entry (new pattern)
@@ -68,8 +68,8 @@ export function createGroupRoutes(supabase: any) {
         // Add group to user's groups list
         userProfile.groups.push({
           code: groupCode,
-          name: name,
-          joinedAt: new Date().toISOString()
+          name,
+          joinedAt: new Date().toISOString(),
         });
 
         userProfile.currentGroup = groupCode;
@@ -79,9 +79,9 @@ export function createGroupRoutes(supabase: any) {
       }
 
       console.log('Group created successfully:', groupCode);
-      return c.json({ 
-        message: 'Group created successfully', 
-        group: groupData
+      return c.json({
+        message: 'Group created successfully',
+        group: groupData,
       });
     } catch (error) {
       console.error('=== Create group error ===', error);
@@ -90,10 +90,10 @@ export function createGroupRoutes(supabase: any) {
   });
 
   // Join an existing group (updated for multi-group support)
-  app.post('/groups/join', async (c) => {
+  app.post('/groups/join', async c => {
     try {
       console.log('=== Join group request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -101,7 +101,7 @@ export function createGroupRoutes(supabase: any) {
 
       const { groupCode, setAsCurrent = true } = await c.req.json();
       console.log('Group join attempt for code:', groupCode, 'setAsCurrent:', setAsCurrent);
-      
+
       if (!groupCode) {
         return c.json({ error: 'Group code is required' }, 400);
       }
@@ -127,7 +127,7 @@ export function createGroupRoutes(supabase: any) {
       }
 
       const isAlreadyMember = group.members.includes(authResult.user.id);
-      
+
       // Add user to group members if not already a member
       if (!isAlreadyMember) {
         group.members.push(authResult.user.id);
@@ -148,7 +148,7 @@ export function createGroupRoutes(supabase: any) {
         userProfile.groups.push({
           code: groupCodeUpper,
           name: group.name,
-          joinedAt: new Date().toISOString()
+          joinedAt: new Date().toISOString(),
         });
       }
 
@@ -161,11 +161,11 @@ export function createGroupRoutes(supabase: any) {
       await kv.set(`user:${authResult.user.id}`, userProfile);
 
       console.log('User joined group successfully:', groupCode, 'Member count:', group.memberCount);
-      return c.json({ 
-        message: isAlreadyMember ? 'Already a member of this group' : 'Joined group successfully', 
-        group: group,
+      return c.json({
+        message: isAlreadyMember ? 'Already a member of this group' : 'Joined group successfully',
+        group,
         isNewMember: !isAlreadyMember,
-        setAsCurrent: setAsCurrent || !userProfile.currentGroup
+        setAsCurrent: setAsCurrent || !userProfile.currentGroup,
       });
     } catch (error) {
       console.error('=== Join group error ===', error);
@@ -174,10 +174,10 @@ export function createGroupRoutes(supabase: any) {
   });
 
   // Get current user's group
-  app.get('/groups/current', async (c) => {
+  app.get('/groups/current', async c => {
     try {
       console.log('=== Get current group request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -193,8 +193,8 @@ export function createGroupRoutes(supabase: any) {
         return c.json({ error: 'Group not found' }, 404);
       }
 
-      return c.json({ 
-        group: group
+      return c.json({
+        group,
       });
     } catch (error) {
       console.error('=== Get current group error ===', error);
@@ -203,10 +203,10 @@ export function createGroupRoutes(supabase: any) {
   });
 
   // Get all user's groups
-  app.get('/groups/user-groups', async (c) => {
+  app.get('/groups/user-groups', async c => {
     try {
       console.log('=== Get user groups request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -234,14 +234,14 @@ export function createGroupRoutes(supabase: any) {
             icon: group.icon,
             memberCount: group.memberCount || 0,
             joinedAt: userGroup.joinedAt,
-            isCurrent: userProfile.currentGroup === group.code
+            isCurrent: userProfile.currentGroup === group.code,
           });
         }
       }
 
-      return c.json({ 
+      return c.json({
         groups: groupsWithDetails,
-        currentGroup: userProfile.currentGroup
+        currentGroup: userProfile.currentGroup,
       });
     } catch (error) {
       console.error('=== Get user groups error ===', error);
@@ -250,17 +250,17 @@ export function createGroupRoutes(supabase: any) {
   });
 
   // Switch current group
-  app.post('/groups/switch', async (c) => {
+  app.post('/groups/switch', async c => {
     try {
       console.log('=== Switch group request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
       }
 
       const { groupCode } = await c.req.json();
-      
+
       if (!groupCode) {
         return c.json({ error: 'Group code is required' }, 400);
       }
@@ -295,9 +295,9 @@ export function createGroupRoutes(supabase: any) {
       await kv.set(`user:${authResult.user.id}`, userProfile);
 
       console.log('User switched to group successfully:', groupCodeUpper);
-      return c.json({ 
+      return c.json({
         message: 'Switched to group successfully',
-        group: group
+        group,
       });
     } catch (error) {
       console.error('=== Switch group error ===', error);
@@ -306,10 +306,10 @@ export function createGroupRoutes(supabase: any) {
   });
 
   // Update group settings (admin only)
-  app.put('/groups/current', async (c) => {
+  app.put('/groups/current', async c => {
     try {
       console.log('=== Update group request received ===');
-      
+
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
@@ -326,14 +326,14 @@ export function createGroupRoutes(supabase: any) {
       }
 
       const { name, code, icon } = await c.req.json();
-      
+
       // Get current group
       const group = await kv.get(`group:${userProfile.currentGroup}`);
       if (!group) {
         return c.json({ error: 'Group not found' }, 404);
       }
 
-      let updatedGroup = { ...group };
+      const updatedGroup = { ...group };
 
       // Update name if provided
       if (name !== undefined) {
@@ -348,9 +348,9 @@ export function createGroupRoutes(supabase: any) {
         if (!code || code.length < 3) {
           return c.json({ error: 'Group code must be at least 3 characters' }, 400);
         }
-        
+
         const codeUpper = code.toUpperCase();
-        
+
         // Check if new code already exists (unless it's the same code)
         if (codeUpper !== userProfile.currentGroup) {
           const existingGroup = await kv.get(`group:${codeUpper}`);
@@ -380,12 +380,15 @@ export function createGroupRoutes(supabase: any) {
           // Update all matches to use new group code
           const matchPrefix = `match:${userProfile.currentGroup}:`;
           const matchItems = await kv.getByPrefix(matchPrefix);
-          
+
           for (const matchItem of matchItems) {
             const match = matchItem.value;
             if (match) {
               match.groupCode = codeUpper;
-              const newMatchKey = matchItem.key.replace(`match:${userProfile.currentGroup}:`, `match:${codeUpper}:`);
+              const newMatchKey = matchItem.key.replace(
+                `match:${userProfile.currentGroup}:`,
+                `match:${codeUpper}:`
+              );
               await kv.set(newMatchKey, match);
               await kv.del(matchItem.key);
             }
@@ -408,11 +411,10 @@ export function createGroupRoutes(supabase: any) {
       await kv.set(`group:${finalGroupCode}`, updatedGroup);
 
       console.log('Group updated successfully:', finalGroupCode);
-      return c.json({ 
-        message: 'Group updated successfully', 
-        group: updatedGroup
+      return c.json({
+        message: 'Group updated successfully',
+        group: updatedGroup,
       });
-
     } catch (error) {
       console.error('=== Update group error ===', error);
       return c.json({ error: 'Internal server error while updating group' }, 500);
@@ -420,28 +422,28 @@ export function createGroupRoutes(supabase: any) {
   });
 
   // Test endpoint for icon upload debugging
-  app.get('/groups/current/icon/test', async (c) => {
+  app.get('/groups/current/icon/test', async c => {
     try {
       const authResult = await validateUserAuth(c, supabase);
       if (authResult.error) {
         return c.json({ error: authResult.error }, authResult.status);
       }
 
-      return c.json({ 
+      return c.json({
         message: 'Icon upload test endpoint working',
         user: authResult.user.id,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Icon test endpoint error:', error);
-      return c.json({ error: 'Test endpoint failed: ' + error.message }, 500);
+      return c.json({ error: `Test endpoint failed: ${error.message}` }, 500);
     }
   });
 
   // Upload group icon (admin only)
-  app.post('/groups/current/icon', async (c) => {
+  app.post('/groups/current/icon', async c => {
     console.log('=== Upload group icon request received ===');
-    
+
     try {
       console.log('Step 1: Validating user authentication...');
       const authResult = await validateUserAuth(c, supabase);
@@ -454,10 +456,18 @@ export function createGroupRoutes(supabase: any) {
       console.log('Step 2: Getting user profile...');
       const userProfile = await kv.get(`user:${authResult.user.id}`);
       if (!userProfile || !userProfile.currentGroup) {
-        console.log('User profile not found or no group:', { hasProfile: !!userProfile, currentGroup: userProfile?.currentGroup });
+        console.log('User profile not found or no group:', {
+          hasProfile: !!userProfile,
+          currentGroup: userProfile?.currentGroup,
+        });
         return c.json({ error: 'User is not in any group' }, 404);
       }
-      console.log('✅ User profile found, group:', userProfile.currentGroup, 'isAdmin:', userProfile.isAdmin);
+      console.log(
+        '✅ User profile found, group:',
+        userProfile.currentGroup,
+        'isAdmin:',
+        userProfile.isAdmin
+      );
 
       // Check if user is admin
       if (!userProfile.isAdmin) {
@@ -469,7 +479,7 @@ export function createGroupRoutes(supabase: any) {
       console.log('Request Content-Type:', c.req.header('Content-Type'));
       console.log('Request method:', c.req.method);
       console.log('Request headers:', Object.fromEntries(c.req.raw.headers.entries()));
-      
+
       let formData;
       try {
         formData = await c.req.formData();
@@ -479,29 +489,33 @@ export function createGroupRoutes(supabase: any) {
         console.error('FormData error details:', {
           name: formError.name,
           message: formError.message,
-          stack: formError.stack?.substring(0, 500)
+          stack: formError.stack?.substring(0, 500),
         });
-        return c.json({ error: 'Failed to parse form data: ' + formError.message }, 400);
+        return c.json({ error: `Failed to parse form data: ${formError.message}` }, 400);
       }
 
       console.log('Step 4: Extracting file from FormData...');
       const file = formData.get('icon') as File;
-      
+
       console.log('FormData contents:');
       for (const [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, typeof value, value instanceof File ? `File(${value.name}, ${value.size}b, ${value.type})` : value);
+        console.log(
+          `  ${key}:`,
+          typeof value,
+          value instanceof File ? `File(${value.name}, ${value.size}b, ${value.type})` : value
+        );
       }
-      
+
       if (!file) {
         console.log('❌ No file found in FormData');
         return c.json({ error: 'No file provided' }, 400);
       }
-      
+
       if (!(file instanceof File)) {
         console.log('❌ Icon field is not a File object:', typeof file, file);
         return c.json({ error: 'Invalid file format' }, 400);
       }
-      
+
       console.log('✅ File extracted:', file.name, 'size:', file.size, 'type:', file.type);
 
       console.log('Step 5: Validating file...');
@@ -522,7 +536,7 @@ export function createGroupRoutes(supabase: any) {
       // Create bucket if it doesn't exist
       const bucketName = 'make-171cbf6f-group-icons';
       console.log('Checking if bucket exists:', bucketName);
-      
+
       let buckets, listError;
       try {
         const listResult = await supabase.storage.listBuckets();
@@ -530,33 +544,36 @@ export function createGroupRoutes(supabase: any) {
         listError = listResult.error;
       } catch (storageError) {
         console.error('Exception listing buckets:', storageError);
-        return c.json({ error: 'Storage service unavailable: ' + storageError.message }, 500);
+        return c.json({ error: `Storage service unavailable: ${storageError.message}` }, 500);
       }
-      
+
       if (listError) {
         console.error('Failed to list buckets:', listError);
-        return c.json({ error: 'Failed to access storage: ' + listError.message }, 500);
+        return c.json({ error: `Failed to access storage: ${listError.message}` }, 500);
       }
-      
+
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
       console.log('Bucket exists:', bucketExists, 'Total buckets:', buckets?.length || 0);
-      
+
       if (!bucketExists) {
         console.log('Creating bucket:', bucketName);
         try {
           const { error: bucketError } = await supabase.storage.createBucket(bucketName, {
             public: false,
             allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
-            fileSizeLimit: 5 * 1024 * 1024 // 5MB
+            fileSizeLimit: 5 * 1024 * 1024, // 5MB
           });
           if (bucketError) {
             console.error('Failed to create bucket:', bucketError);
-            return c.json({ error: 'Failed to create storage bucket: ' + bucketError.message }, 500);
+            return c.json(
+              { error: `Failed to create storage bucket: ${bucketError.message}` },
+              500
+            );
           }
           console.log('✅ Bucket created successfully');
         } catch (createError) {
           console.error('Exception creating bucket:', createError);
-          return c.json({ error: 'Failed to create storage bucket: ' + createError.message }, 500);
+          return c.json({ error: `Failed to create storage bucket: ${createError.message}` }, 500);
         }
       } else {
         console.log('✅ Bucket already exists');
@@ -567,7 +584,7 @@ export function createGroupRoutes(supabase: any) {
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${userProfile.currentGroup}-${Date.now()}.${fileExt}`;
       console.log('Generated fileName:', fileName);
-      
+
       // Convert File to ArrayBuffer for Supabase Storage
       console.log('Converting file to buffer...');
       let fileBuffer;
@@ -576,38 +593,36 @@ export function createGroupRoutes(supabase: any) {
         console.log('✅ File converted to buffer, size:', fileBuffer.byteLength, 'bytes');
       } catch (bufferError) {
         console.error('❌ Failed to convert file to buffer:', bufferError);
-        return c.json({ error: 'Failed to process file: ' + bufferError.message }, 500);
+        return c.json({ error: `Failed to process file: ${bufferError.message}` }, 500);
       }
-      
+
       console.log('Step 8: Uploading file to storage...');
       console.log('Upload params:', {
         bucket: bucketName,
-        fileName: fileName,
+        fileName,
         bufferSize: fileBuffer.byteLength,
-        contentType: file.type
+        contentType: file.type,
       });
-      
+
       let uploadData, uploadError;
       try {
-        const uploadResult = await supabase.storage
-          .from(bucketName)
-          .upload(fileName, fileBuffer, {
-            upsert: true,
-            contentType: file.type
-          });
+        const uploadResult = await supabase.storage.from(bucketName).upload(fileName, fileBuffer, {
+          upsert: true,
+          contentType: file.type,
+        });
         uploadData = uploadResult.data;
         uploadError = uploadResult.error;
       } catch (uploadException) {
         console.error('❌ Exception during upload:', uploadException);
-        return c.json({ error: 'Upload service error: ' + uploadException.message }, 500);
+        return c.json({ error: `Upload service error: ${uploadException.message}` }, 500);
       }
 
       if (uploadError) {
         console.error('❌ Upload failed:', uploadError);
         console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
-        return c.json({ error: 'Failed to upload image: ' + uploadError.message }, 500);
+        return c.json({ error: `Failed to upload image: ${uploadError.message}` }, 500);
       }
-      
+
       console.log('✅ File uploaded successfully:', uploadData?.path || fileName);
 
       console.log('Step 9: Creating signed URL...');
@@ -620,20 +635,20 @@ export function createGroupRoutes(supabase: any) {
         urlError = urlResult.error;
       } catch (urlException) {
         console.error('❌ Exception creating signed URL:', urlException);
-        return c.json({ error: 'URL service error: ' + urlException.message }, 500);
+        return c.json({ error: `URL service error: ${urlException.message}` }, 500);
       }
 
       if (urlError) {
         console.error('❌ Failed to create signed URL:', urlError);
         console.error('Signed URL error details:', JSON.stringify(urlError, null, 2));
-        return c.json({ error: 'Failed to get image URL: ' + urlError.message }, 500);
+        return c.json({ error: `Failed to get image URL: ${urlError.message}` }, 500);
       }
-      
+
       if (!signedUrlData?.signedUrl) {
         console.error('❌ No signed URL returned');
         return c.json({ error: 'Failed to generate image URL' }, 500);
       }
-      
+
       console.log('✅ Signed URL created successfully');
 
       console.log('Step 10: Updating group record...');
@@ -642,14 +657,14 @@ export function createGroupRoutes(supabase: any) {
         group = await kv.get(`group:${userProfile.currentGroup}`);
       } catch (kvError) {
         console.error('❌ Failed to get group from KV store:', kvError);
-        return c.json({ error: 'Failed to access group data: ' + kvError.message }, 500);
+        return c.json({ error: `Failed to access group data: ${kvError.message}` }, 500);
       }
-      
+
       if (!group) {
         console.error('❌ Group not found when updating icon:', userProfile.currentGroup);
         return c.json({ error: 'Group not found' }, 404);
       }
-      
+
       try {
         group.icon = signedUrlData.signedUrl;
         group.iconFileName = fileName;
@@ -659,45 +674,48 @@ export function createGroupRoutes(supabase: any) {
         console.log('✅ Group updated with new icon successfully');
       } catch (updateError) {
         console.error('❌ Failed to update group with icon:', updateError);
-        return c.json({ error: 'Failed to update group with icon: ' + updateError.message }, 500);
+        return c.json({ error: `Failed to update group with icon: ${updateError.message}` }, 500);
       }
 
       console.log('🎉 Group icon upload completed successfully!');
-      return c.json({ 
+      return c.json({
         message: 'Group icon uploaded successfully',
-        iconUrl: signedUrlData.signedUrl
+        iconUrl: signedUrlData.signedUrl,
       });
-
     } catch (error) {
       console.error('=== CRITICAL: Upload group icon error ===');
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
       console.error('Error stack (first 1000 chars):', error.stack?.substring(0, 1000));
-      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-      
+      console.error(
+        'Full error object:',
+        JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+      );
+
       // Provide more specific error messages based on error type
       let errorMessage = 'Internal server error while uploading group icon';
-      
+
       if (error.message?.includes('FormData')) {
-        errorMessage = 'Failed to process upload data: ' + error.message;
+        errorMessage = `Failed to process upload data: ${error.message}`;
       } else if (error.message?.includes('storage') || error.message?.includes('bucket')) {
-        errorMessage = 'Storage service error: ' + error.message;
+        errorMessage = `Storage service error: ${error.message}`;
       } else if (error.message?.includes('auth') || error.message?.includes('token')) {
-        errorMessage = 'Authentication error: ' + error.message;
+        errorMessage = `Authentication error: ${error.message}`;
       } else if (error.message?.includes('kv') || error.message?.includes('database')) {
-        errorMessage = 'Database error: ' + error.message;
+        errorMessage = `Database error: ${error.message}`;
       } else if (error.message) {
-        errorMessage = 'Upload failed: ' + error.message;
+        errorMessage = `Upload failed: ${error.message}`;
       }
-      
-      return c.json({ 
-        error: errorMessage,
-        details: error.message 
-      }, 500);
+
+      return c.json(
+        {
+          error: errorMessage,
+          details: error.message,
+        },
+        500
+      );
     }
   });
-
-
 
   return app;
 }

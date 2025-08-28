@@ -7,7 +7,7 @@ describe('Navigation Component', () => {
   const mockOnViewChange = vi.fn();
   const defaultProps = {
     currentView: 'dashboard',
-    onViewChange: mockOnViewChange
+    onViewChange: mockOnViewChange,
   };
 
   beforeEach(() => {
@@ -57,7 +57,7 @@ describe('Navigation Component', () => {
 
   describe('Active State', () => {
     it('should highlight the current active view', () => {
-      render(<Navigation currentView="statistics" onViewChange={mockOnViewChange} />);
+      render(<Navigation currentView='statistics' onViewChange={mockOnViewChange} />);
 
       const statsButton = screen.getByRole('button', { name: /stats/i });
       expect(statsButton).toHaveClass('text-blue-600');
@@ -71,7 +71,7 @@ describe('Navigation Component', () => {
     });
 
     it('should not apply active styling to non-current views', () => {
-      render(<Navigation currentView="dashboard" onViewChange={mockOnViewChange} />);
+      render(<Navigation currentView='dashboard' onViewChange={mockOnViewChange} />);
 
       const statsButton = screen.getByRole('button', { name: /stats/i });
       const addButton = screen.getByRole('button', { name: /add/i });
@@ -95,7 +95,7 @@ describe('Navigation Component', () => {
     });
 
     it('should maintain Add button special styling regardless of active state', () => {
-      render(<Navigation currentView="match" onViewChange={mockOnViewChange} />);
+      render(<Navigation currentView='match' onViewChange={mockOnViewChange} />);
 
       const addButton = screen.getByRole('button', { name: /add/i });
       expect(addButton).toHaveClass('bg-blue-600', 'text-white', 'rounded-full');
@@ -254,7 +254,7 @@ describe('Navigation Component', () => {
 
   describe('Props Handling', () => {
     it('should handle missing currentUser prop gracefully', () => {
-      render(<Navigation currentView="dashboard" onViewChange={mockOnViewChange} />);
+      render(<Navigation currentView='dashboard' onViewChange={mockOnViewChange} />);
 
       expect(screen.getByText('Home')).toBeInTheDocument();
       expect(mockOnViewChange).toBeDefined();
@@ -265,7 +265,7 @@ describe('Navigation Component', () => {
 
       render(
         <Navigation
-          currentView="dashboard"
+          currentView='dashboard'
           onViewChange={mockOnViewChange}
           currentUser={currentUser}
         />
@@ -275,13 +275,13 @@ describe('Navigation Component', () => {
     });
 
     it('should handle invalid currentView gracefully', () => {
-      render(<Navigation currentView="invalid-view" onViewChange={mockOnViewChange} />);
+      render(<Navigation currentView='invalid-view' onViewChange={mockOnViewChange} />);
 
       // No button should be active
       const buttons = screen.getAllByRole('button');
-      const activeButtons = buttons.filter(button =>
-        button.classList.contains('text-blue-600') &&
-        !button.classList.contains('bg-blue-600') // Exclude the Add button
+      const activeButtons = buttons.filter(
+        button =>
+          button.classList.contains('text-blue-600') && !button.classList.contains('bg-blue-600') // Exclude the Add button
       );
 
       expect(activeButtons).toHaveLength(0);
@@ -290,15 +290,15 @@ describe('Navigation Component', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty string currentView', () => {
-      render(<Navigation currentView="" onViewChange={mockOnViewChange} />);
+      render(<Navigation currentView='' onViewChange={mockOnViewChange} />);
 
       expect(screen.getByText('Home')).toBeInTheDocument();
 
       // No regular button should be active (except Add button which has special styling)
       const buttons = screen.getAllByRole('button');
-      const activeButtons = buttons.filter(button =>
-        button.classList.contains('text-blue-600') &&
-        !button.classList.contains('bg-blue-600')
+      const activeButtons = buttons.filter(
+        button =>
+          button.classList.contains('text-blue-600') && !button.classList.contains('bg-blue-600')
       );
 
       expect(activeButtons).toHaveLength(0);
@@ -307,7 +307,7 @@ describe('Navigation Component', () => {
     it('should handle null onViewChange gracefully', () => {
       // This test ensures the component doesn't crash with null callback
       expect(() => {
-        render(<Navigation currentView="dashboard" onViewChange={vi.fn()} />);
+        render(<Navigation currentView='dashboard' onViewChange={vi.fn()} />);
       }).not.toThrow();
     });
   });

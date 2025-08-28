@@ -6,7 +6,7 @@ const mockConsole = {
   log: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
-  error: vi.fn()
+  error: vi.fn(),
 };
 
 describe('Logger Utility', () => {
@@ -30,37 +30,27 @@ describe('Logger Utility', () => {
     it('should have debug method that logs in development', () => {
       logger.debug('Test debug message', { data: 'test' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[DEBUG] Test debug message',
-        { data: 'test' }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[DEBUG] Test debug message', { data: 'test' });
     });
 
     it('should have info method that logs in development', () => {
       logger.info('Test info message', { data: 'test' });
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
-        '[INFO] Test info message',
-        { data: 'test' }
-      );
+      expect(mockConsole.info).toHaveBeenCalledWith('[INFO] Test info message', { data: 'test' });
     });
 
     it('should have warn method that logs in development', () => {
       logger.warn('Test warn message', { data: 'test' });
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '[WARN] Test warn message',
-        { data: 'test' }
-      );
+      expect(mockConsole.warn).toHaveBeenCalledWith('[WARN] Test warn message', { data: 'test' });
     });
 
     it('should have error method that always logs', () => {
       logger.error('Test error message', { error: 'test' });
 
-      expect(mockConsole.error).toHaveBeenCalledWith(
-        '[ERROR] Test error message',
-        { error: 'test' }
-      );
+      expect(mockConsole.error).toHaveBeenCalledWith('[ERROR] Test error message', {
+        error: 'test',
+      });
     });
   });
 
@@ -68,19 +58,15 @@ describe('Logger Utility', () => {
     it('should have authEvent method that logs in development', () => {
       logger.authEvent('User signed in', { userId: '123' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[AUTH] User signed in',
-        { userId: '123' }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[AUTH] User signed in', { userId: '123' });
     });
 
     it('should have sessionEvent method that logs in development', () => {
       logger.sessionEvent('Session created', { sessionId: 'abc' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[SESSION] Session created',
-        { sessionId: 'abc' }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[SESSION] Session created', {
+        sessionId: 'abc',
+      });
     });
   });
 
@@ -88,46 +74,39 @@ describe('Logger Utility', () => {
     it('should have apiEvent method that logs in development', () => {
       logger.apiEvent('API call completed', { endpoint: '/users' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[API] API call completed',
-        { endpoint: '/users' }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[API] API call completed', {
+        endpoint: '/users',
+      });
     });
 
     it('should have apiRequest method that logs in development', () => {
       logger.apiRequest('/api/users', 'GET', { param: 'value' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[API REQUEST] GET /api/users',
-        { param: 'value' }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[API REQUEST] GET /api/users', {
+        param: 'value',
+      });
     });
 
     it('should handle apiRequest with default method', () => {
       logger.apiRequest('/api/users');
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[API REQUEST] GET /api/users',
-        undefined
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[API REQUEST] GET /api/users', undefined);
     });
 
     it('should have apiResponse method that logs in development', () => {
       logger.apiResponse('/api/users', 200, true, { users: [] });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[API RESPONSE] SUCCESS 200 /api/users',
-        { users: [] }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[API RESPONSE] SUCCESS 200 /api/users', {
+        users: [],
+      });
     });
 
     it('should log error responses with apiResponse', () => {
       logger.apiResponse('/api/users', 404, false, { error: 'Not found' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '[API RESPONSE] ERROR 404 /api/users',
-        { error: 'Not found' }
-      );
+      expect(mockConsole.log).toHaveBeenCalledWith('[API RESPONSE] ERROR 404 /api/users', {
+        error: 'Not found',
+      });
     });
 
     it('should handle apiResponse without data parameter', () => {
@@ -147,7 +126,7 @@ describe('Logger Utility', () => {
       // Also stub import.meta.env.DEV for the logger
       Object.defineProperty(import.meta, 'env', {
         value: { DEV: false },
-        writable: true
+        writable: true,
       });
     });
 
@@ -172,10 +151,7 @@ describe('Logger Utility', () => {
     it('should still log errors in production', () => {
       logger.error('Error message', { error: 'test' });
 
-      expect(mockConsole.error).toHaveBeenCalledWith(
-        '[ERROR] Error message',
-        { error: 'test' }
-      );
+      expect(mockConsole.error).toHaveBeenCalledWith('[ERROR] Error message', { error: 'test' });
     });
   });
 
@@ -190,7 +166,7 @@ describe('Logger Utility', () => {
         'sessionEvent',
         'apiEvent',
         'apiRequest',
-        'apiResponse'
+        'apiResponse',
       ];
 
       requiredMethods.forEach(method => {
