@@ -286,6 +286,8 @@ export interface MatchSubmissionData {
   player1Email?: string;
   /** Player 2 email (for singles) */
   player2Email?: string;
+  /** Winner email (for singles) - required by server validation */
+  winnerEmail?: string;
   /** Team 1 Player 1 email (for doubles) */
   team1Player1Email?: string;
   /** Team 1 Player 2 email (for doubles) */
