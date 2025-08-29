@@ -1,0 +1,8 @@
+# Supabase Configuration File
+
+[functions.api]
+entrypoint = './functions/api/index.tsx'
+
+# Enable all the shared files to be accessible
+[functions]
+# Global function settings
