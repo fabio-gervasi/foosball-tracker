@@ -25,7 +25,7 @@ describe('Logger Completeness Integration', () => {
 
     methodsUsedInCodebase.forEach(method => {
       expect(logger).toHaveProperty(method);
-      expect(typeof logger[method]).toBe('function');
+      expect(typeof (logger as any)[method]).toBe('function');
     });
   });
 
@@ -124,10 +124,7 @@ describe('Logger Completeness Integration', () => {
     ];
 
     requiredMethods.forEach(method => {
-      expect(loggerKeys).toContain(
-        method,
-        `Logger is missing the '${method}' method. This will cause "logger.${method} is not a function" errors at runtime.`
-      );
+      expect(loggerKeys).toContain(method);
     });
   });
 });

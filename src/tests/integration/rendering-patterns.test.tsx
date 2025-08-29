@@ -11,22 +11,15 @@ describe('Rendering Patterns Integration', () => {
     // Check that we're not calling renderCurrentView as a function
     const hasIncorrectFunctionCall = appRouterContent.includes('renderCurrentView()');
 
-    expect(hasIncorrectFunctionCall).toBe(
-      false,
-      'AppRouter should not call renderCurrentView() as a function. ' +
-        'It should use the memoized value directly: {renderCurrentView}'
-    );
+    expect(hasIncorrectFunctionCall).toBe(false);
 
     // Check that we have the correct useMemo pattern
     const hasUseMemoPattern = appRouterContent.includes('useMemo(');
-    expect(hasUseMemoPattern).toBe(true, 'AppRouter should use useMemo for renderCurrentView');
+    expect(hasUseMemoPattern).toBe(true);
 
     // Check that we use the value correctly (without parentheses)
     const hasCorrectUsage = appRouterContent.includes('{renderCurrentView}');
-    expect(hasCorrectUsage).toBe(
-      true,
-      'AppRouter should use renderCurrentView directly without calling it as a function'
-    );
+    expect(hasCorrectUsage).toBe(true);
   });
 
   it('should prevent "is not a function" errors in component patterns', () => {
@@ -92,10 +85,7 @@ describe('Rendering Patterns Integration', () => {
             content
           );
 
-        expect(hasPotentialIssue).toBe(
-          false,
-          `${file} may have useMemo values being called as functions`
-        );
+        expect(hasPotentialIssue).toBe(false);
       }
     }
   });

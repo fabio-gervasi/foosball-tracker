@@ -23,11 +23,11 @@ const mockLocationHref = vi.fn();
 Object.defineProperty(window, 'location', {
   value: {
     reload: mockReload,
-    href: '/',
+    _href: '/',
     get href() {
       return this._href || '/';
     },
-    set href(value) {
+    set href(value: string) {
       mockLocationHref(value);
       this._href = value;
     },

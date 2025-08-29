@@ -25,7 +25,7 @@ const mockUsers: User[] = [
     name: 'Test User',
     currentGroup: 'TEST123',
     rating: 1200,
-    avatar: null,
+    avatar: undefined,
     isAdmin: true,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -42,6 +42,7 @@ const mockMatches: Match[] = [
     score2: 8,
     groupId: 'test-group-id',
     createdAt: '2024-01-01T00:00:00.000Z',
+    date: '2024-01-01T00:00:00.000Z',
   },
 ];
 
@@ -64,8 +65,18 @@ const defaultAppDataContext: AppDataContextType = {
   currentGroup: mockGroup,
   isLoadingData: false,
   error: null,
+  isFetching: false,
+  isLoadingInitial: false,
   refreshData: vi.fn().mockResolvedValue(undefined),
+  updateUser: vi.fn(),
+  addMatch: vi.fn(),
+  setCurrentGroup: vi.fn(),
+  handleGroupSelected: vi.fn().mockResolvedValue(undefined),
+  handleGroupChanged: vi.fn().mockResolvedValue(undefined),
+  handleMatchSubmit: vi.fn().mockResolvedValue({} as Match),
+  handleProfileUpdate: vi.fn().mockResolvedValue(undefined),
   clearError: vi.fn(),
+  refetchAll: vi.fn(),
 };
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {

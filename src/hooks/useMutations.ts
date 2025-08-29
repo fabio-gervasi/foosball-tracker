@@ -53,24 +53,35 @@ export const useSubmitMatchMutation = (
         const optimisticMatch: Match = {
           id: `temp-${Date.now()}`, // Temporary ID
           matchType: matchData.matchType,
-          player1: matchData.player1Email ? { email: matchData.player1Email } : undefined,
-          player2: matchData.player2Email ? { email: matchData.player2Email } : undefined,
+          player1: matchData.player1Email
+            ? { email: matchData.player1Email, name: matchData.player1Email }
+            : undefined,
+          player2: matchData.player2Email
+            ? { email: matchData.player2Email, name: matchData.player2Email }
+            : undefined,
           team1: matchData.team1Player1Email
             ? {
-                player1: { email: matchData.team1Player1Email },
-                player2: { email: matchData.team1Player2Email },
+                player1: { email: matchData.team1Player1Email, name: matchData.team1Player1Email },
+                player2: {
+                  email: matchData.team1Player2Email || '',
+                  name: matchData.team1Player2Email || '',
+                },
               }
             : undefined,
           team2: matchData.team2Player1Email
             ? {
-                player1: { email: matchData.team2Player1Email },
-                player2: { email: matchData.team2Player2Email },
+                player1: { email: matchData.team2Player1Email, name: matchData.team2Player1Email },
+                player2: {
+                  email: matchData.team2Player2Email || '',
+                  name: matchData.team2Player2Email || '',
+                },
               }
             : undefined,
           score1: matchData.score1,
           score2: matchData.score2,
           groupId: 'current', // Will be updated by server response
           createdAt: new Date().toISOString(),
+          date: new Date().toISOString(),
         };
 
         queryClient.setQueryData<Match[]>(queryKeys.matches(), [

@@ -490,5 +490,4 @@ export const reportError = (error: Error, context?: Record<string, any>): void =
   return errorHandler.reportError(error, context);
 };
 
-// Export types
-export type { ValidationError, NetworkError };
+// Types are exported as interfaces above
