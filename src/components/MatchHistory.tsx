@@ -97,15 +97,19 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       filtered = filtered.filter(match => {
         if (match.matchType === '2v2') {
           return (
-            resolvePlayerName(match.team1Player1Email).toLowerCase().includes(searchTerm) ||
-            resolvePlayerName(match.team1Player2Email).toLowerCase().includes(searchTerm) ||
-            resolvePlayerName(match.team2Player1Email).toLowerCase().includes(searchTerm) ||
-            resolvePlayerName(match.team2Player2Email).toLowerCase().includes(searchTerm)
+            (match.team1?.player1?.name &&
+              match.team1.player1.name.toLowerCase().includes(searchTerm)) ||
+            (match.team1?.player2?.name &&
+              match.team1.player2.name.toLowerCase().includes(searchTerm)) ||
+            (match.team2?.player1?.name &&
+              match.team2.player1.name.toLowerCase().includes(searchTerm)) ||
+            (match.team2?.player2?.name &&
+              match.team2.player2.name.toLowerCase().includes(searchTerm))
           );
         } else {
           return (
-            resolvePlayerName(match.player1Email).toLowerCase().includes(searchTerm) ||
-            resolvePlayerName(match.player2Email).toLowerCase().includes(searchTerm)
+            (match.player1?.name && match.player1.name.toLowerCase().includes(searchTerm)) ||
+            (match.player2?.name && match.player2.name.toLowerCase().includes(searchTerm))
           );
         }
       });
@@ -548,15 +552,23 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
                 if (matchDisplay.type === '2v2') {
                   // Team-based layout for 2v2 matches
-                  const team1Player1Info = getUserAvatarInfo(match.team1Player1Email);
-                  const team1Player2Info = getUserAvatarInfo(match.team1Player2Email);
-                  const team2Player1Info = getUserAvatarInfo(match.team2Player1Email);
-                  const team2Player2Info = getUserAvatarInfo(match.team2Player2Email);
+                  const team1Player1Info = getUserAvatarInfo(
+                    match.team1?.player1?.email || match.team1?.player1?.id
+                  );
+                  const team1Player2Info = getUserAvatarInfo(
+                    match.team1?.player2?.email || match.team1?.player2?.id
+                  );
+                  const team2Player1Info = getUserAvatarInfo(
+                    match.team2?.player1?.email || match.team2?.player1?.id
+                  );
+                  const team2Player2Info = getUserAvatarInfo(
+                    match.team2?.player2?.email || match.team2?.player2?.id
+                  );
 
-                  const team1Player1Name = resolvePlayerName(match.team1Player1Email);
-                  const team1Player2Name = resolvePlayerName(match.team1Player2Email);
-                  const team2Player1Name = resolvePlayerName(match.team2Player1Email);
-                  const team2Player2Name = resolvePlayerName(match.team2Player2Email);
+                  const team1Player1Name = match.team1?.player1?.name || 'Unknown';
+                  const team1Player2Name = match.team1?.player2?.name || 'Unknown';
+                  const team2Player1Name = match.team2?.player1?.name || 'Unknown';
+                  const team2Player2Name = match.team2?.player2?.name || 'Unknown';
 
                   const team1Won = match.winningTeam === 'team1';
                   const team2Won = match.winningTeam === 'team2';
@@ -795,10 +807,10 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   );
                 } else {
                   // Cleaner layout for 1v1 matches with avatars
-                  const player1Info = getUserAvatarInfo(match.player1Email);
-                  const player2Info = getUserAvatarInfo(match.player2Email);
-                  const player1Name = resolvePlayerName(match.player1Email);
-                  const player2Name = resolvePlayerName(match.player2Email);
+                  const player1Info = getUserAvatarInfo(match.player1?.email || match.player1?.id);
+                  const player2Info = getUserAvatarInfo(match.player2?.email || match.player2?.id);
+                  const player1Name = match.player1?.name || 'Unknown';
+                  const player2Name = match.player2?.name || 'Unknown';
 
                   return (
                     <div
