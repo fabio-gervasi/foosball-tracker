@@ -12,7 +12,7 @@ const path = require('path');
 const https = require('https');
 
 class PerformanceBudgetValidator {
-  constructor(configPath = './performance-budget.config.js') {
+  constructor(configPath = './performance-budget.config.cjs') {
     this.configPath = configPath;
     this.config = this.loadConfig();
     this.results = {
