@@ -717,5 +717,114 @@ export function createGroupRoutes(supabase: any) {
     }
   });
 
+  // Leave a group
+  app.post('/groups/leave', async c => {
+    try {
+      console.log('=== Leave group request received ===');
+
+      const authResult = await validateUserAuth(c, supabase);
+      if (authResult.error) {
+        return c.json({ error: authResult.error }, authResult.status);
+      }
+
+      const { groupCode } = await c.req.json();
+      console.log('Group leave attempt for code:', groupCode);
+
+      if (!groupCode) {
+        return c.json({ error: 'Group code is required' }, 400);
+      }
+
+      const groupCodeUpper = groupCode.toUpperCase();
+
+      // Get the group
+      const group = await kv.get(`group:${groupCodeUpper}`);
+      if (!group) {
+        return c.json({ error: 'Group not found' }, 404);
+      }
+
+      // Get user profile
+      const userProfile = await kv.get(`user:${authResult.user.id}`);
+      if (!userProfile) {
+        return c.json({ error: 'User profile not found' }, 404);
+      }
+
+      // Initialize groups array if not exists
+      if (!userProfile.groups || !Array.isArray(userProfile.groups)) {
+        userProfile.groups = [];
+      }
+
+      // Check if user is a member of this group
+      const isGroupMember = userProfile.groups.some(g => g.code === groupCodeUpper);
+      if (!isGroupMember) {
+        return c.json({ error: 'User is not a member of this group' }, 400);
+      }
+
+      // Check if user is a member in the group's members array
+      if (!group.members || !Array.isArray(group.members)) {
+        console.warn('Group members is not an array, initializing:', group.members);
+        group.members = [];
+      }
+
+      const isMemberInGroup = group.members.includes(authResult.user.id);
+      if (!isMemberInGroup) {
+        console.warn('User not found in group members array, but found in user groups');
+      }
+
+      // Remove user from group members if present
+      if (isMemberInGroup) {
+        group.members = group.members.filter(memberId => memberId !== authResult.user.id);
+        group.memberCount = Math.max((group.memberCount || 1) - 1, 0);
+        await kv.set(`group:${groupCodeUpper}`, group);
+      }
+
+      // Remove group from user's groups list
+      userProfile.groups = userProfile.groups.filter(g => g.code !== groupCodeUpper);
+
+      // Handle current group switching logic
+      let newCurrentGroup = null;
+      if (userProfile.currentGroup === groupCodeUpper) {
+        // User is leaving their current group
+        if (userProfile.groups.length > 0) {
+          // Switch to the most recently joined group
+          const sortedGroups = userProfile.groups.sort(
+            (a, b) => new Date(b.joinedAt || 0).getTime() - new Date(a.joinedAt || 0).getTime()
+          );
+          newCurrentGroup = sortedGroups[0].code;
+          userProfile.currentGroup = newCurrentGroup;
+          userProfile.groupSwitchedAt = new Date().toISOString();
+        } else {
+          // User has no more groups
+          userProfile.currentGroup = null;
+          userProfile.groupSwitchedAt = new Date().toISOString();
+        }
+      }
+      // If leaving a non-current group, no current group change needed
+
+      // Update user profile
+      await kv.set(`user:${authResult.user.id}`, userProfile);
+
+      // Clean up group-user relationship entry
+      await kv.del(`group:${groupCodeUpper}:user:${authResult.user.id}`);
+
+      console.log(
+        'User left group successfully:',
+        groupCodeUpper,
+        'New member count:',
+        group.memberCount
+      );
+      console.log('New current group:', newCurrentGroup);
+
+      return c.json({
+        message: 'Left group successfully',
+        leftGroup: groupCodeUpper,
+        newCurrentGroup: newCurrentGroup,
+        remainingGroups: userProfile.groups.length,
+      });
+    } catch (error) {
+      console.error('=== Leave group error ===', error);
+      return c.json({ error: 'Internal server error while leaving group' }, 500);
+    }
+  });
+
   return app;
 }

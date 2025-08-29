@@ -10,6 +10,7 @@ import type {
   MatchSubmissionData,
   ProfileUpdateData,
   GroupSwitchData,
+  LeaveGroupData,
 } from '../types';
 
 /**
@@ -312,6 +313,54 @@ export const useJoinGroupMutation = (
     onError: (error, groupData) => {
       const processedError = handleApiError(error, { groupData });
       logger.error('Failed to join group', processedError);
+    },
+  });
+};
+
+/**
+ * Hook for leaving a group
+ */
+export const useLeaveGroupMutation = (
+  accessToken: string | null
+): UseMutationResult<any, Error, LeaveGroupData> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (groupData: LeaveGroupData) => {
+      if (!accessToken) {
+        throw new Error('No access token available');
+      }
+
+      logger.debug('Leaving group', { groupCode: groupData.groupCode });
+
+      const response = await apiRequest('/groups/leave', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(groupData),
+      });
+
+      return response;
+    },
+    onSuccess: (data, groupData) => {
+      logger.info('Left group successfully', {
+        groupCode: groupData.groupCode,
+        newCurrentGroup: data.newCurrentGroup,
+        remainingGroups: data.remainingGroups,
+      });
+
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.userGroups() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.currentGroup() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches() });
+    },
+    onError: (error, groupData) => {
+      const processedError = handleApiError(error, { groupData });
+      logger.error('Failed to leave group', processedError);
     },
   });
 };
