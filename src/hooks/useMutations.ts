@@ -294,7 +294,7 @@ export const useJoinGroupMutation = (
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(groupData),
+        body: JSON.stringify({ groupCode: groupData.code }),
       });
 
       return response;
