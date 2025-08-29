@@ -5,7 +5,7 @@ export const trackEvent = (name: string, properties?: Record<string, any>) => {
   try {
     // Use Vercel Analytics if available
     if (typeof window !== 'undefined' && window.va) {
-      window.va('track', name, properties);
+      window.va('event', { name, ...properties });
       logger.info(`Analytics event tracked: ${name}`, properties);
     }
 

@@ -2,7 +2,7 @@
 // Platform-aware implementation that works in browser and Deno
 
 // Environment detection
-const isServer = typeof Deno !== 'undefined';
+const isServer = typeof (globalThis as any).Deno !== 'undefined';
 const isBrowser = typeof window !== 'undefined';
 
 // Constants - use fallback values for now, can be configured per environment

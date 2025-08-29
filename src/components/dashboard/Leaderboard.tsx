@@ -215,7 +215,9 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
                   <div className='w-12 h-12 rounded-full bg-gray-100'>
                     <Avatar
                       src={user.avatarUrl}
-                      fallback={user.avatar}
+                      fallback={
+                        user.avatar || user.username?.charAt(0) || user.name?.charAt(0) || 'U'
+                      }
                       className='w-full h-full rounded-full'
                       textClassName='text-lg text-gray-600'
                     />
@@ -278,7 +280,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
           <div>
             <TrendingUp className='w-8 h-8 text-green-600 mx-auto mb-2' />
             <p className='text-2xl text-gray-800'>
-              {users.reduce((total, user) => total + user.wins + user.losses, 0)}
+              {users.reduce((total, user) => total + (user.wins || 0) + (user.losses || 0), 0)}
             </p>
             <p className='text-sm text-gray-600'>Total Matches</p>
           </div>

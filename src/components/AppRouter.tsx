@@ -96,6 +96,9 @@ export const AppRouter: React.FC = () => {
   const renderCurrentView = useMemo(() => {
     switch (currentView) {
       case 'dashboard':
+        if (!currentUser) {
+          return <LoadingScreen message='Loading user data...' />;
+        }
         return (
           <Suspense fallback={<LoadingScreen message='Loading Dashboard...' />}>
             <Dashboard
@@ -103,13 +106,16 @@ export const AppRouter: React.FC = () => {
               matches={matches}
               users={users}
               group={currentGroup}
-              error={error}
-              accessToken={accessToken}
+              error={error || undefined}
+              accessToken={accessToken || undefined}
             />
           </Suspense>
         );
 
       case 'profile':
+        if (!currentUser || !accessToken) {
+          return <LoadingScreen message='Loading profile data...' />;
+        }
         return (
           <Suspense fallback={<LoadingScreen message='Loading Profile...' />}>
             <Profile
@@ -131,7 +137,10 @@ export const AppRouter: React.FC = () => {
         );
 
       case 'matchConfirmation':
-        return lastMatchResult ? (
+        if (!currentUser || !accessToken || !lastMatchResult) {
+          return <LoadingScreen message='Loading match confirmation...' />;
+        }
+        return (
           <Suspense fallback={<LoadingScreen message='Loading Match Confirmation...' />}>
             <MatchConfirmation
               matchResult={lastMatchResult}
@@ -144,20 +153,12 @@ export const AppRouter: React.FC = () => {
               onDataChange={refreshData}
             />
           </Suspense>
-        ) : (
-          <Suspense fallback={<LoadingScreen message='Loading Dashboard...' />}>
-            <Dashboard
-              user={currentUser}
-              matches={matches}
-              users={users}
-              group={currentGroup}
-              error={error}
-              accessToken={accessToken}
-            />
-          </Suspense>
         );
 
       case 'statistics':
+        if (!currentUser) {
+          return <LoadingScreen message='Loading statistics...' />;
+        }
         return (
           <Suspense fallback={<LoadingScreen message='Loading Statistics...' />}>
             <Statistics user={currentUser} matches={matches} group={currentGroup} />
@@ -170,13 +171,16 @@ export const AppRouter: React.FC = () => {
             <Leaderboard
               users={users}
               group={currentGroup}
-              currentUser={currentUser}
-              accessToken={accessToken}
+              currentUser={currentUser || undefined}
+              accessToken={accessToken || undefined}
             />
           </Suspense>
         );
 
       case 'history':
+        if (!currentUser || !accessToken) {
+          return <LoadingScreen message='Loading match history...' />;
+        }
         return (
           <Suspense fallback={<LoadingScreen message='Loading Match History...' />}>
             <MatchHistory
@@ -189,6 +193,9 @@ export const AppRouter: React.FC = () => {
         );
 
       case 'admin':
+        if (!currentUser || !accessToken) {
+          return <LoadingScreen message='Loading admin panel...' />;
+        }
         return (
           <Suspense fallback={<LoadingScreen message='Loading Admin Panel...' />}>
             <AdminPanel
@@ -202,7 +209,10 @@ export const AppRouter: React.FC = () => {
         );
 
       case 'playerProfile':
-        return selectedPlayerId ? (
+        if (!selectedPlayerId || !currentUser || !accessToken) {
+          return <LoadingScreen message='Loading Player Profile...' />;
+        }
+        return (
           <Suspense fallback={<LoadingScreen message='Loading Player Profile...' />}>
             <PlayerProfile
               playerId={selectedPlayerId}
@@ -212,20 +222,12 @@ export const AppRouter: React.FC = () => {
               onBack={() => setCurrentView('dashboard')}
             />
           </Suspense>
-        ) : (
-          <Suspense fallback={<LoadingScreen message='Loading Dashboard...' />}>
-            <Dashboard
-              user={currentUser}
-              matches={matches}
-              users={users}
-              group={currentGroup}
-              error={error}
-              accessToken={accessToken}
-            />
-          </Suspense>
         );
 
-      default:
+      case 'fallback':
+        if (!currentUser) {
+          return <LoadingScreen message='Loading user data...' />;
+        }
         return (
           <Suspense fallback={<LoadingScreen message='Loading Dashboard...' />}>
             <Dashboard
@@ -233,8 +235,25 @@ export const AppRouter: React.FC = () => {
               matches={matches}
               users={users}
               group={currentGroup}
-              error={error}
-              accessToken={accessToken}
+              error={error || undefined}
+              accessToken={accessToken || undefined}
+            />
+          </Suspense>
+        );
+
+      default:
+        if (!currentUser) {
+          return <LoadingScreen message='Loading user data...' />;
+        }
+        return (
+          <Suspense fallback={<LoadingScreen message='Loading Dashboard...' />}>
+            <Dashboard
+              user={currentUser}
+              matches={matches}
+              users={users}
+              group={currentGroup}
+              error={error || undefined}
+              accessToken={accessToken || undefined}
             />
           </Suspense>
         );

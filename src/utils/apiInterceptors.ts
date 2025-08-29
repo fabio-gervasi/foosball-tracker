@@ -339,5 +339,4 @@ export function initializeDefaultInterceptors(): () => void {
   };
 }
 
-// Export types
-export type { RequestConfig, ResponseData };
+// Types are exported as interfaces above

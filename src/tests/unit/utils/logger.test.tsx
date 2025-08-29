@@ -171,7 +171,7 @@ describe('Logger Utility', () => {
 
       requiredMethods.forEach(method => {
         expect(logger).toHaveProperty(method);
-        expect(typeof logger[method]).toBe('function');
+        expect(typeof (logger as any)[method]).toBe('function');
       });
     });
 

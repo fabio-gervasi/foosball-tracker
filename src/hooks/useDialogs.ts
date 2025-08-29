@@ -21,7 +21,7 @@ export interface DialogState {
   isOpen: boolean;
   config: ConfirmDialogConfig | AlertConfig;
   type: 'confirm' | 'alert';
-  resolve?: (value: boolean | void) => void;
+  resolve?: (value?: any) => void;
 }
 
 export interface UseDialogsReturn {

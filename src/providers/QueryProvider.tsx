@@ -62,7 +62,9 @@ export function QueryProvider({ children }: QueryProviderProps) {
     <QueryClientProvider client={queryClient}>
       {children}
       {/* Only show devtools in development */}
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} position='bottom-right' />}
+      {import.meta.env.DEV && (
+        <ReactQueryDevtools initialIsOpen={false} position={'bottom-right' as any} />
+      )}
     </QueryClientProvider>
   );
 }

@@ -13,17 +13,17 @@ interface MatchConfirmationProps {
       date: string;
       seriesType?: string;
       // 1v1 format
-      player1?: { id: string; name: string; isGuest?: boolean };
-      player2?: { id: string; name: string; isGuest?: boolean };
-      winner?: { id: string; name: string; isGuest?: boolean };
+      player1?: { id: string; name: string; email?: string; isGuest?: boolean };
+      player2?: { id: string; name: string; email?: string; isGuest?: boolean };
+      winner?: { id: string; name: string; email?: string; isGuest?: boolean };
       // 2v2 format
       team1?: {
-        player1: { id: string; name: string; isGuest?: boolean };
-        player2: { id: string; name: string; isGuest?: boolean };
+        player1: { id: string; name: string; email?: string; isGuest?: boolean };
+        player2: { id: string; name: string; email?: string; isGuest?: boolean };
       };
       team2?: {
-        player1: { id: string; name: string; isGuest?: boolean };
-        player2: { id: string; name: string; isGuest?: boolean };
+        player1: { id: string; name: string; email?: string; isGuest?: boolean };
+        player2: { id: string; name: string; email?: string; isGuest?: boolean };
       };
       winningTeam?: string;
       // Score info
@@ -84,7 +84,9 @@ export function MatchConfirmation({
       onBack();
     } catch (error) {
       console.error('Failed to delete match:', error);
-      setDeleteError(error.message || 'Failed to delete match. Please try again.');
+      setDeleteError(
+        error instanceof Error ? error.message : 'Failed to delete match. Please try again.'
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -149,63 +151,23 @@ export function MatchConfirmation({
       // Fallback to email-based player info if player objects don't exist
       if (match.player1) {
         players.push(match.player1);
-      } else if (match.player1Email) {
-        players.push({
-          id: match.player1Email,
-          name: match.player1Email,
-          isGuest: match.player1IsGuest || false,
-        });
       }
-
       if (match.player2) {
         players.push(match.player2);
-      } else if (match.player2Email) {
-        players.push({
-          id: match.player2Email,
-          name: match.player2Email,
-          isGuest: match.player2IsGuest || false,
-        });
       }
     } else {
       // 2v2 - fallback to email-based info
       if (match.team1?.player1) {
         players.push(match.team1.player1);
-      } else if (match.team1Player1Email) {
-        players.push({
-          id: match.team1Player1Email,
-          name: match.team1Player1Email,
-          isGuest: match.team1Player1IsGuest || false,
-        });
       }
-
       if (match.team1?.player2) {
         players.push(match.team1.player2);
-      } else if (match.team1Player2Email) {
-        players.push({
-          id: match.team1Player2Email,
-          name: match.team1Player2Email,
-          isGuest: match.team1Player2IsGuest || false,
-        });
       }
-
       if (match.team2?.player1) {
         players.push(match.team2.player1);
-      } else if (match.team2Player1Email) {
-        players.push({
-          id: match.team2Player1Email,
-          name: match.team2Player1Email,
-          isGuest: match.team2Player1IsGuest || false,
-        });
       }
-
       if (match.team2?.player2) {
         players.push(match.team2.player2);
-      } else if (match.team2Player2Email) {
-        players.push({
-          id: match.team2Player2Email,
-          name: match.team2Player2Email,
-          isGuest: match.team2Player2IsGuest || false,
-        });
       }
     }
 
@@ -290,25 +252,38 @@ export function MatchConfirmation({
             // Find ELO change for this player - use simple email matching
             let eloChange = null;
 
-            // Get all possible emails for this player
-            const playerEmails = [];
+            // Get all possible player emails/IDs for this player
+            const playerIds = [];
             if (matchResult.match.matchType === '1v1') {
-              playerEmails.push(matchResult.match.player1Email, matchResult.match.player2Email);
+              if (matchResult.match.player1?.email) playerIds.push(matchResult.match.player1.email);
+              if (matchResult.match.player1?.id) playerIds.push(matchResult.match.player1.id);
+              if (matchResult.match.player2?.email) playerIds.push(matchResult.match.player2.email);
+              if (matchResult.match.player2?.id) playerIds.push(matchResult.match.player2.id);
             } else {
-              playerEmails.push(
-                matchResult.match.team1Player1Email,
-                matchResult.match.team1Player2Email,
-                matchResult.match.team2Player1Email,
-                matchResult.match.team2Player2Email
-              );
+              if (matchResult.match.team1?.player1?.email)
+                playerIds.push(matchResult.match.team1.player1.email);
+              if (matchResult.match.team1?.player1?.id)
+                playerIds.push(matchResult.match.team1.player1.id);
+              if (matchResult.match.team1?.player2?.email)
+                playerIds.push(matchResult.match.team1.player2.email);
+              if (matchResult.match.team1?.player2?.id)
+                playerIds.push(matchResult.match.team1.player2.id);
+              if (matchResult.match.team2?.player1?.email)
+                playerIds.push(matchResult.match.team2.player1.email);
+              if (matchResult.match.team2?.player1?.id)
+                playerIds.push(matchResult.match.team2.player1.id);
+              if (matchResult.match.team2?.player2?.email)
+                playerIds.push(matchResult.match.team2.player2.email);
+              if (matchResult.match.team2?.player2?.id)
+                playerIds.push(matchResult.match.team2.player2.id);
             }
 
             // Find ELO change by matching player email/id
-            for (const email of playerEmails) {
-              if (email && matchResult.eloChanges[email]) {
+            for (const playerId of playerIds) {
+              if (playerId && matchResult.eloChanges[playerId]) {
                 // Direct match by email/id
-                if (email === player.id) {
-                  eloChange = matchResult.eloChanges[email];
+                if (playerId === player.id || playerId === player.email) {
+                  eloChange = matchResult.eloChanges[playerId];
                   break;
                 }
               }

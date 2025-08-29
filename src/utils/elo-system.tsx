@@ -1,4 +1,4 @@
-import { INITIAL_ELO, K_FACTOR } from './constants.tsx';
+import { INITIAL_ELO, K_FACTOR } from './constants';
 
 function calculateExpectedScore(playerRating: number, opponentRating: number): number {
   return 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));

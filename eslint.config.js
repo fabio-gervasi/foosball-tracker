@@ -19,7 +19,8 @@ export default [
       'postcss.config.js',
       'performance-budget.config.js',
       'coverage',
-      '.github'
+      '.github',
+      'src/supabase/functions/server/**/*.tsx',
     ],
   },
   {
@@ -117,14 +118,6 @@ export default [
       // Turn off base rules that are covered by TypeScript
       'no-unused-vars': 'off',
       'no-undef': 'off',
-    },
-  },
-  {
-    files: ['src/supabase/functions/server/**/*.tsx'],
-    rules: {
-      // More relaxed rules for server code
-      'no-console': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {

@@ -13,7 +13,11 @@ import {
   transformErrorMessage,
 } from '../../utils/login-helpers';
 
-export function Login({ onLogin }) {
+interface LoginProps {
+  onLogin: (user: any, token: string) => void;
+}
+
+export function Login({ onLogin }: LoginProps) {
   const { login } = useAuth();
   const { showSuccess } = useDialogContext();
   const [email, setEmail] = useState('');
@@ -28,7 +32,7 @@ export function Login({ onLogin }) {
     isHealthy: false,
     isLoading: true,
   });
-  const [validationErrors, setValidationErrors] = useState({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isPasswordReset, setIsPasswordReset] = useState(false);
 
   useEffect(() => {
@@ -41,16 +45,18 @@ export function Login({ onLogin }) {
   };
 
   const validateForm = () => {
-    const errors = {};
+    const errors: Record<string, string> = {};
 
     if (!email.trim()) {
       errors.email = isLogin ? 'Username or email is required' : 'Email is required';
     } else if (!isLogin && validateEmail(email)) {
       // Only validate email format for signup mode
-      errors.email = validateEmail(email);
+      const emailError = validateEmail(email);
+      if (emailError) errors.email = emailError;
     } else if (isPasswordReset && validateEmail(email)) {
       // Validate email format for password reset
-      errors.email = validateEmail(email);
+      const emailError = validateEmail(email);
+      if (emailError) errors.email = emailError;
     }
 
     if (!isPasswordReset) {
@@ -66,7 +72,8 @@ export function Login({ onLogin }) {
         if (!username.trim()) {
           errors.username = 'Username is required';
         } else if (validateUsername(username)) {
-          errors.username = validateUsername(username);
+          const usernameError = validateUsername(username);
+          if (usernameError) errors.username = usernameError;
         }
 
         if (password !== confirmPassword) {
@@ -89,7 +96,7 @@ export function Login({ onLogin }) {
     setValidationErrors({});
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -189,14 +196,17 @@ export function Login({ onLogin }) {
         foosballAnalytics.trackUserRegistration('email');
       }
     } catch (error) {
-      const friendlyError = transformErrorMessage(error.message, !isLogin);
+      const friendlyError = transformErrorMessage(
+        error instanceof Error ? error.message : 'Unknown error',
+        !isLogin
+      );
       setError(friendlyError);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleModeSwitch = newIsLogin => {
+  const handleModeSwitch = (newIsLogin: boolean) => {
     setIsLogin(newIsLogin);
     setIsPasswordReset(false);
     resetForm();

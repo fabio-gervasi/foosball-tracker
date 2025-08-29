@@ -36,10 +36,6 @@ export function AdminPanel({
     groupName: group?.name,
   });
 
-  useEffect(() => {
-    loadAdminData();
-  }, [loadAdminData]);
-
   const loadAdminData = useCallback(async () => {
     try {
       setError('');
@@ -56,11 +52,17 @@ export function AdminPanel({
       logger.info('Admin matches loaded', { matchCount: matchesResponse.matches?.length || 0 });
     } catch (error) {
       logger.error('Failed to load admin data', error);
-      setError(`Failed to load admin data: ${error.message}`);
+      setError(
+        `Failed to load admin data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setLoading(false);
     }
   }, [accessToken]);
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
 
   if (!currentUser?.isAdmin) {
     return (

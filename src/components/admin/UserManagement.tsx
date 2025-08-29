@@ -51,7 +51,9 @@ export function UserManagement({
       );
     } catch (error) {
       console.error('Failed to update admin status:', error);
-      onError(`Failed to update admin status: ${error.message}`);
+      onError(
+        `Failed to update admin status: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -73,7 +75,7 @@ export function UserManagement({
       await showSuccess('User deleted successfully!');
     } catch (error) {
       console.error('Failed to delete user:', error);
-      onError(`Failed to delete user: ${error.message}`);
+      onError(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -126,7 +128,7 @@ export function UserManagement({
                     {user.id !== currentUser.id && (
                       <>
                         <button
-                          onClick={() => handleToggleAdminStatus(user.id, user.isAdmin)}
+                          onClick={() => handleToggleAdminStatus(user.id, user.isAdmin || false)}
                           className={`px-3 py-1 text-xs rounded transition-colors ${
                             user.isAdmin
                               ? 'bg-red-100 text-red-700 hover:bg-red-200'

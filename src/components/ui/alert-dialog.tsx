@@ -7,7 +7,7 @@ import { cn } from './utils';
 import { buttonVariants } from './button';
 
 const AlertDialog = React.forwardRef<
-  React.ElementRef<typeof AlertDialogPrimitive.Root>,
+  HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Root>
 >(({ ...props }, ref) => <AlertDialogPrimitive.Root data-slot='alert-dialog' {...props} />);
 AlertDialog.displayName = 'AlertDialog';
@@ -21,7 +21,7 @@ const AlertDialogTrigger = React.forwardRef<
 AlertDialogTrigger.displayName = 'AlertDialogTrigger';
 
 const AlertDialogPortal = React.forwardRef<
-  React.ElementRef<typeof AlertDialogPrimitive.Portal>,
+  HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Portal>
 >(({ ...props }, ref) => (
   <AlertDialogPrimitive.Portal data-slot='alert-dialog-portal' {...props} />
