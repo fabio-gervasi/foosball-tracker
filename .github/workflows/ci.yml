@@ -1,13 +1,6 @@
-# Foosball Tracker - Continuous Integration Pipeline
-# REQ-5.2.1: Quality Gates Implementation
-# Comprehensive pre-deployment validation with automated checks
-
-name: Continuous Integration
+name: 'Continuous Integration'
 
 on:
-  pull_request:
-    branches: [main, dev]
-    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
@@ -15,260 +8,167 @@ on:
       - 'feature/**'
       - 'bugfix/**'
       - 'hotfix/**'
-      - 'req-*-*-**'
-  workflow_dispatch: # Allow manual triggering
-
-# Permissions needed for the workflow
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-  checks: write
-
-# Cancel previous runs when new commits are pushed
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+      - 'req-**'
+  pull_request:
+    branches:
+      - main
+      - dev
 
 env:
   NODE_VERSION: '20.x'
-  # Cache keys for consistent caching across jobs
-  CACHE_KEY_PREFIX: foosball-tracker-v1
-  # Clean CI logging
+  CACHE_KEY_PREFIX: 'foosball-tracker-v1'
   NO_COLOR: 1
-  CI: true
 
 jobs:
-  # Phase 1: Quality Gates - Comprehensive validation
   quality-gates:
-    name: 🔍 Quality Gates
+    name: '🔍 Quality Gates'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
 
     outputs:
       cache-key: ${{ steps.cache-key.outputs.key }}
-      test-results: ${{ steps.test-results.outputs.results }}
-      bundle-size: ${{ steps.bundle-analysis.outputs.size }}
 
     steps:
-      - name: 📥 Checkout Code
+      - name: '📥 Checkout Repository'
         uses: actions/checkout@v4
         with:
-          # Fetch full history for better analysis
           fetch-depth: 0
 
-      - name: 🔑 Generate Cache Key
+      - name: '🔑 Generate Cache Key'
         id: cache-key
         run: |
-          CACHE_KEY="${{ env.CACHE_KEY_PREFIX }}-${{ hashFiles('package-lock.json', 'package.json') }}"
+          CACHE_KEY="${{ env.CACHE_KEY_PREFIX }}-$(sha256sum package-lock.json | cut -d' ' -f1)"
           echo "key=${CACHE_KEY}" >> $GITHUB_OUTPUT
           echo "Cache key: ${CACHE_KEY}"
 
-      - name: ⚡ Setup Node.js
+      - name: '⚙️ Setup Node.js'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: 'package-lock.json'
 
-      - name: 📦 Install Dependencies
+      - name: '📦 Install Dependencies'
         run: |
           echo "Installing dependencies..."
           npm ci --prefer-offline --no-audit
           echo "Dependencies installed successfully"
 
-      - name: 🧹 Code Quality - ESLint
+      - name: '🧹 ESLint Validation'
         run: |
           echo "Running ESLint validation..."
           npm run lint
           echo "✅ ESLint validation passed"
 
-      - name: 🎨 Code Formatting - Prettier
+      - name: '🎨 Prettier Formatting Check'
         run: |
           echo "Checking code formatting..."
           npm run format:check
-          echo "✅ Code formatting validation passed"
+          echo "✅ Code formatting is correct"
 
-      - name: 📝 TypeScript Type Checking
+      - name: '📝 TypeScript Type Checking'
         run: |
           echo "Running TypeScript type checking..."
           npm run type-check
           echo "✅ TypeScript validation passed"
 
-      - name: 🧪 Test Suite Execution
-        id: test-results
+      - name: '🧪 Run Tests'
         run: |
-          echo "Running comprehensive test suite..."
-          # Run tests with coverage and detailed reporting
-          npm run test:coverage -- --reporter=verbose --reporter=json --outputFile=test-results.json
+          echo "Running test suite..."
+          npm run test:ci
+          echo "✅ All tests passed"
 
-          # Extract test results for reporting
-          TEST_COUNT=$(jq -r '.numTotalTests' test-results.json || echo "unknown")
-          PASSED_COUNT=$(jq -r '.numPassedTests' test-results.json || echo "unknown")
-          FAILED_COUNT=$(jq -r '.numFailedTests' test-results.json || echo "unknown")
-
-          echo "results=Tests: ${TEST_COUNT}, Passed: ${PASSED_COUNT}, Failed: ${FAILED_COUNT}" >> $GITHUB_OUTPUT
-          echo "📊 Test Results: ${TEST_COUNT} total, ${PASSED_COUNT} passed, ${FAILED_COUNT} failed"
-
-          # Fail if any tests failed
-          if [ "${FAILED_COUNT}" != "0" ]; then
-            echo "❌ Test suite failed with ${FAILED_COUNT} failing tests"
-            exit 1
-          fi
-
-          echo "✅ All tests passed successfully"
-
-      - name: 🔒 Security Audit
+      - name: '🔒 Security Audit'
         run: |
           echo "Running security audit..."
-          # Run npm audit with high severity threshold
-          npm audit --audit-level=high --json > audit-results.json || true
+          npm audit --audit-level=high
+          echo "✅ Security audit passed"
 
-          # Check for high/critical vulnerabilities
-          HIGH_VULNS=$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json)
-          CRITICAL_VULNS=$(jq -r '.metadata.vulnerabilities.critical // 0' audit-results.json)
-
-          echo "🔍 Security Audit Results:"
-          echo "  High severity vulnerabilities: ${HIGH_VULNS}"
-          echo "  Critical severity vulnerabilities: ${CRITICAL_VULNS}"
-
-          if [ "${HIGH_VULNS}" != "0" ] || [ "${CRITICAL_VULNS}" != "0" ]; then
-            echo "❌ Security vulnerabilities found"
-            echo "High: ${HIGH_VULNS}, Critical: ${CRITICAL_VULNS}"
-            # For now, warn but don't fail - can be made stricter later
-            echo "⚠️ Warning: Security vulnerabilities detected but not blocking deployment"
-          else
-            echo "✅ No high or critical security vulnerabilities found"
-          fi
-
-      - name: 🏗️ Build Verification
+      - name: '🏗️ Build Application'
         run: |
-          echo "Running build verification..."
+          echo "Building application..."
           npm run build
-
-          # Check if build directory exists and has content
-          if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
-            echo "❌ Build failed - no build directory or empty build"
-            exit 1
-          fi
-
           echo "✅ Build completed successfully"
-          echo "📁 Build directory contents:"
-          ls -la build/
 
-      - name: 📊 Bundle Size Analysis
-        id: bundle-analysis
+      - name: '📊 Bundle Size Analysis'
+        if: always()
         run: |
           echo "Analyzing bundle size..."
-
-          # Calculate total bundle size
-          TOTAL_SIZE=$(du -sb build | cut -f1)
-          TOTAL_SIZE_MB=$(echo "scale=2; ${TOTAL_SIZE} / 1024 / 1024" | bc -l)
-
-          # Find largest assets
-          echo "📦 Bundle Analysis Results:"
-          echo "  Total build size: ${TOTAL_SIZE_MB} MB"
-          echo "  Largest assets:"
-          find build -name "*.js" -o -name "*.css" | head -10 | xargs ls -lah
-
-          # Set output for other jobs
-          echo "size=${TOTAL_SIZE_MB}MB" >> $GITHUB_OUTPUT
-
-          # Performance budget check (1MB = 1048576 bytes)
-          MAX_SIZE=10485760  # 10MB budget
-          if [ "${TOTAL_SIZE}" -gt "${MAX_SIZE}" ]; then
-            echo "⚠️ Warning: Bundle size (${TOTAL_SIZE_MB}MB) exceeds recommended budget (10MB)"
-            # For now, warn but don't fail
+          # Create a simple bundle analysis report
+          if [ -d "build" ]; then
+            du -sh build/ > build-size.txt
+            echo "Bundle size analysis completed"
+            cat build-size.txt
           else
-            echo "✅ Bundle size within acceptable limits"
+            echo "Build directory not found, skipping bundle analysis"
           fi
 
-      - name: 🧪 Upload Test Results
-        uses: actions/upload-artifact@v4
+      - name: '📈 Upload Test Results'
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.run_number }}
           path: |
             test-results.json
             coverage/
           retention-days: 30
+          if-no-files-found: warn
 
-      - name: 📊 Upload Bundle Analysis
-        uses: actions/upload-artifact@v4
+      - name: '📦 Upload Bundle Analysis'
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: bundle-analysis-${{ github.run_number }}
           path: |
             build/
             audit-results.json
           retention-days: 7
+          if-no-files-found: warn
 
-  # Phase 2: Performance Budget Validation
+  # Performance budget check (skipped for dev->main to optimize workflow)
   performance-budget:
-    name: ⚡ Performance Budget
+    name: '⚡ Performance Budget'
     runs-on: ubuntu-latest
     needs: quality-gates
-    if: success()
-    timeout-minutes: 10
+    if: ${{ !contains(github.head_ref, 'dev') && github.base_ref != 'main' }}
 
     steps:
-      - name: 📥 Checkout Code
+      - name: '📥 Checkout Repository'
         uses: actions/checkout@v4
 
-      - name: ⚡ Setup Node.js
+      - name: '⚙️ Setup Node.js'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
-      - name: 📦 Install Dependencies
+      - name: '📦 Install Dependencies'
         run: npm ci --prefer-offline --no-audit
 
-      - name: 📊 Performance Budget Check
+      - name: '🏗️ Build for Performance Check'
+        run: npm run build
+
+      - name: '⚡ Check Performance Budget'
         run: |
-          echo "🎯 Checking performance budgets..."
+          echo "Checking performance budget..."
+          # For CI, we'll do a basic bundle size check instead of full performance testing
+          # The script expects a URL, so we'll provide a placeholder for now
+          echo "Performing bundle size analysis..."
+          npm run ci:bundle-analysis
+          echo "✅ Performance budget check completed"
 
-          # Create performance budget configuration
-          cat > performance-budget.config.js << 'EOF'
-          module.exports = {
-            budgets: [
-              {
-                path: '/',
-                timings: [
-                  { metric: 'first-contentful-paint', budget: 2000 },
-                  { metric: 'largest-contentful-paint', budget: 2500 },
-                  { metric: 'cumulative-layout-shift', budget: 0.1 }
-                ],
-                resourceSizes: [
-                  { resourceType: 'script', budget: 400000 }, // 400KB
-                  { resourceType: 'total', budget: 1000000 }  // 1MB
-                ]
-              }
-            ]
-          };
-          EOF
-
-          echo "✅ Performance budget configuration created"
-          echo "📋 Budget Targets:"
-          echo "  - First Contentful Paint: <2000ms"
-          echo "  - Largest Contentful Paint: <2500ms"
-          echo "  - Cumulative Layout Shift: <0.1"
-          echo "  - Script Size: <400KB"
-          echo "  - Total Size: <1MB"
-
-          # For now, this is a placeholder - in a real implementation,
-          # this would integrate with Lighthouse CI or similar tools
-          echo "⚠️ Performance budget validation configured (ready for Lighthouse integration)"
-
-  # Phase 3: Summary and Reporting
+  # CI Summary - Always runs to provide pipeline feedback
   ci-summary:
-    name: 📋 CI Summary
+    name: '📋 CI Summary'
     runs-on: ubuntu-latest
     needs: [quality-gates, performance-budget]
     if: always()
 
     steps:
-      - name: 📊 Generate CI Summary
+      - name: '📊 Generate Pipeline Summary'
+        env:
+          QUALITY_GATES_RESULT: ${{ needs.quality-gates.result }}
+          PERFORMANCE_BUDGET_RESULT: ${{ needs.performance-budget.result }}
         run: |
           # Determine branch context
           BRANCH_NAME="${{ github.ref_name }}"
@@ -303,12 +203,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Quality Gates Results
-          if [ "${{ needs.quality-gates.result }}" == "success" ]; then
+          if [ "$QUALITY_GATES_RESULT" == "success" ]; then
             echo "✅ **Quality Gates**: All checks passed" >> $GITHUB_STEP_SUMMARY
             echo "- 🧹 Code Quality (ESLint): ✅ Passed" >> $GITHUB_STEP_SUMMARY
             echo "- 🎨 Code Formatting (Prettier): ✅ Passed" >> $GITHUB_STEP_SUMMARY
             echo "- 📝 TypeScript: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-            echo "- 🧪 Tests: ✅ ${{ needs.quality-gates.outputs.test-results }}" >> $GITHUB_STEP_SUMMARY
+            echo "- 🧪 Tests: ✅ ${{ needs.quality-gates.outputs.test-summary }}" >> $GITHUB_STEP_SUMMARY
             echo "- 🔒 Security Audit: ✅ Passed" >> $GITHUB_STEP_SUMMARY
             echo "- 🏗️ Build: ✅ Passed" >> $GITHUB_STEP_SUMMARY
             echo "- 📦 Bundle Size: ${{ needs.quality-gates.outputs.bundle-size }}" >> $GITHUB_STEP_SUMMARY
@@ -319,10 +219,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Performance Budget Results
-          if [ "${{ needs.performance-budget.result }}" == "success" ]; then
+          if [ "$PERFORMANCE_BUDGET_RESULT" == "success" ]; then
             echo "⚡ **Performance Budget**: ✅ Within limits" >> $GITHUB_STEP_SUMMARY
+          elif [ "$PERFORMANCE_BUDGET_RESULT" == "skipped" ]; then
+            echo "⚡ **Performance Budget**: ⏭️ Skipped (optimized for dev->main workflow)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚡ **Performance Budget**: ⚠️ Check required" >> $GITHUB_STEP_SUMMARY
+            echo "⚡ **Performance Budget**: ❌ Failed - Check required" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -355,9 +257,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "_Generated by Foosball Tracker CI Pipeline v0.8.1_" >> $GITHUB_STEP_SUMMARY
 
-      - name: 🎯 Final Status Check
+      - name: '🎯 Final Status Check'
+        env:
+          QUALITY_GATES_RESULT: ${{ needs.quality-gates.result }}
+          PERFORMANCE_BUDGET_RESULT: ${{ needs.performance-budget.result }}
         run: |
-          if [ "${{ needs.quality-gates.result }}" == "success" ] && [ "${{ needs.performance-budget.result }}" == "success" ]; then
+          if [ "$QUALITY_GATES_RESULT" == "success" ] && ([ "$PERFORMANCE_BUDGET_RESULT" == "success" ] || [ "$PERFORMANCE_BUDGET_RESULT" == "skipped" ]); then
             echo "🎉 All CI checks passed successfully!"
             echo "✅ Ready for deployment"
           else

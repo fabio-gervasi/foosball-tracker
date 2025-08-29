@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { User, Users, Shield, ArrowLeft, Trophy, TrendingUp, Award } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { User, Users, Shield, ArrowLeft, Trophy, Award } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
-import type { User as UserType, Group, Match } from '../types';
+import type { User as UserType, Group } from '../types';
 
 interface PlayerProfileProps {
   playerId: string;
@@ -47,7 +47,7 @@ const emailToUsername = (email: string): string => {
 
 export function PlayerProfile({
   playerId,
-  currentUser,
+  currentUser: _currentUser,
   group,
   accessToken,
   onBack,
@@ -57,11 +57,7 @@ export function PlayerProfile({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadPlayerData();
-  }, [playerId]);
-
-  const loadPlayerData = async () => {
+  const loadPlayerData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -87,7 +83,11 @@ export function PlayerProfile({
     } finally {
       setLoading(false);
     }
-  };
+  }, [playerId, accessToken]);
+
+  useEffect(() => {
+    loadPlayerData();
+  }, [loadPlayerData]);
 
   if (loading) {
     return (

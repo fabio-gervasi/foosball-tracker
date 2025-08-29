@@ -817,7 +817,7 @@ export function createGroupRoutes(supabase: any) {
       return c.json({
         message: 'Left group successfully',
         leftGroup: groupCodeUpper,
-        newCurrentGroup: newCurrentGroup,
+        newCurrentGroup,
         remainingGroups: userProfile.groups.length,
       });
     } catch (error) {

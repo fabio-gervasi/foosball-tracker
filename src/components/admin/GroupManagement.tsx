@@ -3,6 +3,7 @@ import { Building2, Edit3, Save, X, Upload, Image, Trash2, AlertTriangle } from 
 import { apiRequest } from '../../utils/supabase/client';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useDialogContext } from '../common/DialogProvider';
+import { logger } from '../../utils/logger';
 import type { Group } from '../../types';
 import {
   AlertDialog,
@@ -83,7 +84,7 @@ export function GroupManagement({
         return;
       }
 
-      console.log('Updating group settings...');
+      logger.info('Updating group settings...');
       const response = await apiRequest('/groups/current', {
         method: 'PUT',
         headers: {
@@ -95,7 +96,7 @@ export function GroupManagement({
         }),
       });
 
-      console.log('Group update response:', response);
+      logger.info('Group update response:', response);
 
       // Refresh main app data - this will now properly reload group data
       onDataChange();
@@ -131,8 +132,8 @@ export function GroupManagement({
       const formData = new FormData();
       formData.append('icon', file);
 
-      console.log('Uploading group icon...');
-      console.log('FormData created with file:', {
+      logger.info('Uploading group icon...');
+      logger.info('FormData created with file:', {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
@@ -149,7 +150,7 @@ export function GroupManagement({
         body: formData,
       });
 
-      console.log('Icon upload response:', response);
+      logger.info('Icon upload response:', response);
 
       // Refresh main app data - this will now properly reload group data
       onDataChange();
@@ -170,7 +171,7 @@ export function GroupManagement({
     try {
       onError('');
 
-      console.log('Deleting group:', group?.code);
+      logger.info('Deleting group:', group?.code);
       await apiRequest('/admin/group', {
         method: 'DELETE',
         headers: {

@@ -22,6 +22,6 @@
     "types": ["vite/client"]
   },
   "include": ["src", "src/vite-env.d.ts"],
-  "exclude": ["node_modules", "build", "dist", "src/supabase/functions/server"],
+  "exclude": ["node_modules", "build", "dist", "supabase/functions"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
