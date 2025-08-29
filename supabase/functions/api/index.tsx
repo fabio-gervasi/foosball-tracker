@@ -4,20 +4,20 @@ import { logger } from 'npm:hono/logger';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Import constants and utilities
-import { API_PREFIX } from './server-constants.tsx';
-import { validateUserAuth } from './auth-helpers.tsx';
-import { migrateGroupDataStructure } from './data-migration.tsx';
-import * as kv from './kv_store.tsx';
-import { serverLogger } from './server-logger.tsx';
+import { API_PREFIX } from '../_shared/server-constants.tsx';
+import { validateUserAuth } from '../_shared/auth-helpers.tsx';
+import { migrateGroupDataStructure } from '../_shared/data-migration.tsx';
+import * as kv from '../_shared/kv_store.tsx';
+import { serverLogger } from '../_shared/server-logger.tsx';
 
 // Import route modules
-import { createAuthRoutes } from './auth-routes.tsx';
-import { createPasswordResetRoutes } from './password-reset-routes.tsx';
-import { createDebugRoutes } from './debug-routes.tsx';
-import { createGroupRoutes } from './group-routes.tsx';
-import { createMatchRoutes } from './match-routes.tsx';
-import { createUserRoutes } from './user-routes.tsx';
-import { createAdminRoutes } from './admin-routes.tsx';
+import { createAuthRoutes } from '../_shared/auth-routes.tsx';
+import { createPasswordResetRoutes } from '../_shared/password-reset-routes.tsx';
+import { createDebugRoutes } from '../_shared/debug-routes.tsx';
+import { createGroupRoutes } from '../_shared/group-routes.tsx';
+import { createMatchRoutes } from '../_shared/match-routes.tsx';
+import { createUserRoutes } from '../_shared/user-routes.tsx';
+import { createAdminRoutes } from '../_shared/admin-routes.tsx';
 
 const app = new Hono();
 
