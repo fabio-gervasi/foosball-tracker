@@ -38,7 +38,6 @@ export const ApiRequestExample: React.FC = () => {
   const getUsersRequest = useApiRequest<any[]>({
     method: 'GET',
     enableCache: true,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Example 3: POST request with optimistic updates

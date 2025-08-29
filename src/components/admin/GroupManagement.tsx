@@ -103,7 +103,7 @@ export function GroupManagement({
       await showSuccess('Group settings updated successfully!');
     } catch (error) {
       console.error('Failed to update group:', error);
-      setGroupEditError(error.message || 'Failed to update group settings');
+      setGroupEditError(error instanceof Error ? error.message : 'Failed to update group settings');
     } finally {
       setIsUpdatingGroup(false);
     }
@@ -156,7 +156,9 @@ export function GroupManagement({
       await showSuccess('Group icon updated successfully!');
     } catch (error) {
       console.error('Failed to upload group icon:', error);
-      onError(`Failed to upload group icon: ${error.message}`);
+      onError(
+        `Failed to upload group icon: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setIsUploadingIcon(false);
       // Reset the file input
@@ -186,7 +188,9 @@ export function GroupManagement({
       }
     } catch (error) {
       console.error('Failed to delete group:', error);
-      onError(`Failed to delete group: ${error.message}`);
+      onError(
+        `Failed to delete group: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       setGroupDeleteConfirm(false);
       setGroupDeleteInput('');
     }

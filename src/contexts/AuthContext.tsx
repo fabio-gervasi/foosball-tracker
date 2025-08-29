@@ -177,8 +177,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Store the token in URL parameters for the password reset form
             const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('token', accessToken);
-            currentUrl.searchParams.set('type', 'recovery');
+            if (accessToken) {
+              currentUrl.searchParams.set('token', accessToken);
+              currentUrl.searchParams.set('type', 'recovery');
+            }
 
             // Update the URL without causing a page reload
             window.history.replaceState({}, document.title, currentUrl.toString());
@@ -222,8 +224,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Store the token hash in URL parameters for the password reset form
             const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('token', tokenHash);
-            currentUrl.searchParams.set('type', 'recovery');
+            if (tokenHash) {
+              currentUrl.searchParams.set('token', tokenHash);
+              currentUrl.searchParams.set('type', 'recovery');
+            }
 
             // Update the URL without causing a page reload
             window.history.replaceState({}, document.title, currentUrl.toString());
@@ -294,12 +298,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           logger.debug('User validation complete');
         } catch (validationError) {
-          logger.error('Session validation failed', validationError);
+          logger.error(
+            'Session validation failed',
+            validationError instanceof Error ? validationError : String(validationError)
+          );
 
           // Check if this is a token expiration issue - but only try refresh ONCE
           if (
-            validationError.message.includes('expired') ||
-            validationError.message.includes('JWT')
+            (validationError instanceof Error && validationError.message.includes('expired')) ||
+            (validationError instanceof Error && validationError.message.includes('JWT'))
           ) {
             logger.info('Token appears expired or invalid, attempting refresh');
             try {
@@ -385,3 +392,7 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+// Export types for use in other files
+export type { AuthContextType };
+export { AuthContext };

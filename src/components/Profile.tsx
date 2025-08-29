@@ -170,7 +170,7 @@ export function Profile({
       }, 2000);
     } catch (error) {
       logger.error('Failed to join group', error);
-      setJoinGroupError(error.message || 'Failed to join group');
+      setJoinGroupError(error instanceof Error ? error.message : 'Failed to join group');
     } finally {
       setIsJoiningGroup(false);
     }
@@ -196,7 +196,7 @@ export function Profile({
     try {
       const response = await createGroupMutation.mutateAsync({
         name: createGroupForm.name,
-        code: createGroupForm.code || '', // Use provided code or let server generate
+        code: '', // Let server generate code
       });
 
       setCreateGroupSuccess(`Successfully created group! Code: ${response.group.code}`);
@@ -216,7 +216,7 @@ export function Profile({
       }, 3000);
     } catch (error) {
       logger.error('Failed to create group', error);
-      setCreateGroupError(error.message || 'Failed to create group');
+      setCreateGroupError(error instanceof Error ? error.message : 'Failed to create group');
     } finally {
       setIsCreatingGroup(false);
     }
@@ -333,7 +333,7 @@ export function Profile({
       await showSuccess('Profile picture updated successfully!');
     } catch (error) {
       logger.error('Avatar upload error', error);
-      setAvatarError(error.message || 'Failed to upload image');
+      setAvatarError(error instanceof Error ? error.message : 'Failed to upload image');
       setPreviewUrl(null);
     } finally {
       setIsUploadingAvatar(false);
@@ -372,7 +372,7 @@ export function Profile({
       await showSuccess('Profile picture deleted successfully!');
     } catch (error) {
       logger.error('Avatar delete error', error);
-      setAvatarError(error.message || 'Failed to delete image');
+      setAvatarError(error instanceof Error ? error.message : 'Failed to delete image');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -468,8 +468,9 @@ export function Profile({
     setShowPasswordChange(false);
   };
 
-  const winRate =
-    user.wins + user.losses > 0 ? ((user.wins / (user.wins + user.losses)) * 100).toFixed(1) : '0';
+  const wins = user.wins || 0;
+  const losses = user.losses || 0;
+  const winRate = wins + losses > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';
 
   return (
     <div className='p-4 space-y-6'>
@@ -479,7 +480,7 @@ export function Profile({
           <div className='w-24 h-24 bg-blue-100 rounded-full mb-4 relative'>
             <Avatar
               src={previewUrl || user.avatarUrl}
-              fallback={user.avatar}
+              fallback={user.avatar || 'U'}
               className='w-full h-full rounded-full'
               textClassName='text-3xl text-blue-600'
             />
@@ -624,9 +625,9 @@ export function Profile({
                       <button
                         key={userGroup.code}
                         onClick={() => handleSwitchGroup(userGroup.code)}
-                        disabled={isSwitchingGroup || userGroup.isCurrent}
+                        disabled={isSwitchingGroup || userGroup.code === group?.code}
                         className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                          userGroup.isCurrent ? 'bg-blue-50 cursor-default' : ''
+                          userGroup.code === group?.code ? 'bg-blue-50 cursor-default' : ''
                         }`}
                       >
                         <div className='flex items-center space-x-3'>
@@ -650,7 +651,7 @@ export function Profile({
                           <span className='text-xs text-gray-600 tracking-wider'>
                             {userGroup.code}
                           </span>
-                          {userGroup.isCurrent && (
+                          {userGroup.code === group?.code && (
                             <div className='w-2 h-2 bg-blue-600 rounded-full'></div>
                           )}
                         </div>

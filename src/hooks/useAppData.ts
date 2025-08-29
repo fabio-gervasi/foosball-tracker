@@ -152,7 +152,7 @@ export const useAppData = (): UseAppDataReturn => {
 
   // Mutation wrapper functions
   const submitMatch = useCallback(
-    async (matchData: MatchData): Promise<any> => {
+    async (matchData: MatchSubmissionData): Promise<any> => {
       try {
         logger.debug('Submitting match via useAppData hook');
         const result = await submitMatchMutation.mutateAsync(matchData);
@@ -166,7 +166,7 @@ export const useAppData = (): UseAppDataReturn => {
   );
 
   const updateUserProfile = useCallback(
-    async (profileData: ProfileData): Promise<void> => {
+    async (profileData: ProfileUpdateData): Promise<void> => {
       try {
         logger.debug('Updating profile via useAppData hook');
         await updateProfileMutation.mutateAsync(profileData);
@@ -205,10 +205,13 @@ export const useAppData = (): UseAppDataReturn => {
   );
 
   const createGroup = useCallback(
-    async (groupData: GroupData): Promise<void> => {
+    async (groupData: GroupCreationData): Promise<void> => {
       try {
         logger.debug('Creating group via useAppData hook', { name: groupData.name });
-        await createGroupMutation.mutateAsync(groupData);
+        await createGroupMutation.mutateAsync({
+          name: groupData.name,
+          code: groupData.code || '',
+        });
       } catch (error) {
         logger.error('Failed to create group in useAppData', error);
         throw error;
