@@ -109,6 +109,11 @@ export const transformErrorMessage = (errorMessage: string, isSignup: boolean): 
     return 'This username is already taken. Try signing in or choose a different username.';
   } else if (errorMessage.includes('validation_failed')) {
     return 'Invalid username format. Use only letters, numbers, spaces, dots, underscores, hyphens, and apostrophes.';
+  } else if (errorMessage.includes('Password is too long') && errorMessage.includes('bytes')) {
+    // Handle password byte length errors from server
+    return errorMessage; // Server message is already user-friendly
+  } else if (errorMessage.includes('Password must be at least')) {
+    return errorMessage; // Server message is already user-friendly
   }
 
   return errorMessage;
