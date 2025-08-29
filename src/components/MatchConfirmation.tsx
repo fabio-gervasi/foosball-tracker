@@ -84,7 +84,9 @@ export function MatchConfirmation({
       onBack();
     } catch (error) {
       console.error('Failed to delete match:', error);
-      setDeleteError(error.message || 'Failed to delete match. Please try again.');
+      setDeleteError(
+        error instanceof Error ? error.message : 'Failed to delete match. Please try again.'
+      );
     } finally {
       setIsDeleting(false);
     }

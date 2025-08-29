@@ -9,7 +9,7 @@ interface PerformanceMetrics {
 }
 
 export function usePerformanceMonitor(componentName: string) {
-  const renderStartTime = useRef<number>();
+  const renderStartTime = useRef<number | undefined>(undefined);
   const metricsHistory = useRef<PerformanceMetrics[]>([]);
 
   // Start performance measurement
@@ -41,7 +41,7 @@ export function usePerformanceMonitor(componentName: string) {
       trackPerformanceData({
         componentName,
         renderTime,
-        memory: getMemoryUsage(),
+        memory: getMemoryUsage() || undefined,
         timestamp: endTime,
       });
 

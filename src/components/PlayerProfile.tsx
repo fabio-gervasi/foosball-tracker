@@ -203,7 +203,7 @@ export function PlayerProfile({
         <div className='w-24 h-24 bg-blue-100 rounded-full mb-4 mx-auto'>
           <Avatar
             src={player.avatarUrl}
-            fallback={player.avatar}
+            fallback={player.avatar || 'P'}
             className='w-full h-full rounded-full'
             textClassName='text-3xl text-blue-600'
           />

@@ -96,14 +96,14 @@ export function GroupSelection({
 
       // If it's an auth error, try to refresh the token
       if (
-        error.message?.includes('Invalid or expired token') ||
-        error.message?.includes('Unauthorized')
+        (error instanceof Error && error.message?.includes('Invalid or expired token')) ||
+        (error instanceof Error && error.message?.includes('Unauthorized'))
       ) {
         // Auth error, trying to refresh token
         await getAccessToken();
         setError('Authentication expired. Please try again.');
       } else {
-        setError(error.message || 'Failed to create group');
+        setError(error instanceof Error ? error.message : 'Failed to create group');
       }
     } finally {
       setIsLoading(false);
@@ -148,14 +148,14 @@ export function GroupSelection({
 
       // If it's an auth error, try to refresh the token
       if (
-        error.message?.includes('Invalid or expired token') ||
-        error.message?.includes('Unauthorized')
+        (error instanceof Error && error.message?.includes('Invalid or expired token')) ||
+        (error instanceof Error && error.message?.includes('Unauthorized'))
       ) {
         // Auth error, trying to refresh token
         await getAccessToken();
         setError('Authentication expired. Please try again.');
       } else {
-        setError(error.message || 'Failed to join group');
+        setError(error instanceof Error ? error.message : 'Failed to join group');
       }
     } finally {
       setIsLoading(false);

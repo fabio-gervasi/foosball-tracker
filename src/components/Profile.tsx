@@ -479,7 +479,7 @@ export function Profile({
           <div className='w-24 h-24 bg-blue-100 rounded-full mb-4 relative'>
             <Avatar
               src={previewUrl || user.avatarUrl}
-              fallback={user.avatar}
+              fallback={user.avatar || 'U'}
               className='w-full h-full rounded-full'
               textClassName='text-3xl text-blue-600'
             />

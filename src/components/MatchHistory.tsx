@@ -36,8 +36,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     isFetching,
   } = useMatchesQuery(accessToken);
 
-  const [filteredMatches, setFilteredMatches] = useState([]);
-  const error = queryError?.message || '';
+  const [filteredMatches, setFilteredMatches] = useState<Match[]>([]);
+  const [localError, setLocalError] = useState('');
+  const error = localError || queryError?.message || '';
 
   // Filter states
   const [showMyGamesOnly, setShowMyGamesOnly] = useState(false);
@@ -482,7 +483,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg'>
           <p className='text-sm'>{error}</p>
           <button
-            onClick={() => setError('')}
+            onClick={() => setLocalError('')}
             className='text-red-500 hover:text-red-700 text-xs mt-1'
           >
             Dismiss
@@ -502,7 +503,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       {!loading && (
         <div className='text-center'>
           <button
-            onClick={loadMatchHistory}
+            onClick={() => loadMatchHistory()}
             disabled={isFetching}
             className='inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 rounded-lg transition-colors text-sm'
           >
@@ -618,7 +619,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                 <div className='flex space-x-1'>
                                   <div className='w-8 h-8 bg-blue-100 rounded-full flex-shrink-0'>
                                     <Avatar
-                                      src={team1Player1Info.avatarUrl}
+                                      src={team1Player1Info.avatarUrl || undefined}
                                       fallback={team1Player1Info.avatar}
                                       className='w-full h-full rounded-full'
                                       textClassName='text-xs text-blue-600'
@@ -626,7 +627,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                   <div className='w-8 h-8 bg-blue-100 rounded-full flex-shrink-0'>
                                     <Avatar
-                                      src={team1Player2Info.avatarUrl}
+                                      src={team1Player2Info.avatarUrl || undefined}
                                       fallback={team1Player2Info.avatar}
                                       className='w-full h-full rounded-full'
                                       textClassName='text-xs text-blue-600'
@@ -714,7 +715,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                 <div className='flex space-x-1'>
                                   <div className='w-8 h-8 bg-blue-100 rounded-full flex-shrink-0'>
                                     <Avatar
-                                      src={team2Player1Info.avatarUrl}
+                                      src={team2Player1Info.avatarUrl || undefined}
                                       fallback={team2Player1Info.avatar}
                                       className='w-full h-full rounded-full'
                                       textClassName='text-xs text-blue-600'
@@ -722,7 +723,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                   <div className='w-8 h-8 bg-blue-100 rounded-full flex-shrink-0'>
                                     <Avatar
-                                      src={team2Player2Info.avatarUrl}
+                                      src={team2Player2Info.avatarUrl || undefined}
                                       fallback={team2Player2Info.avatar}
                                       className='w-full h-full rounded-full'
                                       textClassName='text-xs text-blue-600'
@@ -842,7 +843,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                             <div className='flex items-center space-x-2 flex-1'>
                               <div className='w-10 h-10 bg-blue-100 rounded-full flex-shrink-0'>
                                 <Avatar
-                                  src={player1Info.avatarUrl}
+                                  src={player1Info.avatarUrl || undefined}
                                   fallback={player1Info.avatar}
                                   className='w-full h-full rounded-full'
                                   textClassName='text-sm text-blue-600'
@@ -888,7 +889,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                             <div className='flex items-center space-x-2 flex-1'>
                               <div className='w-10 h-10 bg-blue-100 rounded-full flex-shrink-0'>
                                 <Avatar
-                                  src={player2Info.avatarUrl}
+                                  src={player2Info.avatarUrl || undefined}
                                   fallback={player2Info.avatar}
                                   className='w-full h-full rounded-full'
                                   textClassName='text-sm text-blue-600'
