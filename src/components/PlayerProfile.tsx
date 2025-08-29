@@ -127,17 +127,21 @@ export function PlayerProfile({
     );
   }
 
-  const winRate =
-    player.wins + player.losses > 0
-      ? ((player.wins / (player.wins + player.losses)) * 100).toFixed(1)
-      : '0';
+  const wins = player.wins || 0;
+  const losses = player.losses || 0;
+  const singlesWins = player.singlesWins || 0;
+  const singlesLosses = player.singlesLosses || 0;
+  const doublesWins = player.doublesWins || 0;
+  const doublesLosses = player.doublesLosses || 0;
+
+  const winRate = wins + losses > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';
   const singlesWinRate =
-    player.singlesWins + player.singlesLosses > 0
-      ? ((player.singlesWins / (player.singlesWins + player.singlesLosses)) * 100).toFixed(1)
+    singlesWins + singlesLosses > 0
+      ? ((singlesWins / (singlesWins + singlesLosses)) * 100).toFixed(1)
       : '0';
   const doublesWinRate =
-    player.doublesWins + player.doublesLosses > 0
-      ? ((player.doublesWins / (player.doublesWins + player.doublesLosses)) * 100).toFixed(1)
+    doublesWins + doublesLosses > 0
+      ? ((doublesWins / (doublesWins + doublesLosses)) * 100).toFixed(1)
       : '0';
 
   // Get recent matches (last 5)
@@ -248,7 +252,7 @@ export function PlayerProfile({
 
           <div className='flex items-center justify-between'>
             <span className='text-gray-600'>Total Games</span>
-            <span className='text-gray-800'>{player.wins + player.losses}</span>
+            <span className='text-gray-800'>{wins + losses}</span>
           </div>
 
           {/* Win Rate Progress Bar */}

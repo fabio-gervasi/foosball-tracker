@@ -13,7 +13,11 @@ import {
   transformErrorMessage,
 } from '../../utils/login-helpers';
 
-export function Login({ onLogin }) {
+interface LoginProps {
+  onLogin: (user: any, token: string) => void;
+}
+
+export function Login({ onLogin }: LoginProps) {
   const { login } = useAuth();
   const { showSuccess } = useDialogContext();
   const [email, setEmail] = useState('');
@@ -41,7 +45,7 @@ export function Login({ onLogin }) {
   };
 
   const validateForm = () => {
-    const errors = {};
+    const errors: Record<string, string> = {};
 
     if (!email.trim()) {
       errors.email = isLogin ? 'Username or email is required' : 'Email is required';
@@ -89,7 +93,7 @@ export function Login({ onLogin }) {
     setValidationErrors({});
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -189,14 +193,17 @@ export function Login({ onLogin }) {
         foosballAnalytics.trackUserRegistration('email');
       }
     } catch (error) {
-      const friendlyError = transformErrorMessage(error.message, !isLogin);
+      const friendlyError = transformErrorMessage(
+        error instanceof Error ? error.message : 'Unknown error',
+        !isLogin
+      );
       setError(friendlyError);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleModeSwitch = newIsLogin => {
+  const handleModeSwitch = (newIsLogin: boolean) => {
     setIsLogin(newIsLogin);
     setIsPasswordReset(false);
     resetForm();

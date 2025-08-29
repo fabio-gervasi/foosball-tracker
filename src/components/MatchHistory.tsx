@@ -64,13 +64,22 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
     if (match.matchType === '2v2') {
       return (
-        match.team1Player1Email === userIdentifier ||
-        match.team1Player2Email === userIdentifier ||
-        match.team2Player1Email === userIdentifier ||
-        match.team2Player2Email === userIdentifier
+        match.team1?.player1?.email === userIdentifier ||
+        match.team1?.player1?.id === userIdentifier ||
+        match.team1?.player2?.email === userIdentifier ||
+        match.team1?.player2?.id === userIdentifier ||
+        match.team2?.player1?.email === userIdentifier ||
+        match.team2?.player1?.id === userIdentifier ||
+        match.team2?.player2?.email === userIdentifier ||
+        match.team2?.player2?.id === userIdentifier
       );
     } else {
-      return match.player1Email === userIdentifier || match.player2Email === userIdentifier;
+      return (
+        match.player1?.email === userIdentifier ||
+        match.player1?.id === userIdentifier ||
+        match.player2?.email === userIdentifier ||
+        match.player2?.id === userIdentifier
+      );
     }
   };
 
@@ -201,11 +210,11 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
   const formatMatchDisplay = (match: any) => {
     if (match.matchType === '2v2') {
-      // Resolve player names from email identifiers
-      const team1Player1Name = resolvePlayerName(match.team1Player1Email);
-      const team1Player2Name = resolvePlayerName(match.team1Player2Email);
-      const team2Player1Name = resolvePlayerName(match.team2Player1Email);
-      const team2Player2Name = resolvePlayerName(match.team2Player2Email);
+      // Get player names from structured player objects
+      const team1Player1Name = match.team1?.player1?.name || 'Unknown';
+      const team1Player2Name = match.team1?.player2?.name || 'Unknown';
+      const team2Player1Name = match.team2?.player1?.name || 'Unknown';
+      const team2Player2Name = match.team2?.player2?.name || 'Unknown';
 
       const team1Names = `${team1Player1Name} & ${team1Player2Name}`;
       const team2Names = `${team2Player1Name} & ${team2Player2Name}`;
@@ -213,21 +222,25 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
       // Check for guest players
       const hasGuests = [
-        match.team1Player1IsGuest,
-        match.team1Player2IsGuest,
-        match.team2Player1IsGuest,
-        match.team2Player2IsGuest,
+        match.team1?.player1?.isGuest,
+        match.team1?.player2?.isGuest,
+        match.team2?.player1?.isGuest,
+        match.team2?.player2?.isGuest,
       ].some(Boolean);
 
       const currentUserWon = (() => {
         const userIdentifier = currentUser.username || currentUser.email;
         return (
           (match.winningTeam === 'team1' &&
-            (match.team1Player1Email === userIdentifier ||
-              match.team1Player2Email === userIdentifier)) ||
+            (match.team1?.player1?.email === userIdentifier ||
+              match.team1?.player1?.id === userIdentifier ||
+              match.team1?.player2?.email === userIdentifier ||
+              match.team1?.player2?.id === userIdentifier)) ||
           (match.winningTeam === 'team2' &&
-            (match.team2Player1Email === userIdentifier ||
-              match.team2Player2Email === userIdentifier))
+            (match.team2?.player1?.email === userIdentifier ||
+              match.team2?.player1?.id === userIdentifier ||
+              match.team2?.player2?.email === userIdentifier ||
+              match.team2?.player2?.id === userIdentifier))
         );
       })();
 
@@ -240,17 +253,17 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         currentUserWon,
       };
     } else {
-      // Resolve player names from email identifiers for 1v1
-      const player1Name = resolvePlayerName(match.player1Email);
-      const player2Name = resolvePlayerName(match.player2Email);
-      const winnerName = resolvePlayerName(match.winnerEmail);
+      // Get player names from structured player objects for 1v1
+      const player1Name = match.player1?.name || 'Unknown';
+      const player2Name = match.player2?.name || 'Unknown';
+      const winnerName = match.winner?.name || 'Unknown';
 
       // Check for guest players
-      const hasGuests = match.player1IsGuest || match.player2IsGuest;
+      const hasGuests = match.player1?.isGuest || match.player2?.isGuest;
 
       const currentUserWon = (() => {
         const userIdentifier = currentUser.username || currentUser.email;
-        return match.winnerEmail === userIdentifier;
+        return match.winner?.email === userIdentifier || match.winner?.id === userIdentifier;
       })();
 
       return {
@@ -553,16 +566,16 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                 if (matchDisplay.type === '2v2') {
                   // Team-based layout for 2v2 matches
                   const team1Player1Info = getUserAvatarInfo(
-                    match.team1?.player1?.email || match.team1?.player1?.id
+                    match.team1?.player1?.email || match.team1?.player1?.id || 'unknown'
                   );
                   const team1Player2Info = getUserAvatarInfo(
-                    match.team1?.player2?.email || match.team1?.player2?.id
+                    match.team1?.player2?.email || match.team1?.player2?.id || 'unknown'
                   );
                   const team2Player1Info = getUserAvatarInfo(
-                    match.team2?.player1?.email || match.team2?.player1?.id
+                    match.team2?.player1?.email || match.team2?.player1?.id || 'unknown'
                   );
                   const team2Player2Info = getUserAvatarInfo(
-                    match.team2?.player2?.email || match.team2?.player2?.id
+                    match.team2?.player2?.email || match.team2?.player2?.id || 'unknown'
                   );
 
                   const team1Player1Name = match.team1?.player1?.name || 'Unknown';
@@ -807,8 +820,12 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   );
                 } else {
                   // Cleaner layout for 1v1 matches with avatars
-                  const player1Info = getUserAvatarInfo(match.player1?.email || match.player1?.id);
-                  const player2Info = getUserAvatarInfo(match.player2?.email || match.player2?.id);
+                  const player1Info = getUserAvatarInfo(
+                    match.player1?.email || match.player1?.id || 'unknown'
+                  );
+                  const player2Info = getUserAvatarInfo(
+                    match.player2?.email || match.player2?.id || 'unknown'
+                  );
                   const player1Name = match.player1?.name || 'Unknown';
                   const player2Name = match.player2?.name || 'Unknown';
 

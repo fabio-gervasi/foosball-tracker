@@ -98,7 +98,7 @@ export const Dashboard = memo(function Dashboard({
   logger.debug('User match filtering', {
     hasUserIdentifier: !!userIdentifier,
     userMatchesFound: userMatches.length,
-    profileStats: user.wins + user.losses,
+    profileStats: (user.wins || 0) + (user.losses || 0),
     actualMatches: userMatches.length,
   });
 
@@ -333,7 +333,7 @@ export const Dashboard = memo(function Dashboard({
         <div className='w-20 h-20 bg-blue-100 rounded-full mx-auto mb-4'>
           <Avatar
             src={user.avatarUrl}
-            fallback={user.avatar}
+            fallback={user.avatar || user.username?.charAt(0) || user.name?.charAt(0) || 'U'}
             className='w-full h-full rounded-full'
             textClassName='text-2xl text-blue-600'
           />
@@ -479,8 +479,9 @@ export const Dashboard = memo(function Dashboard({
               <p className='text-2xl text-purple-600'>
                 {Math.round(
                   (users.reduce((total, user) => {
-                    const userWinRate =
-                      user.wins + user.losses > 0 ? user.wins / (user.wins + user.losses) : 0;
+                    const wins = user.wins || 0;
+                    const losses = user.losses || 0;
+                    const userWinRate = wins + losses > 0 ? wins / (wins + losses) : 0;
                     return total + userWinRate;
                   }, 0) /
                     users.length) *

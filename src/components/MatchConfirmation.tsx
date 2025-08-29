@@ -13,17 +13,17 @@ interface MatchConfirmationProps {
       date: string;
       seriesType?: string;
       // 1v1 format
-      player1?: { id: string; name: string; isGuest?: boolean };
-      player2?: { id: string; name: string; isGuest?: boolean };
-      winner?: { id: string; name: string; isGuest?: boolean };
+      player1?: { id: string; name: string; email?: string; isGuest?: boolean };
+      player2?: { id: string; name: string; email?: string; isGuest?: boolean };
+      winner?: { id: string; name: string; email?: string; isGuest?: boolean };
       // 2v2 format
       team1?: {
-        player1: { id: string; name: string; isGuest?: boolean };
-        player2: { id: string; name: string; isGuest?: boolean };
+        player1: { id: string; name: string; email?: string; isGuest?: boolean };
+        player2: { id: string; name: string; email?: string; isGuest?: boolean };
       };
       team2?: {
-        player1: { id: string; name: string; isGuest?: boolean };
-        player2: { id: string; name: string; isGuest?: boolean };
+        player1: { id: string; name: string; email?: string; isGuest?: boolean };
+        player2: { id: string; name: string; email?: string; isGuest?: boolean };
       };
       winningTeam?: string;
       // Score info
