@@ -53,6 +53,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
+    "test:ci": "vitest run --reporter=verbose --coverage",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "lint": "eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 200",

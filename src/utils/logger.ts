@@ -5,7 +5,7 @@ const isDev = () => import.meta.env.DEV;
 export const logger = {
   debug: (message: string, data?: any) => {
     if (isDev()) {
-      console.log(`[DEBUG] ${message}`, data);
+      console.info(`[DEBUG] ${message}`, data);
     }
   },
   info: (message: string, data?: any) => {
@@ -23,28 +23,28 @@ export const logger = {
   },
   authEvent: (message: string, data?: any) => {
     if (isDev()) {
-      console.log(`[AUTH] ${message}`, data);
+      console.info(`[AUTH] ${message}`, data);
     }
   },
   sessionEvent: (message: string, data?: any) => {
     if (isDev()) {
-      console.log(`[SESSION] ${message}`, data);
+      console.info(`[SESSION] ${message}`, data);
     }
   },
   apiEvent: (message: string, data?: any) => {
     if (isDev()) {
-      console.log(`[API] ${message}`, data);
+      console.info(`[API] ${message}`, data);
     }
   },
   apiRequest: (endpoint: string, method: string = 'GET', data?: any) => {
     if (isDev()) {
-      console.log(`[API REQUEST] ${method} ${endpoint}`, data);
+      console.info(`[API REQUEST] ${method} ${endpoint}`, data);
     }
   },
   apiResponse: (endpoint: string, status: number, ok: boolean, data?: any) => {
     if (isDev()) {
       const statusType = ok ? 'SUCCESS' : 'ERROR';
-      console.log(`[API RESPONSE] ${statusType} ${status} ${endpoint}`, data);
+      console.info(`[API RESPONSE] ${statusType} ${status} ${endpoint}`, data);
     }
   },
 };

@@ -30,7 +30,7 @@ describe('Logger Utility', () => {
     it('should have debug method that logs in development', () => {
       logger.debug('Test debug message', { data: 'test' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[DEBUG] Test debug message', { data: 'test' });
+      expect(mockConsole.info).toHaveBeenCalledWith('[DEBUG] Test debug message', { data: 'test' });
     });
 
     it('should have info method that logs in development', () => {
@@ -58,13 +58,13 @@ describe('Logger Utility', () => {
     it('should have authEvent method that logs in development', () => {
       logger.authEvent('User signed in', { userId: '123' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[AUTH] User signed in', { userId: '123' });
+      expect(mockConsole.info).toHaveBeenCalledWith('[AUTH] User signed in', { userId: '123' });
     });
 
     it('should have sessionEvent method that logs in development', () => {
       logger.sessionEvent('Session created', { sessionId: 'abc' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[SESSION] Session created', {
+      expect(mockConsole.info).toHaveBeenCalledWith('[SESSION] Session created', {
         sessionId: 'abc',
       });
     });
@@ -74,7 +74,7 @@ describe('Logger Utility', () => {
     it('should have apiEvent method that logs in development', () => {
       logger.apiEvent('API call completed', { endpoint: '/users' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[API] API call completed', {
+      expect(mockConsole.info).toHaveBeenCalledWith('[API] API call completed', {
         endpoint: '/users',
       });
     });
@@ -82,7 +82,7 @@ describe('Logger Utility', () => {
     it('should have apiRequest method that logs in development', () => {
       logger.apiRequest('/api/users', 'GET', { param: 'value' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[API REQUEST] GET /api/users', {
+      expect(mockConsole.info).toHaveBeenCalledWith('[API REQUEST] GET /api/users', {
         param: 'value',
       });
     });
@@ -90,13 +90,13 @@ describe('Logger Utility', () => {
     it('should handle apiRequest with default method', () => {
       logger.apiRequest('/api/users');
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[API REQUEST] GET /api/users', undefined);
+      expect(mockConsole.info).toHaveBeenCalledWith('[API REQUEST] GET /api/users', undefined);
     });
 
     it('should have apiResponse method that logs in development', () => {
       logger.apiResponse('/api/users', 200, true, { users: [] });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[API RESPONSE] SUCCESS 200 /api/users', {
+      expect(mockConsole.info).toHaveBeenCalledWith('[API RESPONSE] SUCCESS 200 /api/users', {
         users: [],
       });
     });
@@ -104,7 +104,7 @@ describe('Logger Utility', () => {
     it('should log error responses with apiResponse', () => {
       logger.apiResponse('/api/users', 404, false, { error: 'Not found' });
 
-      expect(mockConsole.log).toHaveBeenCalledWith('[API RESPONSE] ERROR 404 /api/users', {
+      expect(mockConsole.info).toHaveBeenCalledWith('[API RESPONSE] ERROR 404 /api/users', {
         error: 'Not found',
       });
     });
@@ -112,7 +112,7 @@ describe('Logger Utility', () => {
     it('should handle apiResponse without data parameter', () => {
       logger.apiResponse('/api/users', 200, true);
 
-      expect(mockConsole.log).toHaveBeenCalledWith(
+      expect(mockConsole.info).toHaveBeenCalledWith(
         '[API RESPONSE] SUCCESS 200 /api/users',
         undefined
       );
@@ -133,7 +133,7 @@ describe('Logger Utility', () => {
     it('should not log debug messages in production', () => {
       logger.debug('Debug message');
 
-      expect(mockConsole.log).not.toHaveBeenCalled();
+      expect(mockConsole.info).not.toHaveBeenCalled();
     });
 
     it('should not log info messages in production', () => {
@@ -145,7 +145,7 @@ describe('Logger Utility', () => {
     it('should not log auth events in production', () => {
       logger.authEvent('Auth event');
 
-      expect(mockConsole.log).not.toHaveBeenCalled();
+      expect(mockConsole.info).not.toHaveBeenCalled();
     });
 
     it('should still log errors in production', () => {
