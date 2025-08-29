@@ -18,6 +18,6 @@ jobs:
         with:
           version: latest
       - name: Deploy all edge functions
-        run: supabase functions deploy --project-ref $PROJECT_ID
+        run: supabase functions deploy --project-ref $PROJECT_ID --use-api --debug
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
