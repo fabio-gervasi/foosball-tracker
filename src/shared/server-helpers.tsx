@@ -2,7 +2,7 @@
 // Platform-aware implementation that works in browser and Deno
 
 // Environment detection
-const isServer = typeof Deno !== 'undefined';
+const isServer = typeof (globalThis as any).Deno !== 'undefined';
 const isBrowser = typeof window !== 'undefined';
 
 export function generateAvatar(name: string): string {
@@ -93,7 +93,7 @@ export function generateSecureToken(length: number = 32): string {
   if (isServer) {
     // Server environment - use crypto if available
     try {
-      const crypto = globalThis.crypto || (await import('crypto')).webcrypto;
+      const crypto = globalThis.crypto;
       const array = new Uint8Array(length);
       crypto.getRandomValues(array);
       for (let i = 0; i < length; i++) {

@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useAuth as useAuthContext } from '../contexts/AuthContext';
 import { supabase, apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
-import type { User } from '../contexts/AuthContext';
+import type { User } from '../types';
 
 // Enhanced auth hook interface
 export interface UseAuthReturn {
@@ -248,4 +248,4 @@ export const useAuth = (): UseAuthReturn => {
 };
 
 // Export types for external use
-export type { Permission };
+// Permission is already exported from types/index.ts

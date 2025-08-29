@@ -173,3 +173,7 @@ export const useAppData = (): AppDataContextType => {
   }
   return context;
 };
+
+// Export types for use in other files
+export type { AppDataContextType };
+export { AppDataContext };

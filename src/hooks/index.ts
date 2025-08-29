@@ -44,8 +44,9 @@ export {
 } from './useMutations';
 
 // Types
-export type { UseAuthReturn, ProfileUpdateData, Permission } from './useAuth';
-export type { UseAppDataReturn, MatchData, ProfileData, GroupData, UserStats } from './useAppData';
+export type { UseAuthReturn } from './useAuth';
+export type { ProfileUpdateData, Permission } from '../types';
+export type { UseAppDataReturn } from './useAppData';
 export type { UseApiRequestReturn, ApiRequestOptions } from './useApiRequest';
 export type { UsePermissionsReturn, PermissionLevel } from './usePermissions';
 export type {
@@ -56,7 +57,8 @@ export type {
   MatchValidationData,
 } from './useMatchValidation';
 export type { UseLocalStorageReturn, LocalStorageOptions } from './useLocalStorage';
-export type { User } from './useQueries';
+// User type is exported from main types file
+export type { User, UserStats, Match, Group } from '../types';
 
 // Error handling types
 export type {

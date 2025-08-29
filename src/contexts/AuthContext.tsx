@@ -385,3 +385,7 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+// Export types for use in other files
+export type { AuthContextType };
+export { AuthContext };
