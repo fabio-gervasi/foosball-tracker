@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { useDialogContext } from '../common/DialogProvider';
 import { logger } from '../../utils/logger';
 import { supabase } from '../../utils/supabase/client';
+import { PasswordInput, PasswordConfirmInput } from './PasswordInput';
+import { usePasswordConfirmValidation } from '../../hooks/usePasswordValidation';
 
 interface PasswordResetFormProps {
   token?: string;
@@ -29,6 +31,14 @@ export function PasswordResetForm({ token, onSuccess, onCancel }: PasswordResetF
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const { showSuccess, showError } = useDialogContext();
+
+  // Use password validation hooks
+  const {
+    passwordValidation,
+    confirmValidation,
+    isValid: passwordsValid,
+    canSubmit,
+  } = usePasswordConfirmValidation(newPassword, confirmPassword);
 
   // Password strength calculation
   const getPasswordStrength = (password: string): PasswordStrength => {
@@ -280,11 +290,7 @@ export function PasswordResetForm({ token, onSuccess, onCancel }: PasswordResetF
               >
                 Cancel
               </Button>
-              <Button
-                type='submit'
-                disabled={isLoading || passwordStrength.score < 2}
-                className='w-full sm:w-auto'
-              >
+              <Button type='submit' disabled={isLoading || !canSubmit} className='w-full sm:w-auto'>
                 {isLoading ? (
                   <div className='flex items-center gap-2'>
                     <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />

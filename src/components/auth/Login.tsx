@@ -12,6 +12,8 @@ import {
   checkServerStatus,
   transformErrorMessage,
 } from '../../utils/login-helpers';
+import { PasswordInput, PasswordConfirmInput } from './PasswordInput';
+import { usePasswordValidation } from '../../hooks/usePasswordValidation';
 
 interface LoginProps {
   onLogin: (user: any, token: string) => void;
@@ -34,6 +36,10 @@ export function Login({ onLogin }: LoginProps) {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isPasswordReset, setIsPasswordReset] = useState(false);
+
+  // Password validation hooks
+  const passwordValidation = usePasswordValidation(password, { realtime: !isLogin });
+  const isPasswordValid = isLogin || passwordValidation.isValid;
 
   useEffect(() => {
     checkServerHealth();
@@ -62,6 +68,9 @@ export function Login({ onLogin }: LoginProps) {
     if (!isPasswordReset) {
       if (!password) {
         errors.password = 'Password is required';
+      } else if (!isLogin && !passwordValidation.isValid) {
+        // For signup, validate password byte length and other requirements
+        errors.password = passwordValidation.errors[0] || 'Password validation failed';
       }
 
       if (!isLogin) {
@@ -390,40 +399,52 @@ export function Login({ onLogin }: LoginProps) {
             {/* Password Field - Hide during password reset */}
             {!isPasswordReset && (
               <div>
-                <label className='block text-gray-700 text-sm mb-2'>Password</label>
-                <div className='relative'>
-                  <Lock className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
-                  <input
-                    type='password'
+                {isLogin ? (
+                  // Simple password input for login
+                  <div>
+                    <label className='block text-gray-700 text-sm mb-2'>Password</label>
+                    <div className='relative'>
+                      <Lock className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                      <input
+                        type='password'
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        placeholder='Enter your password'
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {validationErrors.password && (
+                      <p className='text-xs text-red-500 mt-1'>{validationErrors.password}</p>
+                    )}
+                  </div>
+                ) : (
+                  // Enhanced password input for signup with validation
+                  <PasswordInput
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    onChange={setPassword}
+                    label='Password'
                     placeholder='Enter your password'
                     disabled={isLoading}
+                    showStrengthMeter={true}
+                    showByteCounter={true}
+                    data-testid='signup-password-input'
                   />
-                </div>
+                )}
               </div>
             )}
 
             {/* Confirm Password Field (Signup Only) */}
             {!isLogin && !isPasswordReset && (
-              <div>
-                <label className='block text-gray-700 text-sm mb-2'>Confirm Password</label>
-                <div className='relative'>
-                  <Lock className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
-                  <input
-                    type='password'
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                    placeholder='Confirm your password'
-                    disabled={isLoading}
-                  />
-                </div>
-                {validationErrors.confirmPassword && (
-                  <p className='text-xs text-red-500 mt-1'>{validationErrors.confirmPassword}</p>
-                )}
-              </div>
+              <PasswordConfirmInput
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                originalPassword={password}
+                label='Confirm Password'
+                placeholder='Confirm your password'
+                disabled={isLoading}
+                data-testid='signup-confirm-password-input'
+              />
             )}
 
             {/* Submit Button */}
@@ -488,6 +509,14 @@ export function Login({ onLogin }: LoginProps) {
                 <div>
                   <strong>Username:</strong> Letters, numbers, spaces, hyphens, and underscores
                   allowed
+                </div>
+                <div>
+                  <strong>Password:</strong> At least 8 characters, maximum 60 characters
+                  recommended
+                </div>
+                <div className='text-blue-600 text-xs mt-2'>
+                  💡 Tip: Special characters (é, ñ, 🔐, etc.) use more bytes. Keep passwords under
+                  60 characters for best compatibility.
                 </div>
               </div>
             </div>

@@ -242,6 +242,22 @@ export function createAuthRoutes(supabase: any) {
         return c.json({ error: 'Username must be at least 3 characters' }, 400);
       }
 
+      // Validate password byte length (Supabase/bcrypt limit)
+      const passwordBytes = new TextEncoder().encode(password).length;
+      if (passwordBytes > 72) {
+        console.log('Password too long:', passwordBytes, 'bytes');
+        return c.json(
+          {
+            error: `Password is too long (${passwordBytes} bytes). Maximum allowed is 72 bytes. Consider using fewer special characters or shortening your password.`,
+          },
+          400
+        );
+      }
+
+      if (password.length < 8) {
+        return c.json({ error: 'Password must be at least 8 characters long' }, 400);
+      }
+
       // Validate username format
       const usernameError = validateUsername(username);
       if (usernameError) {
