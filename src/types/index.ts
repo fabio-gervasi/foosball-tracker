@@ -327,6 +327,14 @@ export interface GroupSwitchData {
 }
 
 /**
+ * Data structure for leaving a group
+ */
+export interface LeaveGroupData {
+  /** Code of the group to leave */
+  groupCode: string;
+}
+
+/**
  * Data structure for group creation
  */
 export interface GroupCreationData {

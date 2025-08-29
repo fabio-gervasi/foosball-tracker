@@ -24,6 +24,7 @@ import {
   useGroupSwitchMutation,
   useJoinGroupMutation,
   useCreateGroupMutation,
+  useLeaveGroupMutation,
 } from '../hooks/useMutations';
 import { useDialogContext } from './common/DialogProvider';
 import type { User as UserType, Group, ProfileUpdateData } from '../types';
@@ -80,6 +81,7 @@ export function Profile({
   const groupSwitchMutation = useGroupSwitchMutation(accessToken);
   const joinGroupMutation = useJoinGroupMutation(accessToken);
   const createGroupMutation = useCreateGroupMutation(accessToken);
+  const leaveGroupMutation = useLeaveGroupMutation(accessToken);
 
   const [showGroupSelector, setShowGroupSelector] = useState(false);
   const [showJoinGroup, setShowJoinGroup] = useState(false);
@@ -246,9 +248,20 @@ export function Profile({
       cancelText: 'Cancel',
     });
 
-    if (confirmed) {
-      // This would require a new API endpoint - for now just show a message
-      await showError('Group leaving feature coming soon! For now, please contact your admin.');
+    if (confirmed && group) {
+      try {
+        await leaveGroupMutation.mutateAsync({ groupCode: group.code });
+
+        await showSuccess('Left group successfully');
+
+        // Trigger data refresh
+        onDataChange?.();
+        onGroupChanged?.();
+
+        // If user became groupless, parent components will handle redirection through data invalidation
+      } catch (error: any) {
+        await showError(`Failed to leave group: ${error.message || 'Unknown error'}`);
+      }
     }
   };
 
@@ -672,10 +685,15 @@ export function Profile({
             <div className='text-center mt-4 pt-4 border-t border-gray-200'>
               <button
                 onClick={handleLeaveGroup}
-                className='text-red-600 hover:text-red-700 text-sm flex items-center space-x-2 mx-auto'
+                disabled={leaveGroupMutation.isPending}
+                className='text-red-600 hover:text-red-700 disabled:text-red-400 text-sm flex items-center space-x-2 mx-auto'
               >
-                <LogOut className='w-4 h-4' />
-                <span>Leave Current Group</span>
+                {leaveGroupMutation.isPending ? (
+                  <Loader2 className='w-4 h-4 animate-spin' />
+                ) : (
+                  <LogOut className='w-4 h-4' />
+                )}
+                <span>{leaveGroupMutation.isPending ? 'Leaving...' : 'Leave Current Group'}</span>
               </button>
               <p className='text-xs text-gray-500 mt-1'>Warning: You'll lose all match history</p>
             </div>
