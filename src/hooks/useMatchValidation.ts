@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react';
 import { useAppData } from './useAppData';
 import { logger } from '../utils/logger';
+import type { User } from '../types';
 
 // Validation interfaces
 export interface ValidationError {
@@ -47,7 +48,7 @@ export interface UseMatchValidationReturn {
   // Utility functions
   isValidEmail: (email: string) => boolean;
   isValidScore: (score: number) => boolean;
-  getPlayerByEmail: (email: string) => Player | undefined;
+  getPlayerByEmail: (email: string) => User | undefined;
 
   // Validation rules
   rules: {
@@ -105,7 +106,7 @@ export const useMatchValidation = (): UseMatchValidationReturn => {
 
   // Get player by email
   const getPlayerByEmail = useCallback(
-    (email: string): Player | undefined => {
+    (email: string): User | undefined => {
       return users.find(user => user.email === email);
     },
     [users]

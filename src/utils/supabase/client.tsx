@@ -26,10 +26,10 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   logger.apiRequest(endpoint, options.method || 'GET');
 
   // All Supabase Edge Functions require either the anon key or a user access token
-  const headers = {
+  const headers: Record<string, string> = {
     // Default to public anon key for Supabase Edge Functions
     Authorization: `Bearer ${publicAnonKey}`,
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
 
   // Only set Content-Type for non-FormData requests
@@ -58,7 +58,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     logger.debug(`Endpoint ${endpoint} requires user authentication`);
 
     // Check if Authorization header was explicitly provided
-    const providedAuth = options.headers?.Authorization;
+    const providedAuth = (options.headers as Record<string, string>)?.Authorization;
     if (providedAuth) {
       logger.debug('Using provided Authorization header');
       headers.Authorization = providedAuth;
@@ -121,7 +121,9 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         }
       } catch (sessionError) {
         logger.error('Failed to get session', sessionError);
-        throw new Error(`Failed to get authentication session: ${sessionError.message}`);
+        throw new Error(
+          `Failed to get authentication session: ${sessionError instanceof Error ? sessionError.message : 'Unknown error'}`
+        );
       }
     }
   }
