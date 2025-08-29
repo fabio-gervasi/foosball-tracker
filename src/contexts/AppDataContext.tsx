@@ -91,8 +91,9 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   };
 
   const handleGroupSelected = async (): Promise<void> => {
-    // React Query will automatically refetch when auth state changes
-    logger.debug('Group selected - React Query will auto-refetch');
+    // After joining/selecting a group, we need to refetch all data
+    logger.debug('Group selected - triggering full data refresh');
+    refetchAll();
   };
 
   const handleGroupChanged = async (): Promise<void> => {
