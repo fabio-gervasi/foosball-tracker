@@ -431,7 +431,14 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const lowestElo = eloValues.length > 0 ? Math.min(...eloValues) : currentFilteredElo;
 
   // Calculate opponent statistics (for both 1v1 and 2v2 matches)
-  const rawOpponentStats = {};
+  interface OpponentStats {
+    name: string;
+    wins: number;
+    losses: number;
+    total: number;
+  }
+
+  const rawOpponentStats: Record<string, OpponentStats> = {};
   userMatches.forEach(match => {
     const opponents = [];
 
@@ -499,7 +506,10 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     // Process all opponents for this match
     opponents.forEach(({ identifier, opponent }) => {
       if (identifier && opponent) {
-        const opponentName = opponent.name || identifier;
+        const opponentName =
+          typeof opponent.name === 'string'
+            ? opponent.name
+            : (typeof opponent.name === 'object' ? opponent.name?.name : null) || identifier;
 
         if (!rawOpponentStats[identifier]) {
           rawOpponentStats[identifier] = {
@@ -521,7 +531,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   });
 
   // Now consolidate by name to handle duplicates
-  const consolidatedOpponentStats = {};
+  const consolidatedOpponentStats: Record<string, OpponentStats> = {};
   Object.values(rawOpponentStats).forEach(stats => {
     const normalizedName = stats.name.toLowerCase().trim();
 
@@ -545,7 +555,15 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
 
   // Calculate Most Feared Opponent (worst win rate against in ALL matches)
   const getMostFearedOpponent = () => {
-    const rawAllOpponentStats = {};
+    interface AllOpponentStats {
+      name: string;
+      wins: number;
+      losses: number;
+      total: number;
+      avatar: string;
+    }
+
+    const rawAllOpponentStats: Record<string, AllOpponentStats> = {};
 
     userMatches.forEach(match => {
       const opponents = [];
@@ -615,7 +633,10 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
       // Process all opponents for this match
       opponents.forEach(({ identifier, opponent }) => {
         if (identifier && opponent) {
-          const opponentName = opponent.name || identifier;
+          const opponentName =
+            typeof opponent.name === 'string'
+              ? opponent.name
+              : (typeof opponent.name === 'object' ? opponent.name?.name : null) || identifier;
 
           if (!rawAllOpponentStats[identifier]) {
             rawAllOpponentStats[identifier] = {
@@ -623,7 +644,8 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
               wins: 0,
               losses: 0,
               total: 0,
-              avatar: opponent.avatar || opponentName?.[0] || identifier[0]?.toUpperCase(),
+              avatar:
+                (opponent as any)?.avatar || opponentName?.[0] || identifier[0]?.toUpperCase(),
             };
           }
 
@@ -638,7 +660,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     });
 
     // Consolidate by name to handle duplicates
-    const consolidatedAllOpponentStats = {};
+    const consolidatedAllOpponentStats: Record<string, AllOpponentStats> = {};
     Object.values(rawAllOpponentStats).forEach(stats => {
       const normalizedName = stats.name.toLowerCase().trim();
 
@@ -675,7 +697,16 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   // Calculate Best Partner (best win rate with in 2v2 matches)
   const getBestPartner = () => {
     const twoVsTwoMatches = userMatches.filter(match => match.matchType === '2v2');
-    const rawPartnerStats = {};
+
+    interface PartnerStats {
+      name: string;
+      wins: number;
+      losses: number;
+      total: number;
+      avatar: string;
+    }
+
+    const rawPartnerStats: Record<string, PartnerStats> = {};
 
     twoVsTwoMatches.forEach(match => {
       let partner = null;
@@ -726,7 +757,8 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             wins: 0,
             losses: 0,
             total: 0,
-            avatar: partner.avatar || partnerName?.[0] || partnerIdentifier[0]?.toUpperCase(),
+            avatar:
+              (partner as any)?.avatar || partnerName?.[0] || partnerIdentifier[0]?.toUpperCase(),
           };
         }
 
@@ -740,7 +772,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     });
 
     // Consolidate by name to handle duplicates
-    const consolidatedPartnerStats = {};
+    const consolidatedPartnerStats: Record<string, PartnerStats> = {};
     Object.values(rawPartnerStats).forEach(stats => {
       const normalizedName = stats.name.toLowerCase().trim();
 
@@ -1099,7 +1131,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             <div className='flex items-center space-x-4'>
               <div className='w-16 h-16 bg-white border border-green-200 rounded-full flex items-center justify-center overflow-hidden'>
                 <Avatar
-                  src={null}
+                  src={undefined}
                   fallback={bestPartner.avatar}
                   className='w-full h-full rounded-full'
                   textClassName='text-xl text-green-600'
@@ -1129,7 +1161,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             <div className='flex items-center space-x-4'>
               <div className='w-16 h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center overflow-hidden'>
                 <Avatar
-                  src={null}
+                  src={undefined}
                   fallback={mostFearedOpponent.avatar}
                   className='w-full h-full rounded-full'
                   textClassName='text-xl text-gray-600'

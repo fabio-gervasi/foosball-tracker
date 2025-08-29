@@ -32,7 +32,7 @@ export function Login({ onLogin }: LoginProps) {
     isHealthy: false,
     isLoading: true,
   });
-  const [validationErrors, setValidationErrors] = useState({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isPasswordReset, setIsPasswordReset] = useState(false);
 
   useEffect(() => {
@@ -51,10 +51,12 @@ export function Login({ onLogin }: LoginProps) {
       errors.email = isLogin ? 'Username or email is required' : 'Email is required';
     } else if (!isLogin && validateEmail(email)) {
       // Only validate email format for signup mode
-      errors.email = validateEmail(email);
+      const emailError = validateEmail(email);
+      if (emailError) errors.email = emailError;
     } else if (isPasswordReset && validateEmail(email)) {
       // Validate email format for password reset
-      errors.email = validateEmail(email);
+      const emailError = validateEmail(email);
+      if (emailError) errors.email = emailError;
     }
 
     if (!isPasswordReset) {
@@ -70,7 +72,8 @@ export function Login({ onLogin }: LoginProps) {
         if (!username.trim()) {
           errors.username = 'Username is required';
         } else if (validateUsername(username)) {
-          errors.username = validateUsername(username);
+          const usernameError = validateUsername(username);
+          if (usernameError) errors.username = usernameError;
         }
 
         if (password !== confirmPassword) {

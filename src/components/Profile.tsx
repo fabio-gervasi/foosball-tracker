@@ -625,9 +625,9 @@ export function Profile({
                       <button
                         key={userGroup.code}
                         onClick={() => handleSwitchGroup(userGroup.code)}
-                        disabled={isSwitchingGroup || userGroup.code === currentGroup?.code}
+                        disabled={isSwitchingGroup || userGroup.code === group?.code}
                         className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                          userGroup.code === currentGroup?.code ? 'bg-blue-50 cursor-default' : ''
+                          userGroup.code === group?.code ? 'bg-blue-50 cursor-default' : ''
                         }`}
                       >
                         <div className='flex items-center space-x-3'>
@@ -651,7 +651,7 @@ export function Profile({
                           <span className='text-xs text-gray-600 tracking-wider'>
                             {userGroup.code}
                           </span>
-                          {userGroup.code === currentGroup?.code && (
+                          {userGroup.code === group?.code && (
                             <div className='w-2 h-2 bg-blue-600 rounded-full'></div>
                           )}
                         </div>

@@ -675,7 +675,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange1 = getPlayerEloChange(
                                       match,
-                                      match.team1Player1Email
+                                      match.team1?.player1?.email ||
+                                        match.team1?.player1?.id ||
+                                        'unknown'
                                     );
                                     return eloChange1 !== null ? (
                                       <span
@@ -693,7 +695,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange2 = getPlayerEloChange(
                                       match,
-                                      match.team1Player2Email
+                                      match.team1?.player2?.email ||
+                                        match.team1?.player2?.id ||
+                                        'unknown'
                                     );
                                     return eloChange2 !== null ? (
                                       <span
@@ -771,7 +775,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange1 = getPlayerEloChange(
                                       match,
-                                      match.team2Player1Email
+                                      match.team2?.player1?.email ||
+                                        match.team2?.player1?.id ||
+                                        'unknown'
                                     );
                                     return eloChange1 !== null ? (
                                       <span
@@ -789,7 +795,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange2 = getPlayerEloChange(
                                       match,
-                                      match.team2Player2Email
+                                      match.team2?.player2?.email ||
+                                        match.team2?.player2?.id ||
+                                        'unknown'
                                     );
                                     return eloChange2 !== null ? (
                                       <span
@@ -887,7 +895,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                     {(() => {
                                       const eloChange = getPlayerEloChange(
                                         match,
-                                        match.player1Email
+                                        match.player1?.email || match.player1?.id || 'unknown'
                                       );
                                       if (eloChange !== null) {
                                         return (
@@ -906,7 +914,8 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                 )}
                               </div>
-                              {match.winnerEmail === match.player1Email && (
+                              {(match.winner?.email === match.player1?.email ||
+                                match.winner?.id === match.player1?.id) && (
                                 <Crown className='w-4 h-4 text-yellow-600 flex-shrink-0' />
                               )}
                             </div>
@@ -933,7 +942,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                     {(() => {
                                       const eloChange = getPlayerEloChange(
                                         match,
-                                        match.player2Email
+                                        match.player2?.email || match.player2?.id || 'unknown'
                                       );
                                       if (eloChange !== null) {
                                         return (
@@ -952,7 +961,8 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                 )}
                               </div>
-                              {match.winnerEmail === match.player2Email && (
+                              {(match.winner?.email === match.player2?.email ||
+                                match.winner?.id === match.player2?.id) && (
                                 <Crown className='w-4 h-4 text-yellow-600 flex-shrink-0' />
                               )}
                             </div>

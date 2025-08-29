@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Users, Trophy, Save, User, UserCheck } from 'lucide-react';
-import type { User, MatchSubmissionData } from '../types';
+import { Users, Trophy, Save, User as UserIcon, UserCheck } from 'lucide-react';
+import type { User, MatchSubmissionData } from '../../types';
 
 interface MatchEntryProps {
   users: User[];
@@ -108,7 +108,9 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
 
   const getPlayerName = (playerId: string) => {
     const player = allPlayers.find(p => p.id === playerId);
-    return player ? player.username || player.name : '';
+    if (!player) return '';
+    // For User objects, try username first, then name. For guest players, use name directly.
+    return 'username' in player ? player.username || player.name : player.name;
   };
 
   const getPlayerIdentifier = (playerId: string) => {
@@ -159,41 +161,65 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
         const player1Identifier = getPlayerIdentifier(player1Id);
         const player2Identifier = getPlayerIdentifier(player2Id);
 
-        let matchData = {
-          matchType: '1v1',
-          seriesType,
-          player1Email: player1Identifier,
-          player2Email: player2Identifier,
-          player1IsGuest: isGuestPlayer(player1Id),
-          player2IsGuest: isGuestPlayer(player2Id),
-        };
+        let matchData: MatchSubmissionData;
 
         if (seriesType === 'bo1') {
           const winnerIdentifier = getPlayerIdentifier(winnerId);
           matchData = {
-            ...matchData,
-            winnerEmail: winnerIdentifier,
-            winnerIsGuest: isGuestPlayer(winnerId),
+            matchType: '1v1',
+            seriesType,
+            player1Email: player1Identifier,
+            player2Email: player2Identifier,
+            player1IsGuest: isGuestPlayer(player1Id),
+            player2IsGuest: isGuestPlayer(player2Id),
+            winner: {
+              id: winnerId,
+              name: getPlayerName(winnerId),
+              email: winnerIdentifier,
+              isGuest: isGuestPlayer(winnerId),
+            },
+            score1: winnerId === player1Id ? 1 : 0,
+            score2: winnerId === player2Id ? 1 : 0,
+            groupId: '',
+            createdAt: new Date().toISOString(),
+            date: new Date().toISOString(),
           };
         } else {
           // Best of 3 data
           const overallWinner = getOverallWinner();
-          const winnerIdentifier = getPlayerIdentifier(overallWinner);
+          const winnerIdentifier = overallWinner ? getPlayerIdentifier(overallWinner) : '';
           const seriesScore = getSeriesScore();
 
           matchData = {
-            ...matchData,
-            winnerEmail: winnerIdentifier,
-            winnerIsGuest: isGuestPlayer(overallWinner),
+            matchType: '1v1',
+            seriesType,
+            player1Email: player1Identifier,
+            player2Email: player2Identifier,
+            player1IsGuest: isGuestPlayer(player1Id),
+            player2IsGuest: isGuestPlayer(player2Id),
+            winner: {
+              id: overallWinner || '',
+              name: overallWinner ? getPlayerName(overallWinner) : '',
+              email: winnerIdentifier,
+              isGuest: overallWinner ? isGuestPlayer(overallWinner) : false,
+            },
+            score1: seriesScore ? seriesScore.player1Wins : 0,
+            score2: seriesScore ? seriesScore.player2Wins : 0,
+            groupId: '',
+            createdAt: new Date().toISOString(),
             gameResults: [
               game1Winner === player1Id ? 'player1' : 'player2',
               game2Winner === player1Id ? 'player1' : 'player2',
               game3Winner ? (game3Winner === player1Id ? 'player1' : 'player2') : null,
-            ].filter(g => g !== null),
-            seriesScore: `${seriesScore.player1Wins}-${seriesScore.player2Wins}`,
-            isSweep:
-              (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) ||
-              (seriesScore.player2Wins === 2 && seriesScore.player1Wins === 0),
+            ].filter(g => g !== null) as string[],
+            seriesScore: seriesScore
+              ? `${seriesScore.player1Wins}-${seriesScore.player2Wins}`
+              : '0-0',
+            isSweep: seriesScore
+              ? (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) ||
+                (seriesScore.player2Wins === 2 && seriesScore.player1Wins === 0)
+              : false,
+            date: new Date().toISOString(),
           };
         }
 
@@ -202,7 +228,9 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
         resetForm();
       } catch (error) {
         console.error('Match submission error:', error);
-        setError(error.message || 'Error recording match. Please try again.');
+        setError(
+          error instanceof Error ? error.message : 'Error recording match. Please try again.'
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -237,23 +265,26 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
       setIsSubmitting(true);
 
       try {
-        let matchData = {
-          matchType: '2v2',
-          seriesType,
-          team1Player1Email: getPlayerIdentifier(team1Player1),
-          team1Player2Email: getPlayerIdentifier(team1Player2),
-          team2Player1Email: getPlayerIdentifier(team2Player1),
-          team2Player2Email: getPlayerIdentifier(team2Player2),
-          team1Player1IsGuest: isGuestPlayer(team1Player1),
-          team1Player2IsGuest: isGuestPlayer(team1Player2),
-          team2Player1IsGuest: isGuestPlayer(team2Player1),
-          team2Player2IsGuest: isGuestPlayer(team2Player2),
-        };
+        let matchData: MatchSubmissionData;
 
         if (seriesType === 'bo1') {
           matchData = {
-            ...matchData,
+            matchType: '2v2',
+            seriesType,
+            team1Player1Email: getPlayerIdentifier(team1Player1),
+            team1Player2Email: getPlayerIdentifier(team1Player2),
+            team2Player1Email: getPlayerIdentifier(team2Player1),
+            team2Player2Email: getPlayerIdentifier(team2Player2),
+            team1Player1IsGuest: isGuestPlayer(team1Player1),
+            team1Player2IsGuest: isGuestPlayer(team1Player2),
+            team2Player1IsGuest: isGuestPlayer(team2Player1),
+            team2Player2IsGuest: isGuestPlayer(team2Player2),
             winningTeam: winningTeam === 1 ? 'team1' : 'team2',
+            score1: winningTeam === 1 ? 1 : 0,
+            score2: winningTeam === 2 ? 1 : 0,
+            groupId: '',
+            createdAt: new Date().toISOString(),
+            date: new Date().toISOString(),
           };
         } else {
           // Best of 3 data
@@ -261,13 +292,32 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           const seriesScore = getSeriesScore();
 
           matchData = {
-            ...matchData,
+            matchType: '2v2',
+            seriesType,
+            team1Player1Email: getPlayerIdentifier(team1Player1),
+            team1Player2Email: getPlayerIdentifier(team1Player2),
+            team2Player1Email: getPlayerIdentifier(team2Player1),
+            team2Player2Email: getPlayerIdentifier(team2Player2),
+            team1Player1IsGuest: isGuestPlayer(team1Player1),
+            team1Player2IsGuest: isGuestPlayer(team1Player2),
+            team2Player1IsGuest: isGuestPlayer(team2Player1),
+            team2Player2IsGuest: isGuestPlayer(team2Player2),
             winningTeam: overallWinner,
-            gameResults: [game1Winner, game2Winner, game3Winner].filter(g => g !== null),
-            seriesScore: `${seriesScore.player1Wins}-${seriesScore.player2Wins}`,
-            isSweep:
-              (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) ||
-              (seriesScore.player2Wins === 2 && seriesScore.player1Wins === 0),
+            score1: seriesScore ? seriesScore.player1Wins : 0,
+            score2: seriesScore ? seriesScore.player2Wins : 0,
+            groupId: '',
+            createdAt: new Date().toISOString(),
+            gameResults: [game1Winner, game2Winner, game3Winner].filter(
+              g => g !== null
+            ) as string[],
+            seriesScore: seriesScore
+              ? `${seriesScore.player1Wins}-${seriesScore.player2Wins}`
+              : '0-0',
+            isSweep: seriesScore
+              ? (seriesScore.player1Wins === 2 && seriesScore.player2Wins === 0) ||
+                (seriesScore.player2Wins === 2 && seriesScore.player1Wins === 0)
+              : false,
+            date: new Date().toISOString(),
           };
         }
 
@@ -276,7 +326,9 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
         resetForm();
       } catch (error) {
         console.error('Match submission error:', error);
-        setError(error.message || 'Error recording match. Please try again.');
+        setError(
+          error instanceof Error ? error.message : 'Error recording match. Please try again.'
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -310,7 +362,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             }`}
           >
             <div className='flex flex-col items-center space-y-2'>
-              <User className='w-8 h-8' />
+              <UserIcon className='w-8 h-8' />
               <span>1v1 Singles</span>
               <span className='text-xs text-gray-500'>One vs One</span>
             </div>
@@ -648,12 +700,14 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                     <span className='text-sm'>
                       Series Complete!{' '}
                       {matchType === '1v1'
-                        ? getPlayerName(getOverallWinner())
+                        ? getOverallWinner()
+                          ? getPlayerName(getOverallWinner()!)
+                          : 'Unknown'
                         : `Team ${getOverallWinner() === 'team1' ? '1' : '2'}`}{' '}
-                      wins {getSeriesScore().player1Wins}-{getSeriesScore().player2Wins}
-                      {getSeriesScore().player1Wins === 2 && getSeriesScore().player2Wins === 0
+                      wins {getSeriesScore()?.player1Wins || 0}-{getSeriesScore()?.player2Wins || 0}
+                      {getSeriesScore()?.player1Wins === 2 && getSeriesScore()?.player2Wins === 0
                         ? ' (2-0 Sweep - 1.2x ELO!)'
-                        : getSeriesScore().player2Wins === 2 && getSeriesScore().player1Wins === 0
+                        : getSeriesScore()?.player2Wins === 2 && getSeriesScore()?.player1Wins === 0
                           ? ' (2-0 Sweep - 1.2x ELO!)'
                           : ''}
                     </span>

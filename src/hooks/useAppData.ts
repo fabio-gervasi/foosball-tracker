@@ -208,7 +208,10 @@ export const useAppData = (): UseAppDataReturn => {
     async (groupData: GroupCreationData): Promise<void> => {
       try {
         logger.debug('Creating group via useAppData hook', { name: groupData.name });
-        await createGroupMutation.mutateAsync(groupData);
+        await createGroupMutation.mutateAsync({
+          name: groupData.name,
+          code: groupData.code || '',
+        });
       } catch (error) {
         logger.error('Failed to create group in useAppData', error);
         throw error;
