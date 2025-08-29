@@ -57,10 +57,6 @@ export function PlayerProfile({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadPlayerData();
-  }, [playerId, loadPlayerData]);
-
   const loadPlayerData = useCallback(async () => {
     try {
       setLoading(true);
@@ -88,6 +84,10 @@ export function PlayerProfile({
       setLoading(false);
     }
   }, [playerId, accessToken]);
+
+  useEffect(() => {
+    loadPlayerData();
+  }, [loadPlayerData]);
 
   if (loading) {
     return (

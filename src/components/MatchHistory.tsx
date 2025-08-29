@@ -47,10 +47,6 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
   // Log when matches data changes
   useEffect(() => {
     if (matches.length > 0) {
@@ -158,6 +154,10 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     dateFilter,
     isCurrentUserInMatch,
   ]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const clearFilters = () => {
     setShowMyGamesOnly(false);
