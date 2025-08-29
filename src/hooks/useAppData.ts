@@ -7,6 +7,7 @@ import {
   useGroupSwitchMutation,
   useJoinGroupMutation,
   useCreateGroupMutation,
+  useLeaveGroupMutation,
   useRefreshDataMutation,
 } from './useMutations';
 import { logger } from '../utils/logger';
@@ -54,6 +55,7 @@ export interface UseAppDataReturn {
   switchGroup: (groupCode: string) => Promise<void>;
   joinGroup: (groupCode: string) => Promise<void>;
   createGroup: (groupData: GroupCreationData) => Promise<void>;
+  leaveGroup: (groupCode: string) => Promise<void>;
 
   // Mutation states
   isSubmittingMatch: boolean;
@@ -61,6 +63,7 @@ export interface UseAppDataReturn {
   isSwitchingGroup: boolean;
   isJoiningGroup: boolean;
   isCreatingGroup: boolean;
+  isLeavingGroup: boolean;
 
   // Utilities
   getUserById: (id: string) => User | undefined;
@@ -126,6 +129,7 @@ export const useAppData = (): UseAppDataReturn => {
   const groupSwitchMutation = useGroupSwitchMutation(accessToken);
   const joinGroupMutation = useJoinGroupMutation(accessToken);
   const createGroupMutation = useCreateGroupMutation(accessToken);
+  const leaveGroupMutation = useLeaveGroupMutation(accessToken);
   const refreshDataMutation = useRefreshDataMutation();
 
   // Data refresh functions
@@ -218,6 +222,19 @@ export const useAppData = (): UseAppDataReturn => {
       }
     },
     [createGroupMutation]
+  );
+
+  const leaveGroup = useCallback(
+    async (groupCode: string): Promise<void> => {
+      try {
+        logger.debug('Leaving group via useAppData hook', { groupCode });
+        await leaveGroupMutation.mutateAsync({ groupCode });
+      } catch (error) {
+        logger.error('Failed to leave group in useAppData', error);
+        throw error;
+      }
+    },
+    [leaveGroupMutation]
   );
 
   // Utility functions
@@ -343,6 +360,7 @@ export const useAppData = (): UseAppDataReturn => {
   const isSwitchingGroup = groupSwitchMutation.isPending;
   const isJoiningGroup = joinGroupMutation.isPending;
   const isCreatingGroup = createGroupMutation.isPending;
+  const isLeavingGroup = leaveGroupMutation.isPending;
 
   return {
     // Core data
@@ -378,6 +396,7 @@ export const useAppData = (): UseAppDataReturn => {
     switchGroup,
     joinGroup,
     createGroup,
+    leaveGroup,
 
     // Mutation states
     isSubmittingMatch,
@@ -385,6 +404,7 @@ export const useAppData = (): UseAppDataReturn => {
     isSwitchingGroup,
     isJoiningGroup,
     isCreatingGroup,
+    isLeavingGroup,
 
     // Utilities
     getUserById,
