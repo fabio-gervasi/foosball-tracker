@@ -21,27 +21,7 @@
     },
     "types": ["vite/client"]
   },
-  "include": [
-    "src",
-    "src/vite-env.d.ts",
-    "supabase/functions/tsconfig.json",
-    "supabase/functions/admin-routes.tsx",
-    "supabase/functions/auth-helpers.tsx",
-    "supabase/functions/auth-routes.tsx",
-    "supabase/functions/data-migration.tsx",
-    "supabase/functions/debug-routes.tsx",
-    "supabase/functions/demo-data.tsx",
-    "supabase/functions/elo-system.tsx",
-    "supabase/functions/group-routes.tsx",
-    "supabase/functions/index.tsx",
-    "supabase/functions/kv_store.tsx",
-    "supabase/functions/match-routes.tsx",
-    "supabase/functions/password-reset-routes.tsx",
-    "supabase/functions/server-constants.tsx",
-    "supabase/functions/server-helpers.tsx",
-    "supabase/functions/server-logger.tsx",
-    "supabase/functions/user-routes.tsx"
-  ],
-  "exclude": ["node_modules", "build", "dist", "src/supabase/functions/server"],
+  "include": ["src", "src/vite-env.d.ts"],
+  "exclude": ["node_modules", "build", "dist", "supabase/functions"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -20,7 +20,7 @@ export default [
       'performance-budget.config.js',
       'coverage',
       '.github',
-      'src/supabase/functions/server/**/*.tsx',
+      'supabase/functions/**/*.tsx',
     ],
   },
   {
