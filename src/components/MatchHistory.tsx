@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   History,
   Calendar,
@@ -49,7 +49,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
   useEffect(() => {
     applyFilters();
-  }, [matches, showMyGamesOnly, gameTypeFilter, playerSearchFilter, dateFilter]);
+  }, [applyFilters]);
 
   // Log when matches data changes
   useEffect(() => {
@@ -59,31 +59,34 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   }, [matches]);
 
   // Helper function to check if current user participated in match
-  const isCurrentUserInMatch = (match: any) => {
-    const userIdentifier = currentUser.username || currentUser.email;
+  const isCurrentUserInMatch = useCallback(
+    (match: any) => {
+      const userIdentifier = currentUser.username || currentUser.email;
 
-    if (match.matchType === '2v2') {
-      return (
-        match.team1?.player1?.email === userIdentifier ||
-        match.team1?.player1?.id === userIdentifier ||
-        match.team1?.player2?.email === userIdentifier ||
-        match.team1?.player2?.id === userIdentifier ||
-        match.team2?.player1?.email === userIdentifier ||
-        match.team2?.player1?.id === userIdentifier ||
-        match.team2?.player2?.email === userIdentifier ||
-        match.team2?.player2?.id === userIdentifier
-      );
-    } else {
-      return (
-        match.player1?.email === userIdentifier ||
-        match.player1?.id === userIdentifier ||
-        match.player2?.email === userIdentifier ||
-        match.player2?.id === userIdentifier
-      );
-    }
-  };
+      if (match.matchType === '2v2') {
+        return (
+          match.team1?.player1?.email === userIdentifier ||
+          match.team1?.player1?.id === userIdentifier ||
+          match.team1?.player2?.email === userIdentifier ||
+          match.team1?.player2?.id === userIdentifier ||
+          match.team2?.player1?.email === userIdentifier ||
+          match.team2?.player1?.id === userIdentifier ||
+          match.team2?.player2?.email === userIdentifier ||
+          match.team2?.player2?.id === userIdentifier
+        );
+      } else {
+        return (
+          match.player1?.email === userIdentifier ||
+          match.player1?.id === userIdentifier ||
+          match.player2?.email === userIdentifier ||
+          match.player2?.id === userIdentifier
+        );
+      }
+    },
+    [currentUser]
+  );
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...matches];
 
     // Filter by user participation
@@ -147,7 +150,14 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     }
 
     setFilteredMatches(filtered);
-  };
+  }, [
+    matches,
+    showMyGamesOnly,
+    gameTypeFilter,
+    playerSearchFilter,
+    dateFilter,
+    isCurrentUserInMatch,
+  ]);
 
   const clearFilters = () => {
     setShowMyGamesOnly(false);
@@ -157,13 +167,13 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   };
 
   // Helper function to resolve player name from email/username identifier
-  const resolvePlayerName = (identifier: string) => {
+  const _resolvePlayerName = (identifier: string) => {
     if (!identifier) return 'Unknown';
 
     // Check if it's a guest player
     if (identifier.startsWith('guest')) {
-      const guestNumber = identifier.replace('guest', '');
-      return `Guest ${guestNumber}`;
+      const _guestNumber = identifier.replace('guest', '');
+      return `Guest ${_guestNumber}`;
     }
 
     // Find user by username first, then by email
@@ -181,7 +191,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
     // Check if it's a guest player
     if (identifier.startsWith('guest')) {
-      const guestNumber = identifier.replace('guest', '');
+      const _guestNumber = identifier.replace('guest', '');
       return { avatar: 'G', avatarUrl: null };
     }
 

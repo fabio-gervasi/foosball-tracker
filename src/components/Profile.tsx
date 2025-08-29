@@ -6,7 +6,6 @@ import {
   LogOut,
   Shield,
   Camera,
-  Upload,
   X,
   Loader2,
   Lock,
@@ -50,7 +49,7 @@ export function Profile({
   user,
   group,
   accessToken,
-  onUpdateProfile,
+  onUpdateProfile: _onUpdateProfile,
   onDataChange,
   onGroupChanged,
 }: ProfileProps) {
@@ -75,7 +74,7 @@ export function Profile({
   const {
     data: userGroups = [],
     isLoading: isLoadingGroups,
-    refetch: loadUserGroups,
+    refetch: _loadUserGroups,
   } = useUserGroupsQuery(accessToken);
 
   const groupSwitchMutation = useGroupSwitchMutation(accessToken);
@@ -335,7 +334,7 @@ export function Profile({
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const data = await response.json();
+      const _data = await response.json();
 
       // Update local user state
       if (onDataChange) {
@@ -370,7 +369,7 @@ export function Profile({
     setAvatarError('');
 
     try {
-      const response = await apiRequest('/profile/avatar', {
+      const _response = await apiRequest('/profile/avatar', {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -429,7 +428,7 @@ export function Profile({
 
     try {
       // First verify current password by attempting to sign in
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { data: _authData, error: authError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: passwordForm.currentPassword,
       });
@@ -483,7 +482,7 @@ export function Profile({
 
   const wins = user.wins || 0;
   const losses = user.losses || 0;
-  const winRate = wins + losses > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';
+  const _winRate = wins + losses > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';
 
   return (
     <div className='p-4 space-y-6'>
