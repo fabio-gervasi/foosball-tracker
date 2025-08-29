@@ -170,6 +170,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             seriesType,
             player1Email: player1Identifier,
             player2Email: player2Identifier,
+            winnerEmail: winnerIdentifier, // Add missing winnerEmail field
             player1IsGuest: isGuestPlayer(player1Id),
             player2IsGuest: isGuestPlayer(player2Id),
             winner: {
@@ -195,6 +196,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             seriesType,
             player1Email: player1Identifier,
             player2Email: player2Identifier,
+            winnerEmail: winnerIdentifier, // Add missing winnerEmail field
             player1IsGuest: isGuestPlayer(player1Id),
             player2IsGuest: isGuestPlayer(player2Id),
             winner: {
