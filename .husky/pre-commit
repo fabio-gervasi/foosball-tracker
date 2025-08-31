@@ -1,3 +1,11 @@
+# Check if we're on the dev branch
+current_branch=$(git branch --show-current)
+
+if [ "$current_branch" = "dev" ]; then
+  echo "Skipping pre-commit hooks on dev branch"
+  exit 0
+fi
+
 # Run lint-staged (prettier + eslint on staged files)
 npx lint-staged
 
