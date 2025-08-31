@@ -156,7 +156,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   };
 
   // Helper function to get user avatar info from a player ID
-  const getUserAvatarInfo = (playerId: string) => {
+  const getUserAvatarInfo = (playerId: string | undefined) => {
     if (!playerId) return { avatar: 'U', avatarUrl: null };
 
     if (playerId.startsWith('guest')) {
@@ -172,7 +172,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   };
 
   // Helper function to get ELO change for a specific player ID
-  const getPlayerEloChange = (match: any, playerId: string) => {
+  const getPlayerEloChange = (match: any, playerId: string | undefined) => {
     if (!match.eloChanges || !playerId) return null;
     const change = match.eloChanges[playerId];
     return change ? change.change : null;

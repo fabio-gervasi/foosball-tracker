@@ -367,6 +367,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     wins: number;
     losses: number;
     total: number;
+    avatar: string;
   }
 
   const rawOpponentStats: Record<string, OpponentStats> = {};
@@ -396,6 +397,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
             wins: 0,
             losses: 0,
             total: 0,
+            avatar: (opponent as any)?.avatar || opponentName?.[0] || identifier[0]?.toUpperCase(),
           };
         }
 
@@ -420,6 +422,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
         wins: 0,
         losses: 0,
         total: 0,
+        avatar: stats.avatar,
       };
     }
 
