@@ -3,7 +3,7 @@ import { User, Users, Shield, ArrowLeft, Trophy, Award } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { apiRequest } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
-import type { User as UserType, Group } from '../types';
+import type { User as UserType, Group, Match } from '../types';
 
 interface PlayerProfileProps {
   playerId: string;
@@ -11,30 +11,6 @@ interface PlayerProfileProps {
   group: Group | null;
   accessToken: string;
   onBack: () => void;
-}
-
-interface MatchData {
-  id: string;
-  player1Email: string;
-  player2Email: string;
-  player1Name?: string;
-  player2Name?: string;
-  team1Player1Email?: string;
-  team1Player2Email?: string;
-  team2Player1Email?: string;
-  team2Player2Email?: string;
-  team1Player1Name?: string;
-  team1Player2Name?: string;
-  team2Player1Name?: string;
-  team2Player2Name?: string;
-  gameMode: 'singles' | 'doubles';
-  matchFormat: 'bo1' | 'bo3';
-  winner: 'player1' | 'player2' | 'team1' | 'team2';
-  player1Score: number;
-  player2Score: number;
-  team1Score?: number;
-  team2Score?: number;
-  createdAt: string;
 }
 
 // Helper function to extract username from email for backward compatibility
@@ -53,7 +29,7 @@ export function PlayerProfile({
   onBack,
 }: PlayerProfileProps) {
   const [player, setPlayer] = useState<UserType | null>(null);
-  const [matches, setMatches] = useState<MatchData[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -148,42 +124,33 @@ export function PlayerProfile({
   const recentMatches = matches.slice(0, 5);
 
   // Check if this player participates in a match
-  const playerParticipatesInMatch = (match: MatchData): boolean => {
-    const playerIdentifier = player.username || player.email;
-
-    if (match.gameMode === 'singles') {
-      return match.player1Email === playerIdentifier || match.player2Email === playerIdentifier;
+  const playerParticipatesInMatch = (match: Match): boolean => {
+    if (match.matchType === '1v1' || !match.matchType) {
+      return match.player1?.id === player.id || match.player2?.id === player.id;
     } else {
       return (
-        match.team1Player1Email === playerIdentifier ||
-        match.team1Player2Email === playerIdentifier ||
-        match.team2Player1Email === playerIdentifier ||
-        match.team2Player2Email === playerIdentifier
+        match.team1?.player1?.id === player.id ||
+        match.team1?.player2?.id === player.id ||
+        match.team2?.player1?.id === player.id ||
+        match.team2?.player2?.id === player.id
       );
     }
   };
 
   // Determine if player won a match
-  const didPlayerWin = (match: MatchData): boolean => {
-    const playerIdentifier = player.username || player.email;
-
-    if (match.gameMode === 'singles') {
-      if (match.player1Email === playerIdentifier) {
-        return match.winner === 'player1';
-      } else if (match.player2Email === playerIdentifier) {
-        return match.winner === 'player2';
-      }
+  const didPlayerWin = (match: Match): boolean => {
+    if (match.matchType === '1v1' || !match.matchType) {
+      return match.winner?.id === player.id;
     } else {
-      if (
-        match.team1Player1Email === playerIdentifier ||
-        match.team1Player2Email === playerIdentifier
-      ) {
-        return match.winner === 'team1';
-      } else if (
-        match.team2Player1Email === playerIdentifier ||
-        match.team2Player2Email === playerIdentifier
-      ) {
-        return match.winner === 'team2';
+      const isInTeam1 =
+        match.team1?.player1?.id === player.id || match.team1?.player2?.id === player.id;
+      if (isInTeam1) {
+        return match.winningTeam === 'team1';
+      }
+      const isInTeam2 =
+        match.team2?.player1?.id === player.id || match.team2?.player2?.id === player.id;
+      if (isInTeam2) {
+        return match.winningTeam === 'team2';
       }
     }
     return false;
@@ -357,13 +324,13 @@ export function PlayerProfile({
 
                       <div>
                         <div className='flex items-center space-x-1'>
-                          {match.gameMode === 'singles' ? (
+                          {match.matchType === '1v1' || !match.matchType ? (
                             <User className='w-4 h-4 text-gray-500' />
                           ) : (
                             <Users className='w-4 h-4 text-gray-500' />
                           )}
                           <span className='text-sm text-gray-600 capitalize'>
-                            {match.gameMode} • {match.matchFormat.toUpperCase()}
+                            {match.matchType || '1v1'}
                           </span>
                         </div>
                         <p className={`text-sm ${isWin ? 'text-green-600' : 'text-red-600'}`}>
@@ -374,9 +341,7 @@ export function PlayerProfile({
 
                     <div className='text-right'>
                       <p className='text-sm text-gray-800'>
-                        {match.gameMode === 'singles'
-                          ? `${match.player1Score}-${match.player2Score}`
-                          : `${match.team1Score}-${match.team2Score}`}
+                        {match.score1} - {match.score2}
                       </p>
                       <p className='text-xs text-gray-500'>
                         {new Date(match.createdAt).toLocaleDateString()}

@@ -178,21 +178,23 @@ export function createUserRoutes(supabase: any) {
       const matchEntries = await kv.getByPrefix(matchPrefix);
 
       const userMatches = [];
-      const playerIdentifier = targetUserProfile.username || targetUserProfile.email;
+      const playerId = targetUserProfile.id;
 
       for (const entry of matchEntries) {
         try {
           const match = entry.value;
 
-          // Check if the target user participated in this match
-          const participated =
-            match.player1Email === playerIdentifier ||
-            match.player2Email === playerIdentifier ||
-            (match.gameMode === 'doubles' &&
-              (match.team1Player1Email === playerIdentifier ||
-                match.team1Player2Email === playerIdentifier ||
-                match.team2Player1Email === playerIdentifier ||
-                match.team2Player2Email === playerIdentifier));
+          // Check if the target user participated in this match using the new data structure
+          let participated = false;
+          if (match.matchType === '1v1' || !match.matchType) {
+            participated = match.player1?.id === playerId || match.player2?.id === playerId;
+          } else if (match.matchType === '2v2') {
+            participated =
+              match.team1?.player1?.id === playerId ||
+              match.team1?.player2?.id === playerId ||
+              match.team2?.player1?.id === playerId ||
+              match.team2?.player2?.id === playerId;
+          }
 
           if (participated) {
             userMatches.push(match);

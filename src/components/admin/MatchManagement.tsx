@@ -79,7 +79,7 @@ export function MatchManagement({
             {matches
               .filter(match => match && match.id)
               .map(match => {
-                const matchDisplay = formatMatchDisplay(match, users);
+                const matchDisplay = formatMatchDisplay(match);
 
                 return (
                   <div key={match.id} className='border border-gray-200 rounded-lg p-4'>

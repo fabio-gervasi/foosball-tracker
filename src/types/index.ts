@@ -126,33 +126,15 @@ export interface Match {
   createdBy?: string;
   /** Timestamp when the match was created */
   createdAt: string;
-
-  // Legacy fields for backward compatibility
-  /** Legacy: Winner email */
-  winnerEmail?: string;
-  /** Legacy: Loser email */
-  loserEmail?: string;
-  /** Legacy: Player 1 email */
-  player1Email?: string;
-  /** Legacy: Player 2 email */
-  player2Email?: string;
-  /** Legacy: Team 1 Player 1 email */
-  team1Player1Email?: string;
-  /** Legacy: Team 1 Player 2 email */
-  team1Player2Email?: string;
-  /** Legacy: Team 2 Player 1 email */
-  team2Player1Email?: string;
-  /** Legacy: Team 2 Player 2 email */
-  team2Player2Email?: string;
-  /** Legacy: Winner reference */
+  /** Winner reference */
   winner?: PlayerReference;
-  /** Legacy: Winning team identifier */
+  /** Winning team identifier */
   winningTeam?: string;
-  /** Legacy: Date field */
+  /** Date field */
   date: string;
-  /** Legacy: ELO changes from the match */
+  /** ELO changes from the match */
   eloChanges?: any;
-  /** Legacy: Group code */
+  /** Group code */
   groupCode?: string;
 }
 
