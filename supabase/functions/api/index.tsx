@@ -18,6 +18,7 @@ import { createGroupRoutes } from '../_shared/group-routes.tsx';
 import { createMatchRoutes } from '../_shared/match-routes.tsx';
 import { createUserRoutes } from '../_shared/user-routes.tsx';
 import { createAdminRoutes } from '../_shared/admin-routes.tsx';
+import { createDataMigrationRoutes } from '../data-migration/index.tsx';
 
 const app = new Hono();
 
@@ -129,6 +130,10 @@ try {
   serverLogger.info('Mounting admin routes');
   app.route(`${API_PREFIX}`, createAdminRoutes(supabase));
   serverLogger.info('Admin routes mounted');
+
+  serverLogger.info('Mounting data migration routes');
+  app.route(`${API_PREFIX}/data-migration`, createDataMigrationRoutes(supabase));
+  serverLogger.info('Data migration routes mounted');
 
   serverLogger.info('All routes mounted successfully');
 } catch (routeError) {
