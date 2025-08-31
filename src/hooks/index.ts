@@ -15,13 +15,6 @@ export { useApiRequest, useApiQuery } from './useApiRequest';
 // Specialized hooks
 export { usePermissions } from './usePermissions';
 export { useMatchValidation } from './useMatchValidation';
-export {
-  useLocalStorage,
-  useUserPreferences,
-  useThemePreferences,
-  useFormStorage,
-  useRecentItems,
-} from './useLocalStorage';
 
 // React Query hooks (re-export for consistency)
 export {
@@ -56,7 +49,6 @@ export type {
   Player,
   MatchValidationData,
 } from './useMatchValidation';
-export type { UseLocalStorageReturn, LocalStorageOptions } from './useLocalStorage';
 // User type is exported from main types file
 export type { User, UserStats, Match, Group } from '../types';
 
