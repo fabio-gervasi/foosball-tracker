@@ -2,6 +2,11 @@ import { afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+vi.mock('../utils/supabase/info', () => ({
+  projectId: 'test-project-id',
+  publicAnonKey: 'test-anon-key',
+}));
+
 // Clean up after each test
 afterEach(() => {
   cleanup();

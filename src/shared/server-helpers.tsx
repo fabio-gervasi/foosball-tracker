@@ -3,7 +3,6 @@
 
 // Environment detection
 const isServer = typeof (globalThis as any).Deno !== 'undefined';
-const isBrowser = typeof window !== 'undefined';
 
 export function generateAvatar(name: string): string {
   return name
@@ -100,7 +99,7 @@ export function generateSecureToken(length: number = 32): string {
         result += chars[array[i] % chars.length];
       }
       return result;
-    } catch (error) {
+    } catch (_error) {
       // Fallback to Math.random
     }
   }
@@ -128,7 +127,7 @@ export function formatDateTime(date: string | Date): string {
 export function safeJsonParse<T>(json: string, fallback: T): T {
   try {
     return JSON.parse(json);
-  } catch (error) {
+  } catch (_error) {
     return fallback;
   }
 }
@@ -137,11 +136,11 @@ export function safeJsonParse<T>(json: string, fallback: T): T {
 export function logInfo(message: string, data?: any): void {
   if (isServer) {
     // Server logging - could be enhanced with proper logger
-    console.log(`[SERVER] ${message}`, data);
+    console.info(`[SERVER] ${message}`, data);
   } else {
     // Client logging - development only
     if (import.meta.env?.DEV) {
-      console.log(`[CLIENT] ${message}`, data);
+      console.info(`[CLIENT] ${message}`, data);
     }
   }
 }

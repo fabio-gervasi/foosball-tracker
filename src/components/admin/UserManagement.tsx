@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, Crown, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../utils/supabase/client';
 import { useDialogContext } from '../common/DialogProvider';
+import { logger } from '../../utils/logger';
 import type { User } from '../../types';
 import {
   AlertDialog,
@@ -30,13 +31,13 @@ export function UserManagement({
   onDataChange,
   onError,
 }: UserManagementProps) {
-  const { showSuccess, showError } = useDialogContext();
+  const { showSuccess } = useDialogContext();
 
   const handleToggleAdminStatus = async (userId: string, currentAdminStatus: boolean) => {
     try {
       onError('');
 
-      console.log('Toggling admin status for user:', userId, 'to', !currentAdminStatus);
+      logger.info('Toggling admin status for user', { userId, newStatus: !currentAdminStatus });
       await apiRequest(`/admin/users/${userId}/admin`, {
         method: 'PUT',
         headers: {
@@ -61,7 +62,7 @@ export function UserManagement({
     try {
       onError('');
 
-      console.log('Deleting user:', userId);
+      logger.info('Deleting user', { userId });
       await apiRequest(`/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
