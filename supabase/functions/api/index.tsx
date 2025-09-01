@@ -53,7 +53,6 @@ app.get('/make-server-171cbf6f/simple-health', c => {
       },
     });
   } catch (error) {
-    serverLogger.error('Simple health check failed', error);
     return c.json(
       {
         status: 'error',
