@@ -133,6 +133,12 @@ export const Dashboard = memo(function Dashboard({
   });
   const userRank = sortedUsers.findIndex(u => u.id === user.id) + 1;
 
+  // Calculate average ELO for the group
+  const averageElo =
+    users.length > 0
+      ? Math.round(users.reduce((total, user) => total + (user.elo || 1200), 0) / users.length)
+      : 1200;
+
   const handleRefresh = () => {
     window.location.reload();
   };
@@ -321,20 +327,8 @@ export const Dashboard = memo(function Dashboard({
               <p className='text-sm text-gray-600'>Total Games</p>
             </div>
             <div>
-              <p className='text-2xl text-purple-600'>
-                {Math.round(
-                  (users.reduce((total, user) => {
-                    const wins = user.wins || 0;
-                    const losses = user.losses || 0;
-                    const userWinRate = wins + losses > 0 ? wins / (wins + losses) : 0;
-                    return total + userWinRate;
-                  }, 0) /
-                    users.length) *
-                    100
-                ) || 0}
-                %
-              </p>
-              <p className='text-sm text-gray-600'>Avg Win Rate</p>
+              <p className='text-2xl text-purple-600'>{averageElo}</p>
+              <p className='text-sm text-gray-600'>Average ELO</p>
             </div>
           </div>
         </div>
