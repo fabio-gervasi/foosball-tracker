@@ -344,7 +344,7 @@ export function PlayerProfile({
                         {match.score1} - {match.score2}
                       </p>
                       <p className='text-xs text-gray-500'>
-                        {new Date(match.createdAt).toLocaleDateString()}
+                        {new Date(match.createdAt || new Date()).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

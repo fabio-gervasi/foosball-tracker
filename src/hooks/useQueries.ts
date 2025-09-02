@@ -21,10 +21,8 @@ export const queryKeys = {
   userGroups: () => ['groups', 'user'] as const,
 } as const;
 
-// API Response interfaces are now imported from types
-
 /**
- * Hook to fetch current user data
+ * Hook to fetch current user data from relational database
  */
 export const useUserQuery = (accessToken: string | null): UseQueryResult<User, Error> => {
   return useQuery({
@@ -34,12 +32,11 @@ export const useUserQuery = (accessToken: string | null): UseQueryResult<User, E
         throw new Error('No access token available');
       }
 
-      logger.debug('Fetching current user data');
+      logger.debug('Fetching current user data (relational)');
 
-      const response = (await apiRequest('/user', {
+      const response = (await apiRequest('/user-relational', {
         headers: { Authorization: `Bearer ${accessToken}` },
       })) as UserResponse;
-
       return response.user;
     },
     enabled: !!accessToken,
@@ -54,7 +51,7 @@ export const useUserQuery = (accessToken: string | null): UseQueryResult<User, E
 };
 
 /**
- * Hook to fetch current group data
+ * Hook to fetch current group data from relational database
  */
 export const useCurrentGroupQuery = (accessToken: string | null): UseQueryResult<Group, Error> => {
   return useQuery({
@@ -64,16 +61,15 @@ export const useCurrentGroupQuery = (accessToken: string | null): UseQueryResult
         throw new Error('No access token available');
       }
 
-      logger.debug('Fetching current group data');
+      logger.debug('Fetching current group data (relational)');
 
-      const response = (await apiRequest('/groups/current', {
+      const response = (await apiRequest('/groups/current-relational', {
         headers: { Authorization: `Bearer ${accessToken}` },
       })) as GroupResponse;
-
       return response.group;
     },
     enabled: !!accessToken,
-    staleTime: 3 * 60 * 1000, // 3 minutes - groups change less frequently
+    staleTime: 3 * 60 * 1000, // 3 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) {
         return false;
@@ -84,7 +80,7 @@ export const useCurrentGroupQuery = (accessToken: string | null): UseQueryResult
 };
 
 /**
- * Hook to fetch all users in current group
+ * Hook to fetch all users in current group from relational database
  */
 export const useUsersQuery = (accessToken: string | null): UseQueryResult<User[], Error> => {
   return useQuery({
@@ -94,16 +90,15 @@ export const useUsersQuery = (accessToken: string | null): UseQueryResult<User[]
         throw new Error('No access token available');
       }
 
-      logger.debug('Fetching users data');
+      logger.debug('Fetching users data (relational)');
 
-      const response = (await apiRequest('/users', {
+      const response = (await apiRequest('/users-relational', {
         headers: { Authorization: `Bearer ${accessToken}` },
       })) as UsersResponse;
-
       return response.users || [];
     },
     enabled: !!accessToken,
-    staleTime: 2 * 60 * 1000, // 2 minutes - user stats change frequently
+    staleTime: 2 * 60 * 1000, // 2 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) {
         return false;
@@ -114,7 +109,7 @@ export const useUsersQuery = (accessToken: string | null): UseQueryResult<User[]
 };
 
 /**
- * Hook to fetch matches in current group
+ * Hook to fetch matches in current group from relational database
  */
 export const useMatchesQuery = (accessToken: string | null): UseQueryResult<Match[], Error> => {
   return useQuery({
@@ -124,16 +119,15 @@ export const useMatchesQuery = (accessToken: string | null): UseQueryResult<Matc
         throw new Error('No access token available');
       }
 
-      logger.debug('Fetching matches data');
+      logger.debug('Fetching matches data (relational)');
 
-      const response = (await apiRequest('/matches', {
+      const response = (await apiRequest('/matches-relational', {
         headers: { Authorization: `Bearer ${accessToken}` },
       })) as MatchesResponse;
-
       return response.matches || [];
     },
     enabled: !!accessToken,
-    staleTime: 1 * 60 * 1000, // 1 minute - matches change frequently
+    staleTime: 1 * 60 * 1000, // 1 minute
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) {
         return false;
@@ -144,7 +138,7 @@ export const useMatchesQuery = (accessToken: string | null): UseQueryResult<Matc
 };
 
 /**
- * Hook to fetch user's groups
+ * Hook to fetch user's groups from relational database
  */
 export const useUserGroupsQuery = (accessToken: string | null): UseQueryResult<Group[], Error> => {
   return useQuery({
@@ -154,16 +148,15 @@ export const useUserGroupsQuery = (accessToken: string | null): UseQueryResult<G
         throw new Error('No access token available');
       }
 
-      logger.debug('Fetching user groups data');
+      logger.debug('Fetching user groups data (relational)');
 
-      const response = (await apiRequest('/groups/user-groups', {
+      const response = (await apiRequest('/groups/user-relational', {
         headers: { Authorization: `Bearer ${accessToken}` },
       })) as GroupsResponse;
-
       return response.groups || [];
     },
     enabled: !!accessToken,
-    staleTime: 10 * 60 * 1000, // 10 minutes - groups change rarely
+    staleTime: 3 * 60 * 1000, // 3 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 401 || error?.status === 403) {
         return false;
@@ -174,73 +167,75 @@ export const useUserGroupsQuery = (accessToken: string | null): UseQueryResult<G
 };
 
 /**
- * Combined hook for all app data - provides a simple interface similar to current AppDataContext
+ * Combined hook for all app data queries
+ * Provides a unified interface for accessing all data
  */
 export const useAppDataQueries = (accessToken: string | null) => {
   const userQuery = useUserQuery(accessToken);
   const currentGroupQuery = useCurrentGroupQuery(accessToken);
   const usersQuery = useUsersQuery(accessToken);
   const matchesQuery = useMatchesQuery(accessToken);
+  const userGroupsQuery = useUserGroupsQuery(accessToken);
 
-  // Determine overall loading state
+  // Extract data
+  const currentUser = userQuery.data;
+  const currentGroup = currentGroupQuery.data;
+  const users = usersQuery.data || [];
+  const matches = matchesQuery.data || [];
+
+  // Combined loading states
   const isLoading =
     userQuery.isLoading ||
     currentGroupQuery.isLoading ||
     usersQuery.isLoading ||
     matchesQuery.isLoading;
-
-  // Determine if any initial load is pending
-  const isLoadingInitial =
-    userQuery.isLoading ||
-    currentGroupQuery.isLoading ||
-    usersQuery.isLoading ||
-    matchesQuery.isLoading;
-
-  // Determine if any data is being fetched (including background)
   const isFetching =
     userQuery.isFetching ||
     currentGroupQuery.isFetching ||
     usersQuery.isFetching ||
     matchesQuery.isFetching;
+  const isLoadingInitial =
+    userQuery.isLoading || (currentGroupQuery.isLoading && !currentGroupQuery.data);
 
-  // Collect any errors
-  const errors = [
-    userQuery.error,
-    currentGroupQuery.error,
-    usersQuery.error,
-    matchesQuery.error,
-  ].filter(Boolean);
+  // Combined error state
+  const error =
+    userQuery.error?.message ||
+    currentGroupQuery.error?.message ||
+    usersQuery.error?.message ||
+    matchesQuery.error?.message ||
+    null;
 
-  // Get the most relevant error
-  const error = errors.length > 0 ? errors[0] : null;
+  // Refetch all function
+  const refetchAll = () => {
+    userQuery.refetch();
+    currentGroupQuery.refetch();
+    usersQuery.refetch();
+    matchesQuery.refetch();
+    userGroupsQuery.refetch();
+  };
 
   return {
-    // Individual query results
+    // Data
+    currentUser,
+    currentGroup,
+    users,
+    matches,
+    userGroups: userGroupsQuery.data || [],
+
+    // Individual queries for advanced usage
     userQuery,
     currentGroupQuery,
     usersQuery,
     matchesQuery,
+    userGroupsQuery,
 
-    // Extracted data (with defaults)
-    currentUser: userQuery.data || null,
-    currentGroup: currentGroupQuery.data || null,
-    users: usersQuery.data || [],
-    matches: matchesQuery.data || [],
-
-    // Loading states
+    // Combined states
     isLoading,
-    isLoadingInitial,
     isFetching,
+    isLoadingInitial,
+    error,
 
-    // Error state
-    error: error?.message || null,
-
-    // Utility functions
-    refetchAll: () => {
-      userQuery.refetch();
-      currentGroupQuery.refetch();
-      usersQuery.refetch();
-      matchesQuery.refetch();
-    },
+    // Actions
+    refetchAll,
   };
 };

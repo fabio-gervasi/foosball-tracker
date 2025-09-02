@@ -9,7 +9,8 @@ const mockGroup = {
   name: 'Test Group',
   code: 'TEST',
   icon: 'test-icon.png',
-  createdAt: new Date().toISOString(),
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
   adminIds: ['user-1'],
 };
 

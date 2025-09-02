@@ -38,7 +38,7 @@ export const Dashboard = memo(function Dashboard({
     hasUsername: !!user.username,
     wins: user.wins,
     losses: user.losses,
-    currentGroup: user.currentGroup,
+    currentGroup: user.current_group_code,
   });
   logger.debug('Dashboard matches', { count: matches.length });
   logger.debug('Dashboard users', { count: users.length });
@@ -291,7 +291,7 @@ export const Dashboard = memo(function Dashboard({
                       <p className={`${isWinner ? 'text-green-600' : 'text-red-600'}`}>
                         {isWinner ? 'Won' : 'Lost'}
                       </p>
-                      {eloChangeText && (
+                      {eloChangeText && userEloChange && (
                         <p
                           className={`text-xs ${userEloChange.change > 0 ? 'text-green-600' : 'text-red-600'}`}
                         >

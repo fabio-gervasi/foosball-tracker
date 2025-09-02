@@ -120,7 +120,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
 
       filtered = filtered.filter(match => {
-        const matchDate = new Date(match.date || match.createdAt);
+        const matchDate = new Date(match.date || match.createdAt || new Date());
         switch (dateFilter) {
           case 'today':
             return matchDate >= today;
@@ -548,7 +548,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                             </span>
                             <span className='text-xs text-gray-500 flex items-center'>
                               <Calendar className='w-3 h-3 mr-1' />
-                              {formatDate(match.date || match.createdAt)}
+                              {formatDate(
+                                match.date || match.createdAt || new Date().toISOString()
+                              )}
                             </span>
                             {matchDisplay.hasGuests && (
                               <span className='px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-600 flex items-center'>
@@ -787,7 +789,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                             </span>
                             <span className='text-xs text-gray-500 flex items-center'>
                               <Calendar className='w-3 h-3 mr-1' />
-                              {formatDate(match.date || match.createdAt)}
+                              {formatDate(
+                                match.date || match.createdAt || new Date().toISOString()
+                              )}
                             </span>
                             {matchDisplay.hasGuests && (
                               <span className='px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-600 flex items-center'>
