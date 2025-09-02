@@ -212,16 +212,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
                   <div className='flex-shrink-0'>{getRankIcon(rank)}</div>
 
                   {/* Avatar */}
-                  <button
-                    onClick={() => {
-                      window.dispatchEvent(
-                        new CustomEvent('showPlayerProfile', {
-                          detail: { playerId: user.id },
-                        })
-                      );
-                    }}
-                    className='w-12 h-12 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                  >
+                  <div className='w-12 h-12 rounded-full bg-gray-100'>
                     <Avatar
                       src={user.avatarUrl}
                       fallback={
@@ -230,7 +221,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
                       className='w-full h-full rounded-full'
                       textClassName='text-lg text-gray-600'
                     />
-                  </button>
+                  </div>
 
                   {/* Player Info */}
                   <div className='flex-1'>

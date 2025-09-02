@@ -219,7 +219,7 @@ export const AppRouter: React.FC = () => {
               currentUser={currentUser}
               group={currentGroup}
               accessToken={accessToken}
-              onBack={() => setCurrentView('dashboard')}
+              onBack={() => window.history.back()}
             />
           </Suspense>
         );
