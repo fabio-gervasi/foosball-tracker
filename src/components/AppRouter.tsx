@@ -37,6 +37,7 @@ const PlayerProfile = lazy(() =>
 export const AppRouter: React.FC = () => {
   // Router state
   const [currentView, setCurrentView] = useState('dashboard');
+  const [previousView, setPreviousView] = useState('dashboard');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [lastMatchResult, setLastMatchResult] = useState<any | null>(null);
 
@@ -58,10 +59,14 @@ export const AppRouter: React.FC = () => {
     setCurrentView(event.detail);
   }, []);
 
-  const handlePlayerSelect = useCallback((event: any) => {
-    setSelectedPlayerId(event.detail.playerId);
-    setCurrentView('playerProfile');
-  }, []);
+  const handlePlayerSelect = useCallback(
+    (event: any) => {
+      setSelectedPlayerId(event.detail.playerId);
+      setPreviousView(currentView);
+      setCurrentView('playerProfile');
+    },
+    [currentView]
+  );
 
   // Listen for navigation events from components
   useEffect(() => {
@@ -219,7 +224,7 @@ export const AppRouter: React.FC = () => {
               currentUser={currentUser}
               group={currentGroup}
               accessToken={accessToken}
-              onBack={() => setCurrentView('dashboard')}
+              onBack={() => setCurrentView(previousView)}
             />
           </Suspense>
         );
@@ -272,6 +277,7 @@ export const AppRouter: React.FC = () => {
     refreshData,
     handleGroupChanged,
     selectedPlayerId,
+    previousView,
   ]);
 
   return (

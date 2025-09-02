@@ -33,7 +33,7 @@ export function GroupManagement({
   onGroupDeleted,
 }: GroupManagementProps) {
   const [isEditingGroup, setIsEditingGroup] = useState(false);
-  const { showSuccess, showError } = useDialogContext();
+  const { showSuccess } = useDialogContext();
   const [groupEditData, setGroupEditData] = useState({ name: '', code: '' });
   const [groupEditError, setGroupEditError] = useState('');
   const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);

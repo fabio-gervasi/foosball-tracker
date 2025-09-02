@@ -3,6 +3,9 @@
 [functions.api]
 entrypoint = './functions/api/index.tsx'
 
+[functions.data-migration]
+entrypoint = './functions/data-migration/index.tsx'
+
 # Enable all the shared files to be accessible
 [functions]
 # Global function settings

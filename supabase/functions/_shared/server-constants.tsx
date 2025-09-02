@@ -6,17 +6,17 @@ export const INITIAL_ELO = 1200;
 export const K_FACTOR = 32;
 
 // Admin configuration - SERVER ONLY
-// This secret should be moved to environment variables in production
-export const ADMIN_SECRET = Deno.env.get('ADMIN_SECRET') || 'foosball-admin-2024';
+export const ADMIN_SECRET = Deno.env.get('ADMIN_SECRET');
 
 // API route prefix
 export const API_PREFIX = '/make-server-171cbf6f';
 
 // Environment validation
-if (!Deno.env.get('ADMIN_SECRET')) {
-  console.warn(
-    'WARNING: ADMIN_SECRET not found in environment variables, using default value. Set ADMIN_SECRET environment variable for production.'
-  );
+if (!ADMIN_SECRET) {
+  console.error('FATAL: ADMIN_SECRET is not defined in environment variables.');
+  console.error('The application cannot start without a valid ADMIN_SECRET.');
+  console.error('Please set the ADMIN_SECRET environment variable and restart the server.');
+  Deno.exit(1);
 } else {
   console.log('✅ ADMIN_SECRET loaded from environment variables');
 }

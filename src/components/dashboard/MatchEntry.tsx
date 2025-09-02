@@ -1007,7 +1007,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
                 )}
 
                 {/* Game 3 - Only show if games are tied 1-1 */}
-                {game1Winner && game2Winner && !isSeriesComplete() && (
+                {game1Winner && game2Winner && game1Winner !== game2Winner && (
                   <div className='border border-gray-200 rounded-lg p-4'>
                     <h4 className='text-md text-gray-700 mb-3 flex items-center'>
                       <Trophy className='w-4 h-4 mr-2 text-yellow-600' />

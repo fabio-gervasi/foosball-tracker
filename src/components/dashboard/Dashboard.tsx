@@ -51,21 +51,12 @@ export const Dashboard = memo(function Dashboard({
     return matches.filter(match => {
       // Handle 1v1 matches
       if (match.matchType === '1v1' || !match.matchType) {
-        // New format
         if (match.player1?.id && match.player2?.id) {
           return match.player1.id === user.id || match.player2.id === user.id;
         }
-        // Legacy format
-        return (
-          match.player1Email === userIdentifier ||
-          match.player2Email === userIdentifier ||
-          match.player1Email === user.email ||
-          match.player2Email === user.email
-        );
       }
       // Handle 2v2 matches
       else if (match.matchType === '2v2') {
-        // New format
         if (
           match.team1?.player1?.id &&
           match.team1?.player2?.id &&
@@ -79,21 +70,10 @@ export const Dashboard = memo(function Dashboard({
             match.team2.player2.id === user.id
           );
         }
-        // Legacy format
-        return (
-          match.team1Player1Email === userIdentifier ||
-          match.team1Player2Email === userIdentifier ||
-          match.team2Player1Email === userIdentifier ||
-          match.team2Player2Email === userIdentifier ||
-          match.team1Player1Email === user.email ||
-          match.team1Player2Email === user.email ||
-          match.team2Player1Email === user.email ||
-          match.team2Player2Email === user.email
-        );
       }
       return false;
     });
-  }, [matches, user.id, user.email, userIdentifier]);
+  }, [matches, user.id]);
 
   logger.debug('User match filtering', {
     hasUserIdentifier: !!userIdentifier,
@@ -109,55 +89,22 @@ export const Dashboard = memo(function Dashboard({
 
     userMatches.forEach(match => {
       if (match.matchType === '1v1' || !match.matchType) {
-        // For 1v1 matches - check both new and legacy formats
-        let isWinner = false;
-
-        // New format
-        if (match.winner?.id) {
-          isWinner = match.winner.id === user.id;
-        }
-        // Legacy format
-        else {
-          isWinner = match.winnerEmail === user.email || match.winnerEmail === userIdentifier;
-        }
-
+        const isWinner = match.winner?.id === user.id;
         if (isWinner) {
           wins++;
         } else {
           losses++;
         }
       } else if (match.matchType === '2v2') {
-        // For 2v2 matches - check both new and legacy formats
-        let isInTeam1 = false;
-        let isInTeam2 = false;
+        const isInTeam1 =
+          match.team1?.player1.id === user.id || match.team1?.player2.id === user.id;
+        const isInTeam2 =
+          match.team2?.player1.id === user.id || match.team2?.player2.id === user.id;
 
-        // New format
         if (
-          match.team1?.player1?.id &&
-          match.team1?.player2?.id &&
-          match.team2?.player1?.id &&
-          match.team2?.player2?.id
+          (isInTeam1 && match.winningTeam === 'team1') ||
+          (isInTeam2 && match.winningTeam === 'team2')
         ) {
-          isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-          isInTeam2 = match.team2.player1.id === user.id || match.team2.player2.id === user.id;
-        }
-        // Legacy format
-        else {
-          isInTeam1 =
-            match.team1Player1Email === userIdentifier ||
-            match.team1Player2Email === userIdentifier ||
-            match.team1Player1Email === user.email ||
-            match.team1Player2Email === user.email;
-          isInTeam2 =
-            match.team2Player1Email === userIdentifier ||
-            match.team2Player2Email === userIdentifier ||
-            match.team2Player1Email === user.email ||
-            match.team2Player2Email === user.email;
-        }
-
-        if (isInTeam1 && match.winningTeam === 'team1') {
-          wins++;
-        } else if (isInTeam2 && match.winningTeam === 'team2') {
           wins++;
         } else if (isInTeam1 || isInTeam2) {
           losses++;
@@ -166,7 +113,7 @@ export const Dashboard = memo(function Dashboard({
     });
 
     return { actualWins: wins, actualLosses: losses };
-  }, [userMatches, user.id, user.email, userIdentifier]);
+  }, [userMatches, user.id]);
 
   // Use actual calculated stats instead of user profile stats
   const totalGames = actualWins + actualLosses;
@@ -186,99 +133,31 @@ export const Dashboard = memo(function Dashboard({
   });
   const userRank = sortedUsers.findIndex(u => u.id === user.id) + 1;
 
+  // Calculate average ELO for the group
+  const averageElo =
+    users.length > 0
+      ? Math.round(users.reduce((total, user) => total + (user.elo || 1200), 0) / users.length)
+      : 1200;
+
   const handleRefresh = () => {
     window.location.reload();
   };
 
-  // Helper function to resolve player name from identifier (email/username)
-  const resolvePlayerName = (identifier: string) => {
-    if (!identifier) return 'Unknown';
-
-    // Try to find user by email first
-    let foundUser = users.find(u => u.email === identifier);
-
-    // If not found by email, try by username
-    if (!foundUser) {
-      foundUser = users.find(u => u.username === identifier);
-    }
-
-    // If still not found, try by name
-    if (!foundUser) {
-      foundUser = users.find(u => u.name === identifier);
-    }
-
-    // Return the user's display name or fallback to identifier
-    if (foundUser) {
-      return foundUser.username || foundUser.name || foundUser.email;
-    }
-
-    // As a last resort, try to extract a readable name from the identifier
-    if (identifier.includes('@')) {
-      // If it's an email, use the part before @
-      return identifier.split('@')[0];
-    }
-
-    return identifier;
-  };
-
   // Helper function to format match description
   const formatMatchDescription = (match: any) => {
-    if (match.matchType === '1v1' || !match.matchType) {
-      // New format
-      if (match.player1?.id && match.player2?.id) {
-        const opponent = match.player1.id === user.id ? match.player2 : match.player1;
-        return `${user.username || user.name} vs ${opponent.name}${opponent.isGuest ? ' (Guest)' : ''}`;
-      }
-      // Legacy format
-      const isPlayer1 = match.player1Email === userIdentifier || match.player1Email === user.email;
-      const opponentEmail = isPlayer1 ? match.player2Email : match.player1Email;
-      const opponentName = resolvePlayerName(opponentEmail);
-      return `${user.username || user.name} vs ${opponentName}`;
-    } else if (match.matchType === '2v2') {
-      // New format
-      if (
-        match.team1?.player1?.id &&
-        match.team1?.player2?.id &&
-        match.team2?.player1?.id &&
-        match.team2?.player2?.id
-      ) {
-        const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-        if (isInTeam1) {
-          const partner =
-            match.team1.player1.id === user.id ? match.team1.player2 : match.team1.player1;
-          return `Team with ${partner.name}${partner.isGuest ? ' (Guest)' : ''}`;
-        } else {
-          const partner =
-            match.team2.player1.id === user.id ? match.team2.player2 : match.team2.player1;
-          return `Team with ${partner.name}${partner.isGuest ? ' (Guest)' : ''}`;
-        }
-      }
-      // Legacy format
-      const isInTeam1 =
-        match.team1Player1Email === userIdentifier ||
-        match.team1Player2Email === userIdentifier ||
-        match.team1Player1Email === user.email ||
-        match.team1Player2Email === user.email;
-      const isInTeam2 =
-        match.team2Player1Email === userIdentifier ||
-        match.team2Player2Email === userIdentifier ||
-        match.team2Player1Email === user.email ||
-        match.team2Player2Email === user.email;
-
+    if ((match.matchType === '1v1' || !match.matchType) && match.player1?.id && match.player2?.id) {
+      const opponent = match.player1.id === user.id ? match.player2 : match.player1;
+      return `${user.username || user.name} vs ${opponent.name}${opponent.isGuest ? ' (Guest)' : ''}`;
+    } else if (match.matchType === '2v2' && match.team1?.player1?.id) {
+      const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
       if (isInTeam1) {
-        const partnerEmail =
-          match.team1Player1Email === userIdentifier || match.team1Player1Email === user.email
-            ? match.team1Player2Email
-            : match.team1Player1Email;
-        const partnerName = resolvePlayerName(partnerEmail);
-        return `Team with ${partnerName}`;
-      } else if (isInTeam2) {
-        const partnerEmail =
-          match.team2Player1Email === userIdentifier || match.team2Player1Email === user.email
-            ? match.team2Player2Email
-            : match.team2Player1Email;
-        const partnerName = resolvePlayerName(partnerEmail);
-        return `Team with ${partnerName}`;
+        const partner =
+          match.team1.player1.id === user.id ? match.team1.player2 : match.team1.player1;
+        return `Team with ${partner.name}${partner.isGuest ? ' (Guest)' : ''}`;
+      } else {
+        const partner =
+          match.team2.player1.id === user.id ? match.team2.player2 : match.team2.player1;
+        return `Team with ${partner.name}${partner.isGuest ? ' (Guest)' : ''}`;
       }
     }
     return 'Unknown match';
@@ -287,38 +166,10 @@ export const Dashboard = memo(function Dashboard({
   // Helper function to check if user won a match
   const isMatchWinner = (match: any) => {
     if (match.matchType === '1v1' || !match.matchType) {
-      // New format
-      if (match.winner?.id) {
-        return match.winner.id === user.id;
-      }
-      // Legacy format
-      return match.winnerEmail === user.email || match.winnerEmail === userIdentifier;
+      return match.winner?.id === user.id;
     } else if (match.matchType === '2v2') {
-      // New format
-      if (
-        match.team1?.player1?.id &&
-        match.team1?.player2?.id &&
-        match.team2?.player1?.id &&
-        match.team2?.player2?.id
-      ) {
-        const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-        const isInTeam2 = match.team2.player1.id === user.id || match.team2.player2.id === user.id;
-        return (
-          (isInTeam1 && match.winningTeam === 'team1') ||
-          (isInTeam2 && match.winningTeam === 'team2')
-        );
-      }
-      // Legacy format
-      const isInTeam1 =
-        match.team1Player1Email === userIdentifier ||
-        match.team1Player2Email === userIdentifier ||
-        match.team1Player1Email === user.email ||
-        match.team1Player2Email === user.email;
-      const isInTeam2 =
-        match.team2Player1Email === userIdentifier ||
-        match.team2Player2Email === userIdentifier ||
-        match.team2Player1Email === user.email ||
-        match.team2Player2Email === user.email;
+      const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
+      const isInTeam2 = match.team2.player1.id === user.id || match.team2.player2.id === user.id;
       return (
         (isInTeam1 && match.winningTeam === 'team1') || (isInTeam2 && match.winningTeam === 'team2')
       );
@@ -476,20 +327,8 @@ export const Dashboard = memo(function Dashboard({
               <p className='text-sm text-gray-600'>Total Games</p>
             </div>
             <div>
-              <p className='text-2xl text-purple-600'>
-                {Math.round(
-                  (users.reduce((total, user) => {
-                    const wins = user.wins || 0;
-                    const losses = user.losses || 0;
-                    const userWinRate = wins + losses > 0 ? wins / (wins + losses) : 0;
-                    return total + userWinRate;
-                  }, 0) /
-                    users.length) *
-                    100
-                ) || 0}
-                %
-              </p>
-              <p className='text-sm text-gray-600'>Avg Win Rate</p>
+              <p className='text-2xl text-purple-600'>{averageElo}</p>
+              <p className='text-sm text-gray-600'>Average ELO</p>
             </div>
           </div>
         </div>

@@ -57,29 +57,18 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   // Helper function to check if current user participated in match
   const isCurrentUserInMatch = useCallback(
     (match: any) => {
-      const userIdentifier = currentUser.username || currentUser.email;
-
       if (match.matchType === '2v2') {
         return (
-          match.team1?.player1?.email === userIdentifier ||
-          match.team1?.player1?.id === userIdentifier ||
-          match.team1?.player2?.email === userIdentifier ||
-          match.team1?.player2?.id === userIdentifier ||
-          match.team2?.player1?.email === userIdentifier ||
-          match.team2?.player1?.id === userIdentifier ||
-          match.team2?.player2?.email === userIdentifier ||
-          match.team2?.player2?.id === userIdentifier
+          match.team1?.player1?.id === currentUser.id ||
+          match.team1?.player2?.id === currentUser.id ||
+          match.team2?.player1?.id === currentUser.id ||
+          match.team2?.player2?.id === currentUser.id
         );
       } else {
-        return (
-          match.player1?.email === userIdentifier ||
-          match.player1?.id === userIdentifier ||
-          match.player2?.email === userIdentifier ||
-          match.player2?.id === userIdentifier
-        );
+        return match.player1?.id === currentUser.id || match.player2?.id === currentUser.id;
       }
     },
-    [currentUser]
+    [currentUser.id]
   );
 
   const applyFilters = useCallback(() => {
@@ -166,41 +155,15 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     setDateFilter('all');
   };
 
-  // Helper function to resolve player name from email/username identifier
-  const _resolvePlayerName = (identifier: string) => {
-    if (!identifier) return 'Unknown';
+  // Helper function to get user avatar info from a player ID
+  const getUserAvatarInfo = (playerId: string | undefined) => {
+    if (!playerId) return { avatar: 'U', avatarUrl: null };
 
-    // Check if it's a guest player
-    if (identifier.startsWith('guest')) {
-      const _guestNumber = identifier.replace('guest', '');
-      return `Guest ${_guestNumber}`;
-    }
-
-    // Find user by username first, then by email
-    let user = users.find(u => u.username === identifier);
-    if (!user) {
-      user = users.find(u => u.email === identifier);
-    }
-
-    return user?.name || user?.username || identifier;
-  };
-
-  // Helper function to get user avatar info from email/username identifier
-  const getUserAvatarInfo = (identifier: string) => {
-    if (!identifier) return { avatar: 'U', avatarUrl: null };
-
-    // Check if it's a guest player
-    if (identifier.startsWith('guest')) {
-      const _guestNumber = identifier.replace('guest', '');
+    if (playerId.startsWith('guest')) {
       return { avatar: 'G', avatarUrl: null };
     }
 
-    // Find user by username first, then by email
-    let user = users.find(u => u.username === identifier);
-    if (!user) {
-      user = users.find(u => u.email === identifier);
-    }
-
+    const user = users.find(u => u.id === playerId);
     return {
       avatar:
         user?.avatar || user?.name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || 'U',
@@ -208,19 +171,15 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     };
   };
 
-  // Helper function to get ELO change for a specific player
-  const getPlayerEloChange = (match: any, playerIdentifier: string) => {
-    if (!match.eloChanges) return null;
-
-    // Try to find ELO change by the specific identifier first
-    const change = match.eloChanges[playerIdentifier];
-
+  // Helper function to get ELO change for a specific player ID
+  const getPlayerEloChange = (match: any, playerId: string | undefined) => {
+    if (!match.eloChanges || !playerId) return null;
+    const change = match.eloChanges[playerId];
     return change ? change.change : null;
   };
 
   const formatMatchDisplay = (match: any) => {
     if (match.matchType === '2v2') {
-      // Get player names from structured player objects
       const team1Player1Name = match.team1?.player1?.name || 'Unknown';
       const team1Player2Name = match.team1?.player2?.name || 'Unknown';
       const team2Player1Name = match.team2?.player1?.name || 'Unknown';
@@ -230,7 +189,6 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
       const team2Names = `${team2Player1Name} & ${team2Player2Name}`;
       const winnerNames = match.winningTeam === 'team1' ? team1Names : team2Names;
 
-      // Check for guest players
       const hasGuests = [
         match.team1?.player1?.isGuest,
         match.team1?.player2?.isGuest,
@@ -238,21 +196,13 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         match.team2?.player2?.isGuest,
       ].some(Boolean);
 
-      const currentUserWon = (() => {
-        const userIdentifier = currentUser.username || currentUser.email;
-        return (
-          (match.winningTeam === 'team1' &&
-            (match.team1?.player1?.email === userIdentifier ||
-              match.team1?.player1?.id === userIdentifier ||
-              match.team1?.player2?.email === userIdentifier ||
-              match.team1?.player2?.id === userIdentifier)) ||
-          (match.winningTeam === 'team2' &&
-            (match.team2?.player1?.email === userIdentifier ||
-              match.team2?.player1?.id === userIdentifier ||
-              match.team2?.player2?.email === userIdentifier ||
-              match.team2?.player2?.id === userIdentifier))
-        );
-      })();
+      const currentUserWon =
+        (match.winningTeam === 'team1' &&
+          (match.team1?.player1?.id === currentUser.id ||
+            match.team1?.player2?.id === currentUser.id)) ||
+        (match.winningTeam === 'team2' &&
+          (match.team2?.player1?.id === currentUser.id ||
+            match.team2?.player2?.id === currentUser.id));
 
       return {
         participants: `${team1Names} vs ${team2Names}`,
@@ -263,18 +213,12 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
         currentUserWon,
       };
     } else {
-      // Get player names from structured player objects for 1v1
       const player1Name = match.player1?.name || 'Unknown';
       const player2Name = match.player2?.name || 'Unknown';
       const winnerName = match.winner?.name || 'Unknown';
 
-      // Check for guest players
       const hasGuests = match.player1?.isGuest || match.player2?.isGuest;
-
-      const currentUserWon = (() => {
-        const userIdentifier = currentUser.username || currentUser.email;
-        return match.winner?.email === userIdentifier || match.winner?.id === userIdentifier;
-      })();
+      const currentUserWon = match.winner?.id === currentUser.id;
 
       return {
         participants: `${player1Name} vs ${player2Name}`,
@@ -575,18 +519,10 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
 
                 if (matchDisplay.type === '2v2') {
                   // Team-based layout for 2v2 matches
-                  const team1Player1Info = getUserAvatarInfo(
-                    match.team1?.player1?.email || match.team1?.player1?.id || 'unknown'
-                  );
-                  const team1Player2Info = getUserAvatarInfo(
-                    match.team1?.player2?.email || match.team1?.player2?.id || 'unknown'
-                  );
-                  const team2Player1Info = getUserAvatarInfo(
-                    match.team2?.player1?.email || match.team2?.player1?.id || 'unknown'
-                  );
-                  const team2Player2Info = getUserAvatarInfo(
-                    match.team2?.player2?.email || match.team2?.player2?.id || 'unknown'
-                  );
+                  const team1Player1Info = getUserAvatarInfo(match.team1?.player1?.id);
+                  const team1Player2Info = getUserAvatarInfo(match.team1?.player2?.id);
+                  const team2Player1Info = getUserAvatarInfo(match.team2?.player1?.id);
+                  const team2Player2Info = getUserAvatarInfo(match.team2?.player2?.id);
 
                   const team1Player1Name = match.team1?.player1?.name || 'Unknown';
                   const team1Player2Name = match.team1?.player2?.name || 'Unknown';
@@ -685,9 +621,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange1 = getPlayerEloChange(
                                       match,
-                                      match.team1?.player1?.email ||
-                                        match.team1?.player1?.id ||
-                                        'unknown'
+                                      match.team1?.player1?.id
                                     );
                                     return eloChange1 !== null ? (
                                       <span
@@ -705,9 +639,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange2 = getPlayerEloChange(
                                       match,
-                                      match.team1?.player2?.email ||
-                                        match.team1?.player2?.id ||
-                                        'unknown'
+                                      match.team1?.player2?.id
                                     );
                                     return eloChange2 !== null ? (
                                       <span
@@ -785,9 +717,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange1 = getPlayerEloChange(
                                       match,
-                                      match.team2?.player1?.email ||
-                                        match.team2?.player1?.id ||
-                                        'unknown'
+                                      match.team2?.player1?.id
                                     );
                                     return eloChange1 !== null ? (
                                       <span
@@ -805,9 +735,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   {(() => {
                                     const eloChange2 = getPlayerEloChange(
                                       match,
-                                      match.team2?.player2?.email ||
-                                        match.team2?.player2?.id ||
-                                        'unknown'
+                                      match.team2?.player2?.id
                                     );
                                     return eloChange2 !== null ? (
                                       <span
@@ -838,12 +766,8 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   );
                 } else {
                   // Cleaner layout for 1v1 matches with avatars
-                  const player1Info = getUserAvatarInfo(
-                    match.player1?.email || match.player1?.id || 'unknown'
-                  );
-                  const player2Info = getUserAvatarInfo(
-                    match.player2?.email || match.player2?.id || 'unknown'
-                  );
+                  const player1Info = getUserAvatarInfo(match.player1?.id);
+                  const player2Info = getUserAvatarInfo(match.player2?.id);
                   const player1Name = match.player1?.name || 'Unknown';
                   const player2Name = match.player2?.name || 'Unknown';
 
@@ -905,7 +829,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                     {(() => {
                                       const eloChange = getPlayerEloChange(
                                         match,
-                                        match.player1?.email || match.player1?.id || 'unknown'
+                                        match.player1?.id
                                       );
                                       if (eloChange !== null) {
                                         return (
@@ -924,8 +848,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                 )}
                               </div>
-                              {(match.winner?.email === match.player1?.email ||
-                                match.winner?.id === match.player1?.id) && (
+                              {match.winner?.id === match.player1?.id && (
                                 <Crown className='w-4 h-4 text-yellow-600 flex-shrink-0' />
                               )}
                             </div>
@@ -952,7 +875,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                     {(() => {
                                       const eloChange = getPlayerEloChange(
                                         match,
-                                        match.player2?.email || match.player2?.id || 'unknown'
+                                        match.player2?.id
                                       );
                                       if (eloChange !== null) {
                                         return (
@@ -971,8 +894,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                 )}
                               </div>
-                              {(match.winner?.email === match.player2?.email ||
-                                match.winner?.id === match.player2?.id) && (
+                              {match.winner?.id === match.player2?.id && (
                                 <Crown className='w-4 h-4 text-yellow-600 flex-shrink-0' />
                               )}
                             </div>
