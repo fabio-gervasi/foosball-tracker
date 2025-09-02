@@ -33,6 +33,7 @@
     "@vitejs/plugin-react-swc": "^3.10.2",
     "@vitest/coverage-v8": "^3.2.4",
     "autoprefixer": "^10.4.17",
+    "dotenv": "^17.2.1",
     "eslint": "^9.34.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
@@ -76,6 +77,13 @@
     "rollback:auto": "npm run ci:rollback-monitor",
     "rollback:manual": "npm run ci:rollback-force",
     "migrate:data": "node scripts/run-migration.js",
+    "migrate:test": "node scripts/test-migration.js",
+    "migrate:rollback": "node scripts/rollback-migration.js rollback",
+    "migrate:emergency": "node scripts/rollback-migration.js emergency --yes",
+    "db:performance": "node scripts/performance-monitor.js",
+    "db:schema-apply": "echo 'Apply schema via API: POST /data-migration/apply-schema'",
+    "db:migrate-data": "echo 'Migrate data via API: POST /data-migration/migrate-kv-to-relational'",
+    "db:health-check": "npm run migrate:test",
     "prepare": "husky"
   },
   "lint-staged": {

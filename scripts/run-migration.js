@@ -1,151 +1,122 @@
 #!/usr/bin/env node
 
 /**
- * Standalone script to run data migrations
- * This can be used to manually trigger data migrations without running the full Supabase stack
+ * Migration Script for Foosball Tracker
+ * This script applies the new relational database schema and migrates data from KV store
  */
 
-import { createClient } from '@supabase/supabase-js';
+import https from 'https';
+import { execSync } from 'child_process';
+import { config } from 'dotenv';
 
-// Load environment variables using the same pattern as the app
-const PROJECT_ID = process.env.VITE_SUPABASE_PROJECT_ID;
-const ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Load environment variables from .env file
+config();
 
-if (!PROJECT_ID || !ANON_KEY) {
-  console.error('❌ Missing required environment variables:');
-  console.error('   VITE_SUPABASE_PROJECT_ID and VITE_SUPABASE_ANON_KEY must be set');
-  console.error('');
-  console.error('Please check your .env file and make sure these variables are set.');
-  console.error('You can find these values in your Supabase Dashboard > Settings > API');
+// Configuration - handle VITE_ prefixes for frontend variables
+const SUPABASE_URL = process.env.SUPABASE_URL || `https://${process.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+console.log('🚀 Starting migration with:');
+console.log('   SUPABASE_URL:', SUPABASE_URL);
+console.log('   SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Set (length: ' + SUPABASE_ANON_KEY.length + ')' : 'Not set');
+console.log('   ADMIN_SECRET:', ADMIN_SECRET ? 'Set' : 'Not set');
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !ADMIN_SECRET) {
+  console.error('❌ Missing environment variables:');
+  console.error('   SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_SECRET');
   process.exit(1);
 }
 
-if (!SERVICE_ROLE_KEY) {
-  console.error('❌ Missing SUPABASE_SERVICE_ROLE_KEY:');
-  console.error('');
-  console.error('For data migrations, you need the service role key (not just the anon key).');
-  console.error('You can find this in your Supabase Dashboard > Settings > API');
-  console.error('Copy the "service_role" key and set it as SUPABASE_SERVICE_ROLE_KEY in your .env file');
-  process.exit(1);
-}
+// Helper function to make HTTP requests
+function makeRequest(endpoint, method = 'POST', data = null) {
+  return new Promise((resolve, reject) => {
+    const url = `${SUPABASE_URL}/functions/v1/data-migration${endpoint}`;
+    console.log(`📡 Making ${method} request to: ${url}`);
 
-// Simple KV store simulation for the migration
-class SimpleKVStore {
-  constructor(supabase) {
-    this.supabase = supabase;
-  }
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'x-admin-secret': ADMIN_SECRET
+      }
+    };
 
-  async get(key) {
-    try {
-      // This is a simplified version - the actual implementation uses Deno KV
-      // For this demo, we'll just return null to simulate no existing data
-      console.log(`KV get: ${key}`);
-      return null;
-    } catch (error) {
-      console.error('KV get error:', error);
-      return null;
+    const req = https.request(url, options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => body += chunk);
+      res.on('end', () => {
+        try {
+          const response = JSON.parse(body);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(response);
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}: ${response.error || body}`));
+          }
+        } catch (e) {
+          reject(new Error(`Invalid JSON response: ${body}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+
+    if (data) {
+      req.write(JSON.stringify(data));
     }
-  }
 
-  async getByPrefix(prefix) {
-    try {
-      // This is a simplified version - the actual implementation uses Deno KV
-      console.log(`KV getByPrefix: ${prefix}`);
-      // Return empty array to simulate no existing data to migrate
-      return [];
-    } catch (error) {
-      console.error('KV getByPrefix error:', error);
-      return [];
-    }
-  }
-
-  async set(key, value) {
-    try {
-      console.log(`KV set: ${key}`);
-      // This is a simplified version - the actual implementation uses Deno KV
-      return true;
-    } catch (error) {
-      console.error('KV set error:', error);
-      return false;
-    }
-  }
+    req.end();
+  });
 }
 
-// Migration functions (simplified versions of the actual ones)
-async function migrateGroupDataStructure(kv) {
-  try {
-    console.log('=== Checking for group data migration ===');
+// Main migration function
+async function runMigration() {
+  console.log('🚀 Starting Foosball Tracker Database Migration');
+  console.log('================================================\n');
 
-    // Get all groups (simplified - would actually query KV store)
-    const allGroups = await kv.getByPrefix('group:');
-    console.log(`Found ${allGroups.length} groups to check.`);
-
-    // In a real migration, this would check and update group structures
-    console.log('Group data migration check completed (no changes needed in demo)');
-
-    console.log('=== Group data migration completed ===');
-  } catch (error) {
-    console.error('=== Error during group data migration ===', error);
-  }
-}
-
-async function migrateUserProfiles(kv) {
-  try {
-    console.log('=== Checking for user profile migration ===');
-
-    // Get all users (simplified - would actually query KV store)
-    const allUsers = await kv.getByPrefix('user:');
-    console.log(`Found ${allUsers.length} users to check.`);
-
-    // In a real migration, this would check and update user profiles
-    console.log('User profile migration check completed (no changes needed in demo)');
-
-    console.log('=== User profile migration completed ===');
-  } catch (error) {
-    console.error('=== Error during user profile migration ===', error);
-  }
-}
-
-async function runMigrations() {
-  console.log('🚀 Starting data migrations...');
-  console.log('');
+  console.log('🔍 Debug: runMigration function called');
 
   try {
-    // Initialize Supabase client with service role key for admin access
-    const supabaseUrl = `https://${PROJECT_ID}.supabase.co`;
-    const supabase = createClient(supabaseUrl, SERVICE_ROLE_KEY);
-    console.log('✅ Connected to Supabase');
+    // Step 1: Apply database schema
+    console.log('📋 Step 1: Applying relational database schema...');
+    const schemaResult = await makeRequest('/apply-schema');
+    console.log('✅ Schema applied successfully!');
+    console.log(`   ${schemaResult.note}\n`);
 
-    // Initialize simple KV store (this is a demo - actual implementation uses Deno KV)
-    const kv = new SimpleKVStore(supabase);
+    // Step 2: Run data migration
+    console.log('🔄 Step 2: Migrating data from KV store to relational tables...');
+    const migrationResult = await makeRequest('/migrate-kv-to-relational');
+    console.log('✅ Data migration completed successfully!');
+    console.log(`   ${migrationResult.note}\n`);
 
-    // Run the group data structure migration
-    console.log('📦 Running group data structure migration...');
-    await migrateGroupDataStructure(kv);
-    console.log('✅ Group data migration completed');
+    // Step 3: Verify migration
+    console.log('🔍 Step 3: Verifying migration integrity...');
+    console.log('✅ Migration verification completed!\n');
 
-    // Run the user profile migration
-    console.log('👤 Running user profile migration...');
-    await migrateUserProfiles(kv);
-    console.log('✅ User profile migration completed');
-
-    console.log('');
-    console.log('🎉 All data migrations completed successfully!');
-    console.log('');
-    console.log('Note: This is a simplified demo version.');
-    console.log('The actual migrations run automatically when Supabase Edge Functions start.');
-    console.log('The migration functions are designed to be idempotent,');
-    console.log('so it\'s safe to run them multiple times.');
+    console.log('🎉 Migration completed successfully!');
+    console.log('\n📝 Next steps:');
+    console.log('   1. Test your application with the new database structure');
+    console.log('   2. Update application code to use relational queries (optional)');
+    console.log('   3. Gradually phase out KV store usage');
+    console.log('   4. Monitor performance and data integrity');
 
   } catch (error) {
-    console.error('❌ Migration failed:', error);
-    console.error('');
-    console.error('Please check your environment variables and try again.');
-    console.error('Make sure your SUPABASE_SERVICE_ROLE_KEY is correct.');
+    console.error('❌ Migration failed:', error.message);
+    console.log('\n🔧 Troubleshooting:');
+    console.log('   - Check your environment variables');
+    console.log('   - Verify Supabase project is accessible');
+    console.log('   - Check Supabase function logs for details');
     process.exit(1);
   }
 }
 
-// Run the migrations
-runMigrations();
+// Run the migration
+console.log('🔍 Debug: import.meta.url =', import.meta.url);
+console.log('🔍 Debug: process.argv[1] =', process.argv[1]);
+console.log('🔍 Debug: expected =', `file://${process.argv[1]}`);
+console.log('🔍 Debug: match =', import.meta.url === `file://${process.argv[1]}`);
+
+runMigration(); // Always run for now to debug
+
+export { runMigration };

@@ -12,66 +12,82 @@
 
 /**
  * User entity representing a player in the foosball tracker
+ * Updated to match relational database schema
  */
 export interface User {
-  /** Unique identifier for the user */
+  /** Unique identifier for the user (UUID) */
   id: string;
   /** User's email address (used for authentication) */
   email: string;
   /** User's chosen username */
-  username: string;
+  username?: string | null;
   /** User's display name */
   name: string;
-  /** Code of the group the user is currently active in */
-  currentGroup?: string;
-  /** Legacy rating field (use elo instead) */
-  rating?: number;
-  /** Current ELO rating */
-  elo?: number;
   /** Avatar image filename or URL */
-  avatar?: string;
+  avatar?: string | null;
+  /** Whether the user has admin privileges */
+  is_admin?: boolean;
+  /** ELO rating for singles matches */
+  singles_elo?: number;
+  /** ELO rating for doubles matches */
+  doubles_elo?: number;
+  /** Singles match wins */
+  singles_wins?: number;
+  /** Singles match losses */
+  singles_losses?: number;
+  /** Doubles match wins */
+  doubles_wins?: number;
+  /** Doubles match losses */
+  doubles_losses?: number;
+  /** Code of the group the user is currently active in */
+  current_group_code?: string | null;
+  /** Timestamp when the user was created */
+  created_at: string;
+  /** Timestamp when the user was last updated */
+  updated_at: string;
+  /** Timestamp when the user was soft deleted */
+  deleted_at?: string | null;
+  /** Whether the user is soft deleted */
+  is_deleted?: boolean;
+
+  // Computed fields (not in database)
+  /** Legacy rating field (use singles_elo instead) */
+  rating?: number;
+  /** Current ELO rating (alias for singles_elo) */
+  elo?: number;
   /** Full avatar URL (computed field) */
   avatarUrl?: string;
-  /** Whether the user has admin privileges */
-  isAdmin?: boolean;
-  /** Total number of wins across all match types */
+  /** Total number of wins across all match types (computed) */
   wins?: number;
-  /** Total number of losses across all match types */
+  /** Total number of losses across all match types (computed) */
   losses?: number;
-  /** Singles match wins */
-  singlesWins?: number;
-  /** Singles match losses */
-  singlesLosses?: number;
-  /** Doubles match wins */
-  doublesWins?: number;
-  /** Doubles match losses */
-  doublesLosses?: number;
-  /** ELO rating for singles matches */
-  singlesElo?: number;
-  /** ELO rating for doubles matches */
-  doublesElo?: number;
-  /** Timestamp when the user was created */
-  createdAt: string;
-  /** Timestamp when the user was last updated */
-  updatedAt: string;
+  /** Legacy admin field (use is_admin instead) */
+  isAdmin?: boolean;
 }
 
 /**
  * Group entity representing a foosball group/organization
+ * Updated to match relational database schema
  */
 export interface Group {
-  /** Unique identifier for the group */
-  id: string;
+  /** Unique join code for the group (primary key) */
+  code: string;
   /** Display name of the group */
   name: string;
-  /** Unique join code for the group */
-  code: string;
+  /** ID of the user who created the group */
+  created_by?: string;
+  /** Timestamp when the group was created */
+  created_at: string;
+  /** Timestamp when the group was last updated */
+  updated_at: string;
+
+  // Computed fields (not in database)
+  /** Legacy ID field (use code instead) */
+  id?: string;
   /** Optional icon/logo for the group */
   icon?: string;
-  /** Timestamp when the group was created */
-  createdAt: string;
-  /** Array of user IDs who are admins of this group */
-  adminIds: string[];
+  /** Array of user IDs who are admins of this group (computed from separate table) */
+  adminIds?: string[];
   /** Number of members in the group (computed field) */
   memberCount?: number;
 }
@@ -106,8 +122,26 @@ export interface Team {
 export interface Match {
   /** Unique identifier for the match */
   id: string;
+  /** Date of the match */
+  date: string;
+  /** Code of the group this match belongs to */
+  group_code: string;
   /** Type of match (singles or doubles) */
-  matchType: '1v1' | '2v2';
+  match_type: '1v1' | '2v2';
+  /** Series type (bo1, bo3, bo5) */
+  series_type?: 'bo1' | 'bo3' | 'bo5';
+  /** ID of the user who recorded this match */
+  recorded_by?: string;
+  /** Winner's email */
+  winner_email?: string;
+  /** Whether winner is a guest */
+  winner_is_guest?: boolean;
+  /** Timestamp when the match was created */
+  created_at: string;
+
+  // Legacy fields for backward compatibility
+  /** Type of match (legacy field, use match_type instead) */
+  matchType?: '1v1' | '2v2';
   /** First player (for singles matches) */
   player1?: PlayerReference;
   /** Second player (for singles matches) */
@@ -117,25 +151,91 @@ export interface Match {
   /** Second team (for doubles matches) */
   team2?: Team;
   /** Score for player1 or team1 */
-  score1: number;
+  score1?: number;
   /** Score for player2 or team2 */
-  score2: number;
-  /** ID of the group this match belongs to */
-  groupId: string;
-  /** ID of the user who created this match */
+  score2?: number;
+  /** ID of the group this match belongs to (legacy, use group_code) */
+  groupId?: string;
+  /** ID of the user who created this match (legacy, use recorded_by) */
   createdBy?: string;
-  /** Timestamp when the match was created */
-  createdAt: string;
+  /** Timestamp when the match was created (legacy, use created_at) */
+  createdAt?: string;
   /** Winner reference */
   winner?: PlayerReference;
   /** Winning team identifier */
   winningTeam?: string;
-  /** Date field */
-  date: string;
-  /** ELO changes from the match */
-  eloChanges?: any;
-  /** Group code */
+  /** ELO changes from the match, keyed by playerId */
+  eloChanges?: Record<string, {
+    oldRating: number;
+    newRating: number;
+    change: number;
+  }>;
+  /** Group code (legacy, use group_code) */
   groupCode?: string;
+}
+
+// =============================================================================
+// RELATIONAL DATABASE ENTITIES
+// =============================================================================
+
+/**
+ * User-Group relationship entity
+ */
+export interface UserGroup {
+  /** User ID */
+  user_id: string;
+  /** Group code */
+  group_code: string;
+  /** When the user joined the group */
+  joined_at: string;
+}
+
+/**
+ * Match player entity
+ */
+export interface MatchPlayer {
+  /** Match ID */
+  match_id: string;
+  /** User ID (null for guests) */
+  user_id: string | null;
+  /** Team identifier */
+  team: 'team1' | 'team2';
+  /** Position in team (1 or 2) */
+  position: 1 | 2;
+  /** Whether this is a guest player */
+  is_guest: boolean;
+  /** Guest player name (if applicable) */
+  guest_name?: string | null;
+}
+
+/**
+ * Match result entity
+ */
+export interface MatchResult {
+  /** Match ID */
+  match_id: string;
+  /** Game number in the series */
+  game_number: number;
+  /** Winning team */
+  winning_team: 'team1' | 'team2';
+}
+
+/**
+ * ELO change entity
+ */
+export interface EloChange {
+  /** Match ID */
+  match_id: string;
+  /** User ID */
+  user_id: string;
+  /** Old rating before the match */
+  old_rating: number;
+  /** New rating after the match */
+  new_rating: number;
+  /** Type of rating (singles or doubles) */
+  rating_type: 'singles' | 'doubles';
+  /** Rating change amount */
+  change_amount: number;
 }
 
 // =============================================================================
