@@ -107,6 +107,9 @@ export async function migrateGroupDataStructure() {
 
     // Run user profile migration after group migration
     await migrateUserProfiles();
+
+    // Run match ELO migration
+    await migrateMatchEloData();
   } catch (error) {
     console.error('=== Error during group data migration ===', error);
   }
@@ -190,5 +193,105 @@ export async function migrateUserProfiles() {
     console.log('=== User profile migration completed ===');
   } catch (error) {
     console.error('=== Error during user profile migration ===', error);
+  }
+}
+
+// Migrate existing match ELO data from email-based to ID-based storage
+export async function migrateMatchEloData() {
+  try {
+    console.log('=== Checking for match ELO data migration ===');
+
+    // Get all groups to process their matches
+    const groupPrefix = 'group:';
+    const allGroups = await kv.getByPrefix(groupPrefix);
+
+    for (const groupData of allGroups) {
+      if (groupData && groupData.value && typeof groupData.value === 'object') {
+        const group = groupData.value;
+
+        // Skip if this is a lookup key
+        if (groupData.key.includes(':name:') || groupData.key.includes(':user:')) {
+          continue;
+        }
+
+        const groupCode = group.code;
+        if (!groupCode) continue;
+
+        console.log(`Processing matches for group: ${groupCode}`);
+
+        // Get all matches for this group
+        const matchPrefix = `match:${groupCode}:`;
+        const groupMatches = await kv.getByPrefix(matchPrefix);
+
+        let migratedCount = 0;
+
+        for (const matchData of groupMatches) {
+          if (matchData && matchData.value && typeof matchData.value === 'object') {
+            const match = matchData.value;
+            const matchKey = matchData.key;
+
+            // Skip if this is not a match record
+            if (!match.id || !match.eloChanges) {
+              continue;
+            }
+
+            // Check if ELO changes are already using ID-based format
+            const eloKeys = Object.keys(match.eloChanges);
+            const needsMigration = eloKeys.some(
+              key => key.includes('@') || key.startsWith('guest_')
+            );
+
+            if (!needsMigration) {
+              continue; // Already migrated
+            }
+
+            console.log(`Migrating match ${match.id} ELO data`);
+
+            const newEloChanges = {};
+
+            // For 1v1 matches
+            if (match.matchType === '1v1' || !match.matchType) {
+              if (match.player1?.id && match.eloChanges[match.player1.email]) {
+                newEloChanges[match.player1.id] = match.eloChanges[match.player1.email];
+              }
+              if (match.player2?.id && match.eloChanges[match.player2.email]) {
+                newEloChanges[match.player2.id] = match.eloChanges[match.player2.email];
+              }
+            }
+            // For 2v2 matches
+            else if (match.matchType === '2v2') {
+              if (match.team1?.player1?.id && match.eloChanges[match.team1.player1.email]) {
+                newEloChanges[match.team1.player1.id] = match.eloChanges[match.team1.player1.email];
+              }
+              if (match.team1?.player2?.id && match.eloChanges[match.team1.player2.email]) {
+                newEloChanges[match.team1.player2.id] = match.eloChanges[match.team1.player2.email];
+              }
+              if (match.team2?.player1?.id && match.eloChanges[match.team2.player1.email]) {
+                newEloChanges[match.team2.player1.id] = match.eloChanges[match.team2.player1.email];
+              }
+              if (match.team2?.player2?.id && match.eloChanges[match.team2.player2.email]) {
+                newEloChanges[match.team2.player2.id] = match.eloChanges[match.team2.player2.email];
+              }
+            }
+
+            // Update the match with new ELO changes
+            if (Object.keys(newEloChanges).length > 0) {
+              match.eloChanges = newEloChanges;
+              await kv.set(matchKey, match);
+              migratedCount++;
+              console.log(`Migrated ELO data for match ${match.id}`);
+            }
+          }
+        }
+
+        if (migratedCount > 0) {
+          console.log(`Migrated ${migratedCount} matches for group ${groupCode}`);
+        }
+      }
+    }
+
+    console.log('=== Match ELO data migration completed ===');
+  } catch (error) {
+    console.error('=== Error during match ELO data migration ===', error);
   }
 }

@@ -1,6 +1,7 @@
 import { Hono } from 'npm:hono';
 import * as kv from '../_shared/kv_store.tsx';
 import { ADMIN_SECRET } from '../_shared/server-constants.tsx';
+import { migrateMatchEloData } from '../_shared/data-migration.tsx';
 import type { Match } from '../../../src/types/index.ts';
 
 export function createDataMigrationRoutes(supabase: any) {
@@ -116,6 +117,29 @@ export function createDataMigrationRoutes(supabase: any) {
     } catch (error) {
       console.error('=== Data migration error ===', error);
       return c.json({ error: 'Internal server error during data migration' }, 500);
+    }
+  });
+
+  app.post('/migrate-elo-data', async c => {
+    // 1. Authenticate the request using the admin secret
+    const adminSecret = c.req.header('x-admin-secret');
+    if (adminSecret !== ADMIN_SECRET) {
+      return c.json({ error: 'Unauthorized. Admin secret is required.' }, 401);
+    }
+
+    try {
+      console.log('=== Starting ELO data migration ===');
+
+      // Run the migration function
+      await migrateMatchEloData();
+
+      console.log('=== ELO data migration completed ===');
+      return c.json({
+        message: 'ELO data migration completed successfully.',
+      });
+    } catch (error) {
+      console.error('=== ELO data migration error ===', error);
+      return c.json({ error: 'Internal server error during ELO data migration' }, 500);
     }
   });
 
