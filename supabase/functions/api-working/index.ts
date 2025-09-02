@@ -905,13 +905,17 @@ Deno.serve(async (req) => {
           recordedBy: match.recorded_by,
           winnerEmail: match.winner_email,
           players: match.match_players?.map(player => ({
-            userId: player.user_id,
+            match_id: match.id,
+            user_id: player.user_id,
             team: player.team,
             position: player.position,
-            isGuest: player.is_guest,
-            guestName: player.guest_name,
-            name: player.users?.name || player.guest_name,
-            email: player.users?.email
+            is_guest: player.is_guest,
+            guest_name: player.guest_name,
+            users: player.users ? {
+              id: player.users.id,
+              name: player.users.name,
+              email: player.users.email
+            } : null
           })) || [],
           eloChanges
         };
