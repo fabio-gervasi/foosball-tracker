@@ -174,6 +174,8 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
   // Helper function to get ELO change for a specific player ID
   const getPlayerEloChange = (match: any, playerId: string | undefined) => {
     if (!match.eloChanges || !playerId) return null;
+
+    // ELO changes are now stored using player IDs as keys
     const change = match.eloChanges[playerId];
     return change ? change.change : null;
   };

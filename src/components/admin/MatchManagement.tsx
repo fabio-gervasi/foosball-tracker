@@ -113,16 +113,48 @@ export function MatchManagement({
                           <div className='text-xs text-gray-600'>
                             <strong>ELO Changes:</strong>{' '}
                             {Object.entries(match.eloChanges).map(
-                              ([email, change]: [string, any]) => (
-                                <span
-                                  key={email}
-                                  className={`ml-2 ${change.change > 0 ? 'text-green-600' : 'text-red-600'}`}
-                                >
-                                  {users.find(u => u.email === email)?.name || email}:{' '}
-                                  {change.change > 0 ? '+' : ''}
-                                  {change.change}
-                                </span>
-                              )
+                              ([playerId, change]: [string, any]) => {
+                                // Find player name by ID (works for both registered users and guests)
+                                let playerName = playerId;
+                                if (match.matchType === '1v1') {
+                                  if (match.player1?.id === playerId) {
+                                    playerName = match.player1.name;
+                                  } else if (match.player2?.id === playerId) {
+                                    playerName = match.player2.name;
+                                  }
+                                } else if (match.matchType === '2v2') {
+                                  if (match.team1?.player1?.id === playerId) {
+                                    playerName = match.team1.player1.name;
+                                  } else if (match.team1?.player2?.id === playerId) {
+                                    playerName = match.team1.player2.name;
+                                  } else if (match.team2?.player1?.id === playerId) {
+                                    playerName = match.team2.player1.name;
+                                  } else if (match.team2?.player2?.id === playerId) {
+                                    playerName = match.team2.player2.name;
+                                  }
+                                }
+                                // Fallback: try to find by email if we have player data
+                                if (playerName === playerId && match.matchType === '1v1') {
+                                  const user = users.find(
+                                    u =>
+                                      (match.player1?.id === playerId &&
+                                        u.email === match.player1?.email) ||
+                                      (match.player2?.id === playerId &&
+                                        u.email === match.player2?.email)
+                                  );
+                                  if (user) playerName = user.name;
+                                }
+
+                                return (
+                                  <span
+                                    key={playerId}
+                                    className={`ml-2 ${change.change > 0 ? 'text-green-600' : 'text-red-600'}`}
+                                  >
+                                    {playerName}: {change.change > 0 ? '+' : ''}
+                                    {change.change}
+                                  </span>
+                                );
+                              }
                             )}
                           </div>
                         )}
