@@ -37,10 +37,41 @@ export function createMatchRoutes(supabase: any) {
       const matchPrefix = `match:${userProfile.currentGroup}:`;
       const matchItems = await kv.getByPrefix(matchPrefix);
 
-      const matches = matchItems
+      let matches = matchItems
         .map(item => item.value)
         .filter(match => match && typeof match === 'object')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Normalize eloChanges to be keyed by player ID for backward compatibility
+      matches = await Promise.all(
+        matches.map(async match => {
+          if (match.eloChanges) {
+            const newEloChanges = {};
+            let needsUpdate = false;
+            for (const key in match.eloChanges) {
+              if (key.includes('@')) {
+                // This is an email, so we need to convert it to a player ID
+                needsUpdate = true;
+                const playerId =
+                  (await kv.get(`user:username:${key}`)) || (await kv.get(`user:email:${key}`));
+                if (playerId) {
+                  newEloChanges[playerId] = match.eloChanges[key];
+                } else {
+                  // Fallback for guest players or if user not found
+                  newEloChanges[key] = match.eloChanges[key];
+                }
+              } else {
+                // This is already a player ID or another key
+                newEloChanges[key] = match.eloChanges[key];
+              }
+            }
+            if (needsUpdate) {
+              match.eloChanges = newEloChanges;
+            }
+          }
+          return match;
+        })
+      );
 
       console.log(`Found ${matches.length} matches for group ${userProfile.currentGroup}`);
 
@@ -251,13 +282,13 @@ export function createMatchRoutes(supabase: any) {
               multiplier
             );
 
-            eloChanges[match.player1Email] = {
+            eloChanges[player1Id] = {
               oldRating: player1Profile.singlesElo || INITIAL_ELO,
               newRating: eloData.player1.newRating,
               change: eloData.player1.change,
             };
 
-            eloChanges[match.player2Email] = {
+            eloChanges[player2Id] = {
               oldRating: player2Profile.singlesElo || INITIAL_ELO,
               newRating: eloData.player2.newRating,
               change: eloData.player2.change,
@@ -324,25 +355,25 @@ export function createMatchRoutes(supabase: any) {
               multiplier
             );
 
-            eloChanges[match.team1Player1Email] = {
+            eloChanges[team1Player1Id] = {
               oldRating: team1Player1Profile.doublesElo || INITIAL_ELO,
               newRating: eloData.team1Player1.newRating,
               change: eloData.team1Player1.change,
             };
 
-            eloChanges[match.team1Player2Email] = {
+            eloChanges[team1Player2Id] = {
               oldRating: team1Player2Profile.doublesElo || INITIAL_ELO,
               newRating: eloData.team1Player2.newRating,
               change: eloData.team1Player2.change,
             };
 
-            eloChanges[match.team2Player1Email] = {
+            eloChanges[team2Player1Id] = {
               oldRating: team2Player1Profile.doublesElo || INITIAL_ELO,
               newRating: eloData.team2Player1.newRating,
               change: eloData.team2Player1.change,
             };
 
-            eloChanges[match.team2Player2Email] = {
+            eloChanges[team2Player2Id] = {
               oldRating: team2Player2Profile.doublesElo || INITIAL_ELO,
               newRating: eloData.team2Player2.newRating,
               change: eloData.team2Player2.change,
@@ -606,8 +637,8 @@ export function createMatchRoutes(supabase: any) {
             const isPlayer1Winner = match.winnerEmail === match.player1Email;
 
             // Get ELO changes from match record
-            const player1EloChange = match.eloChanges?.[match.player1Email];
-            const player2EloChange = match.eloChanges?.[match.player2Email];
+            const player1EloChange = match.eloChanges?.[player1Id];
+            const player2EloChange = match.eloChanges?.[player2Id];
 
             // Reverse player 1 stats
             const updatedPlayer1 = {
@@ -689,10 +720,10 @@ export function createMatchRoutes(supabase: any) {
             const isTeam1Winner = match.winningTeam === 'team1';
 
             // Get ELO changes from match record
-            const team1Player1EloChange = match.eloChanges?.[match.team1Player1Email];
-            const team1Player2EloChange = match.eloChanges?.[match.team1Player2Email];
-            const team2Player1EloChange = match.eloChanges?.[match.team2Player1Email];
-            const team2Player2EloChange = match.eloChanges?.[match.team2Player2Email];
+            const team1Player1EloChange = match.eloChanges?.[team1Player1Id];
+            const team1Player2EloChange = match.eloChanges?.[team1Player2Id];
+            const team2Player1EloChange = match.eloChanges?.[team2Player1Id];
+            const team2Player2EloChange = match.eloChanges?.[team2Player2Id];
 
             // Reverse team 1 player 1
             const updatedTeam1Player1 = {
