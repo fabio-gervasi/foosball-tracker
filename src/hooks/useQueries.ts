@@ -184,12 +184,26 @@ export const useAppDataQueries = (accessToken: string | null) => {
   const matches = matchesQuery.data || [];
 
   // Combined loading states
-  const isLoading = userQuery.isLoading || currentGroupQuery.isLoading || usersQuery.isLoading || matchesQuery.isLoading;
-  const isFetching = userQuery.isFetching || currentGroupQuery.isFetching || usersQuery.isFetching || matchesQuery.isFetching;
-  const isLoadingInitial = userQuery.isLoading || (currentGroupQuery.isLoading && !currentGroupQuery.data);
+  const isLoading =
+    userQuery.isLoading ||
+    currentGroupQuery.isLoading ||
+    usersQuery.isLoading ||
+    matchesQuery.isLoading;
+  const isFetching =
+    userQuery.isFetching ||
+    currentGroupQuery.isFetching ||
+    usersQuery.isFetching ||
+    matchesQuery.isFetching;
+  const isLoadingInitial =
+    userQuery.isLoading || (currentGroupQuery.isLoading && !currentGroupQuery.data);
 
   // Combined error state
-  const error = userQuery.error?.message || currentGroupQuery.error?.message || usersQuery.error?.message || matchesQuery.error?.message || null;
+  const error =
+    userQuery.error?.message ||
+    currentGroupQuery.error?.message ||
+    usersQuery.error?.message ||
+    matchesQuery.error?.message ||
+    null;
 
   // Refetch all function
   const refetchAll = () => {

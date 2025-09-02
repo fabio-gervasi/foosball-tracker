@@ -75,7 +75,9 @@ export const useHybridUserQuery = (accessToken: string | null): UseQueryResult<U
 /**
  * Hybrid hook to fetch current group data
  */
-export const useHybridCurrentGroupQuery = (accessToken: string | null): UseQueryResult<Group, Error> => {
+export const useHybridCurrentGroupQuery = (
+  accessToken: string | null
+): UseQueryResult<Group, Error> => {
   return useQuery({
     queryKey: hybridQueryKeys.currentGroup(),
     queryFn: async (): Promise<Group> => {
@@ -163,7 +165,9 @@ export const useHybridUsersQuery = (accessToken: string | null): UseQueryResult<
 /**
  * Hybrid hook to fetch matches in current group
  */
-export const useHybridMatchesQuery = (accessToken: string | null): UseQueryResult<Match[], Error> => {
+export const useHybridMatchesQuery = (
+  accessToken: string | null
+): UseQueryResult<Match[], Error> => {
   return useQuery({
     queryKey: hybridQueryKeys.matches(),
     queryFn: async (): Promise<Match[]> => {
@@ -207,7 +211,9 @@ export const useHybridMatchesQuery = (accessToken: string | null): UseQueryResul
 /**
  * Hybrid hook to fetch user's groups
  */
-export const useHybridUserGroupsQuery = (accessToken: string | null): UseQueryResult<Group[], Error> => {
+export const useHybridUserGroupsQuery = (
+  accessToken: string | null
+): UseQueryResult<Group[], Error> => {
   return useQuery({
     queryKey: hybridQueryKeys.userGroups(),
     queryFn: async (): Promise<Group[]> => {

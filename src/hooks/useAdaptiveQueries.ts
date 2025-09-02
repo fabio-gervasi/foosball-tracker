@@ -21,11 +21,7 @@ import {
   getMigrationStatus,
 } from './useHybridQueries';
 
-import type {
-  User,
-  Group,
-  Match,
-} from '../types';
+import type { User, Group, Match } from '../types';
 
 // Migration mode detection
 const getMigrationMode = (): 'kv' | 'relational' | 'hybrid' => {
@@ -66,26 +62,27 @@ export const useAdaptiveUserQuery = (accessToken: string | null): UseQueryResult
     }
   }, []);
 
-  // Choose appropriate hook based on mode
+  // Always call hooks in the same order (React Hooks rule)
+  const kvResult = useUserQuery(accessToken);
+  const hybridResult = useHybridUserQuery(accessToken);
+
+  // Choose appropriate result based on mode
   switch (mode) {
     case 'kv':
       logger.debug('Using KV store user query');
-      return useUserQuery(accessToken);
+      return kvResult;
 
     case 'relational':
       logger.debug('Using relational user query');
-      return useHybridUserQuery(accessToken);
+      return hybridResult;
 
     case 'hybrid':
     default:
       logger.debug('Using hybrid user query with fallback');
-      const hybridResult = useHybridUserQuery(accessToken);
 
-      // If hybrid fails, show fallback option
+      // If hybrid fails, fall back to KV store
       if (hybridResult.isError) {
         logger.warn('Hybrid query failed, falling back to KV store');
-        const kvResult = useUserQuery(accessToken);
-
         // Return the successful result or the hybrid error
         return kvResult.isSuccess ? kvResult : hybridResult;
       }
@@ -97,7 +94,9 @@ export const useAdaptiveUserQuery = (accessToken: string | null): UseQueryResult
 /**
  * Adaptive hook for current group queries
  */
-export const useAdaptiveCurrentGroupQuery = (accessToken: string | null): UseQueryResult<Group, Error> => {
+export const useAdaptiveCurrentGroupQuery = (
+  accessToken: string | null
+): UseQueryResult<Group, Error> => {
   const [mode, setMode] = useState<'kv' | 'relational' | 'hybrid'>(getMigrationMode());
 
   useEffect(() => {
@@ -111,16 +110,18 @@ export const useAdaptiveCurrentGroupQuery = (accessToken: string | null): UseQue
     }
   }, []);
 
+  // Always call hooks in the same order (React Hooks rule)
+  const kvResult = useCurrentGroupQuery(accessToken);
+  const hybridResult = useHybridCurrentGroupQuery(accessToken);
+
   switch (mode) {
     case 'kv':
-      return useCurrentGroupQuery(accessToken);
+      return kvResult;
     case 'relational':
-      return useHybridCurrentGroupQuery(accessToken);
+      return hybridResult;
     case 'hybrid':
     default:
-      const hybridResult = useHybridCurrentGroupQuery(accessToken);
       if (hybridResult.isError) {
-        const kvResult = useCurrentGroupQuery(accessToken);
         return kvResult.isSuccess ? kvResult : hybridResult;
       }
       return hybridResult;
@@ -130,7 +131,9 @@ export const useAdaptiveCurrentGroupQuery = (accessToken: string | null): UseQue
 /**
  * Adaptive hook for users queries
  */
-export const useAdaptiveUsersQuery = (accessToken: string | null): UseQueryResult<User[], Error> => {
+export const useAdaptiveUsersQuery = (
+  accessToken: string | null
+): UseQueryResult<User[], Error> => {
   const [mode, setMode] = useState<'kv' | 'relational' | 'hybrid'>(getMigrationMode());
 
   useEffect(() => {
@@ -144,16 +147,18 @@ export const useAdaptiveUsersQuery = (accessToken: string | null): UseQueryResul
     }
   }, []);
 
+  // Always call hooks in the same order (React Hooks rule)
+  const kvResult = useUsersQuery(accessToken);
+  const hybridResult = useHybridUsersQuery(accessToken);
+
   switch (mode) {
     case 'kv':
-      return useUsersQuery(accessToken);
+      return kvResult;
     case 'relational':
-      return useHybridUsersQuery(accessToken);
+      return hybridResult;
     case 'hybrid':
     default:
-      const hybridResult = useHybridUsersQuery(accessToken);
       if (hybridResult.isError) {
-        const kvResult = useUsersQuery(accessToken);
         return kvResult.isSuccess ? kvResult : hybridResult;
       }
       return hybridResult;
@@ -163,7 +168,9 @@ export const useAdaptiveUsersQuery = (accessToken: string | null): UseQueryResul
 /**
  * Adaptive hook for matches queries
  */
-export const useAdaptiveMatchesQuery = (accessToken: string | null): UseQueryResult<Match[], Error> => {
+export const useAdaptiveMatchesQuery = (
+  accessToken: string | null
+): UseQueryResult<Match[], Error> => {
   const [mode, setMode] = useState<'kv' | 'relational' | 'hybrid'>(getMigrationMode());
 
   useEffect(() => {
@@ -177,16 +184,18 @@ export const useAdaptiveMatchesQuery = (accessToken: string | null): UseQueryRes
     }
   }, []);
 
+  // Always call hooks in the same order (React Hooks rule)
+  const kvResult = useMatchesQuery(accessToken);
+  const hybridResult = useHybridMatchesQuery(accessToken);
+
   switch (mode) {
     case 'kv':
-      return useMatchesQuery(accessToken);
+      return kvResult;
     case 'relational':
-      return useHybridMatchesQuery(accessToken);
+      return hybridResult;
     case 'hybrid':
     default:
-      const hybridResult = useHybridMatchesQuery(accessToken);
       if (hybridResult.isError) {
-        const kvResult = useMatchesQuery(accessToken);
         return kvResult.isSuccess ? kvResult : hybridResult;
       }
       return hybridResult;
@@ -196,7 +205,9 @@ export const useAdaptiveMatchesQuery = (accessToken: string | null): UseQueryRes
 /**
  * Adaptive hook for user groups queries
  */
-export const useAdaptiveUserGroupsQuery = (accessToken: string | null): UseQueryResult<Group[], Error> => {
+export const useAdaptiveUserGroupsQuery = (
+  accessToken: string | null
+): UseQueryResult<Group[], Error> => {
   const [mode, setMode] = useState<'kv' | 'relational' | 'hybrid'>(getMigrationMode());
 
   useEffect(() => {
@@ -210,16 +221,18 @@ export const useAdaptiveUserGroupsQuery = (accessToken: string | null): UseQuery
     }
   }, []);
 
+  // Always call hooks in the same order (React Hooks rule)
+  const kvResult = useUserGroupsQuery(accessToken);
+  const hybridResult = useHybridUserGroupsQuery(accessToken);
+
   switch (mode) {
     case 'kv':
-      return useUserGroupsQuery(accessToken);
+      return kvResult;
     case 'relational':
-      return useHybridUserGroupsQuery(accessToken);
+      return hybridResult;
     case 'hybrid':
     default:
-      const hybridResult = useHybridUserGroupsQuery(accessToken);
       if (hybridResult.isError) {
-        const kvResult = useUserGroupsQuery(accessToken);
         return kvResult.isSuccess ? kvResult : hybridResult;
       }
       return hybridResult;
@@ -296,7 +309,7 @@ export const useMigrationHealth = () => {
           kvStore: false,
           relationalDB: false,
           overallHealth: 'error',
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         };
       }
     },

@@ -50,6 +50,22 @@ export interface User {
   /** Whether the user is soft deleted */
   is_deleted?: boolean;
 
+  // Computed/legacy properties for backward compatibility
+  /** @deprecated Use current_group_code instead */
+  currentGroup?: string | null;
+  /** @deprecated Use singles_elo instead */
+  singlesElo?: number;
+  /** @deprecated Use doubles_elo instead */
+  doublesElo?: number;
+  /** @deprecated Use singles_wins instead */
+  singlesWins?: number;
+  /** @deprecated Use singles_losses instead */
+  singlesLosses?: number;
+  /** @deprecated Use doubles_wins instead */
+  doublesWins?: number;
+  /** @deprecated Use doubles_losses instead */
+  doublesLosses?: number;
+
   // Computed fields (not in database)
   /** Legacy rating field (use singles_elo instead) */
   rating?: number;
@@ -165,11 +181,14 @@ export interface Match {
   /** Winning team identifier */
   winningTeam?: string;
   /** ELO changes from the match, keyed by playerId */
-  eloChanges?: Record<string, {
-    oldRating: number;
-    newRating: number;
-    change: number;
-  }>;
+  eloChanges?: Record<
+    string,
+    {
+      oldRating: number;
+      newRating: number;
+      change: number;
+    }
+  >;
   /** Group code (legacy, use group_code) */
   groupCode?: string;
 }

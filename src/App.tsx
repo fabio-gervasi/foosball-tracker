@@ -98,7 +98,7 @@ const AppContent: React.FC = () => {
   }
 
   // Show group selection if user doesn't have a group
-  if (!currentUser?.currentGroup) {
+  if (!currentUser?.current_group_code) {
     return <GroupSelection onGroupSelected={handleGroupSelected} accessToken={accessToken} />;
   }
 

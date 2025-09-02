@@ -17,7 +17,8 @@ import type {
  * Hook for submitting matches with optimistic updates
  */
 export const useSubmitMatchMutation = (
-  accessToken: string | null
+  accessToken: string | null,
+  currentGroup?: Group | null
 ): UseMutationResult<any, Error, MatchSubmissionData> => {
   const queryClient = useQueryClient();
 
@@ -53,7 +54,11 @@ export const useSubmitMatchMutation = (
       if (previousMatches) {
         const optimisticMatch: Match = {
           id: `temp-${Date.now()}`, // Temporary ID
-          matchType: matchData.matchType,
+          group_code: currentGroup?.code || '',
+          match_type: matchData.matchType,
+          date: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          matchType: matchData.matchType, // Legacy compatibility
           player1: matchData.player1Email
             ? { email: matchData.player1Email, name: matchData.player1Email }
             : undefined,
@@ -82,7 +87,6 @@ export const useSubmitMatchMutation = (
           score2: matchData.score2,
           groupId: 'current', // Will be updated by server response
           createdAt: new Date().toISOString(),
-          date: new Date().toISOString(),
         };
 
         queryClient.setQueryData<Match[]>(queryKeys.matches(), [
@@ -162,7 +166,7 @@ export const useUpdateProfileMutation = (
         queryClient.setQueryData<User>(queryKeys.user(), {
           ...previousUser,
           ...profileData,
-          updatedAt: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
       }
 
