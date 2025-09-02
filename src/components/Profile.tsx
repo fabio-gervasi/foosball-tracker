@@ -318,23 +318,13 @@ export function Profile({
       const formData = new FormData();
       formData.append('avatar', file);
 
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-171cbf6f/profile/avatar`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
-      const _data = await response.json();
+      const _data = await apiRequest('/profile/avatar', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
 
       // Update local user state
       if (onDataChange) {

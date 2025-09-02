@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/201</span>
+                <span class='fraction'>0/208</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/201</span>
+                <span class='fraction'>0/208</span>
             </div>
         
             
@@ -369,7 +369,16 @@
 <a name='L304'></a><a href='#L304'>304</a>
 <a name='L305'></a><a href='#L305'>305</a>
 <a name='L306'></a><a href='#L306'>306</a>
-<a name='L307'></a><a href='#L307'>307</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -588,6 +597,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -675,7 +693,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React, { useState } from 'react';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React, { useState } from 'react';</span></span></span>
 import { Trophy, TrendingUp, Users, User } from 'lucide-react';
 import { Avatar } from '../Avatar';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
@@ -889,7 +907,16 @@ interface LeaderboardProps {
 <span class="cstat-no" title="statement not covered" >                  &lt;div className='flex-shrink-0'&gt;{getRankIcon(rank)}&lt;/div&gt;</span>
 &nbsp;
                   {/* Avatar */}
-<span class="cstat-no" title="statement not covered" >                  &lt;div className='w-12 h-12 rounded-full bg-gray-100'&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;button</span>
+<span class="cstat-no" title="statement not covered" >                    onClick={() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                      window.dispatchEvent(</span>
+<span class="cstat-no" title="statement not covered" >                        new CustomEvent('showPlayerProfile', {</span>
+<span class="cstat-no" title="statement not covered" >                          detail: { playerId: user.id },</span>
+<span class="cstat-no" title="statement not covered" >                        })</span>
+                      );
+<span class="cstat-no" title="statement not covered" >                    }}</span>
+<span class="cstat-no" title="statement not covered" >                    className='w-12 h-12 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'</span>
+                  &gt;
 <span class="cstat-no" title="statement not covered" >                    &lt;Avatar</span>
 <span class="cstat-no" title="statement not covered" >                      src={user.avatarUrl}</span>
 <span class="cstat-no" title="statement not covered" >                      fallback={</span>
@@ -898,7 +925,7 @@ interface LeaderboardProps {
 <span class="cstat-no" title="statement not covered" >                      className='w-full h-full rounded-full'</span>
 <span class="cstat-no" title="statement not covered" >                      textClassName='text-lg text-gray-600'</span>
                     /&gt;
-                  &lt;/div&gt;
+                  &lt;/button&gt;
 &nbsp;
                   {/* Player Info */}
 <span class="cstat-no" title="statement not covered" >                  &lt;div className='flex-1'&gt;</span>
@@ -988,7 +1015,7 @@ interface LeaderboardProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-29T12:22:39.621Z
+                at 2025-09-02T13:54:49.316Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

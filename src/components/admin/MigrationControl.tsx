@@ -12,7 +12,7 @@ export const MigrationControl: React.FC = () => {
     queryKey: ['system-health'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('/make-server-171cbf6f/simple-health');
+        const response = await apiRequest('/simple-health');
         return {
           serverStatus: response.status,
           databaseMode: 'relational',

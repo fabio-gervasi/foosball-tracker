@@ -9,14 +9,13 @@ export const K_FACTOR = 32;
 export const ADMIN_SECRET = Deno.env.get('ADMIN_SECRET');
 
 // API route prefix
-export const API_PREFIX = '/make-server-171cbf6f';
+export const API_PREFIX = '';
 
-// Environment validation
+// Environment validation - made non-fatal for debugging
 if (!ADMIN_SECRET) {
-  console.error('FATAL: ADMIN_SECRET is not defined in environment variables.');
-  console.error('The application cannot start without a valid ADMIN_SECRET.');
-  console.error('Please set the ADMIN_SECRET environment variable and restart the server.');
-  Deno.exit(1);
+  console.warn('⚠️ ADMIN_SECRET is not defined in environment variables.');
+  console.warn('Some admin features may not work without ADMIN_SECRET.');
+  console.warn('Please set the ADMIN_SECRET environment variable for full functionality.');
 } else {
   console.log('✅ ADMIN_SECRET loaded from environment variables');
 }

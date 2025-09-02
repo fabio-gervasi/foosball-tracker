@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/740</span>
+                <span class='fraction'>0/752</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/740</span>
+                <span class='fraction'>0/752</span>
             </div>
         
             
@@ -1173,7 +1173,24 @@
 <a name='L1108'></a><a href='#L1108'>1108</a>
 <a name='L1109'></a><a href='#L1109'>1109</a>
 <a name='L1110'></a><a href='#L1110'>1110</a>
-<a name='L1111'></a><a href='#L1111'>1111</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L1111'></a><a href='#L1111'>1111</a>
+<a name='L1112'></a><a href='#L1112'>1112</a>
+<a name='L1113'></a><a href='#L1113'>1113</a>
+<a name='L1114'></a><a href='#L1114'>1114</a>
+<a name='L1115'></a><a href='#L1115'>1115</a>
+<a name='L1116'></a><a href='#L1116'>1116</a>
+<a name='L1117'></a><a href='#L1117'>1117</a>
+<a name='L1118'></a><a href='#L1118'>1118</a>
+<a name='L1119'></a><a href='#L1119'>1119</a>
+<a name='L1120'></a><a href='#L1120'>1120</a>
+<a name='L1121'></a><a href='#L1121'>1121</a>
+<a name='L1122'></a><a href='#L1122'>1122</a>
+<a name='L1123'></a><a href='#L1123'>1123</a>
+<a name='L1124'></a><a href='#L1124'>1124</a>
+<a name='L1125'></a><a href='#L1125'>1125</a>
+<a name='L1126'></a><a href='#L1126'>1126</a>
+<a name='L1127'></a><a href='#L1127'>1127</a>
+<a name='L1128'></a><a href='#L1128'>1128</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1255,6 +1272,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1411,16 +1429,27 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1848,8 +1877,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -2291,7 +2325,6 @@ import {
   LogOut,
   Shield,
   Camera,
-  Upload,
   X,
   Loader2,
   Lock,
@@ -2309,6 +2342,7 @@ import {
   useGroupSwitchMutation,
   useJoinGroupMutation,
   useCreateGroupMutation,
+  useLeaveGroupMutation,
 } from '../hooks/useMutations';
 import { useDialogContext } from './common/DialogProvider';
 import type { User as UserType, Group, ProfileUpdateData } from '../types';
@@ -2334,7 +2368,7 @@ interface ProfileProps {
 <span class="cstat-no" title="statement not covered" >  user,</span>
 <span class="cstat-no" title="statement not covered" >  group,</span>
 <span class="cstat-no" title="statement not covered" >  accessToken,</span>
-<span class="cstat-no" title="statement not covered" >  onUpdateProfile,</span>
+<span class="cstat-no" title="statement not covered" >  onUpdateProfile: _onUpdateProfile,</span>
 <span class="cstat-no" title="statement not covered" >  onDataChange,</span>
 <span class="cstat-no" title="statement not covered" >  onGroupChanged,</span>
 <span class="cstat-no" title="statement not covered" >}: ProfileProps) {</span>
@@ -2359,12 +2393,13 @@ interface ProfileProps {
 <span class="cstat-no" title="statement not covered" >  const {</span>
 <span class="cstat-no" title="statement not covered" >    data: userGroups = [],</span>
 <span class="cstat-no" title="statement not covered" >    isLoading: isLoadingGroups,</span>
-<span class="cstat-no" title="statement not covered" >    refetch: loadUserGroups,</span>
+<span class="cstat-no" title="statement not covered" >    refetch: _loadUserGroups,</span>
 <span class="cstat-no" title="statement not covered" >  } = useUserGroupsQuery(accessToken);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const groupSwitchMutation = useGroupSwitchMutation(accessToken);</span>
 <span class="cstat-no" title="statement not covered" >  const joinGroupMutation = useJoinGroupMutation(accessToken);</span>
 <span class="cstat-no" title="statement not covered" >  const createGroupMutation = useCreateGroupMutation(accessToken);</span>
+<span class="cstat-no" title="statement not covered" >  const leaveGroupMutation = useLeaveGroupMutation(accessToken);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const [showGroupSelector, setShowGroupSelector] = useState(false);</span>
 <span class="cstat-no" title="statement not covered" >  const [showJoinGroup, setShowJoinGroup] = useState(false);</span>
@@ -2531,9 +2566,20 @@ interface ProfileProps {
 <span class="cstat-no" title="statement not covered" >      cancelText: 'Cancel',</span>
 <span class="cstat-no" title="statement not covered" >    });</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (confirmed) {</span>
-<span class="cstat-no" title="statement not covered" >      // This would require a new API endpoint - for now just show a message</span>
-<span class="cstat-no" title="statement not covered" >      await showError('Group leaving feature coming soon! For now, please contact your admin.');</span>
+<span class="cstat-no" title="statement not covered" >    if (confirmed &amp;&amp; group) {</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        await leaveGroupMutation.mutateAsync({ groupCode: group.code });</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        await showSuccess('Left group successfully');</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        // Trigger data refresh</span>
+<span class="cstat-no" title="statement not covered" >        onDataChange?.();</span>
+<span class="cstat-no" title="statement not covered" >        onGroupChanged?.();</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        // If user became groupless, parent components will handle redirection through data invalidation</span>
+<span class="cstat-no" title="statement not covered" >      } catch (error: any) {</span>
+<span class="cstat-no" title="statement not covered" >        await showError(`Failed to leave group: ${error.message || 'Unknown error'}`);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 &nbsp;
@@ -2607,7 +2653,7 @@ interface ProfileProps {
 <span class="cstat-no" title="statement not covered" >        throw new Error(errorData.error || 'Upload failed');</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      const data = await response.json();</span>
+<span class="cstat-no" title="statement not covered" >      const _data = await response.json();</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      // Update local user state</span>
 <span class="cstat-no" title="statement not covered" >      if (onDataChange) {</span>
@@ -2642,7 +2688,7 @@ interface ProfileProps {
 <span class="cstat-no" title="statement not covered" >    setAvatarError('');</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      const response = await apiRequest('/profile/avatar', {</span>
+<span class="cstat-no" title="statement not covered" >      const _response = await apiRequest('/profile/avatar', {</span>
 <span class="cstat-no" title="statement not covered" >        method: 'DELETE',</span>
 <span class="cstat-no" title="statement not covered" >        headers: {</span>
 <span class="cstat-no" title="statement not covered" >          Authorization: `Bearer ${accessToken}`,</span>
@@ -2701,7 +2747,7 @@ interface ProfileProps {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      // First verify current password by attempting to sign in</span>
-<span class="cstat-no" title="statement not covered" >      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({</span>
+<span class="cstat-no" title="statement not covered" >      const { data: _authData, error: authError } = await supabase.auth.signInWithPassword({</span>
 <span class="cstat-no" title="statement not covered" >        email: user.email,</span>
 <span class="cstat-no" title="statement not covered" >        password: passwordForm.currentPassword,</span>
 <span class="cstat-no" title="statement not covered" >      });</span>
@@ -2755,7 +2801,7 @@ interface ProfileProps {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const wins = user.wins || 0;</span>
 <span class="cstat-no" title="statement not covered" >  const losses = user.losses || 0;</span>
-<span class="cstat-no" title="statement not covered" >  const winRate = wins + losses &gt; 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';</span>
+<span class="cstat-no" title="statement not covered" >  const _winRate = wins + losses &gt; 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;div className='p-4 space-y-6'&gt;</span>
@@ -2957,10 +3003,15 @@ interface ProfileProps {
 <span class="cstat-no" title="statement not covered" >            &lt;div className='text-center mt-4 pt-4 border-t border-gray-200'&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;button</span>
 <span class="cstat-no" title="statement not covered" >                onClick={handleLeaveGroup}</span>
-<span class="cstat-no" title="statement not covered" >                className='text-red-600 hover:text-red-700 text-sm flex items-center space-x-2 mx-auto'</span>
+<span class="cstat-no" title="statement not covered" >                disabled={leaveGroupMutation.isPending}</span>
+<span class="cstat-no" title="statement not covered" >                className='text-red-600 hover:text-red-700 disabled:text-red-400 text-sm flex items-center space-x-2 mx-auto'</span>
               &gt;
-<span class="cstat-no" title="statement not covered" >                &lt;LogOut className='w-4 h-4' /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;span&gt;Leave Current Group&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {leaveGroupMutation.isPending ? (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;Loader2 className='w-4 h-4 animate-spin' /&gt;</span>
+                ) : (
+<span class="cstat-no" title="statement not covered" >                  &lt;LogOut className='w-4 h-4' /&gt;</span>
+                )}
+<span class="cstat-no" title="statement not covered" >                &lt;span&gt;{leaveGroupMutation.isPending ? 'Leaving...' : 'Leave Current Group'}&lt;/span&gt;</span>
               &lt;/button&gt;
 <span class="cstat-no" title="statement not covered" >              &lt;p className='text-xs text-gray-500 mt-1'&gt;Warning: You'll lose all match history&lt;/p&gt;</span>
             &lt;/div&gt;
@@ -3400,7 +3451,7 @@ interface ProfileProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-29T12:22:39.621Z
+                at 2025-09-02T13:54:49.316Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

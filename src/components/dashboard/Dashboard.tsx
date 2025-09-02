@@ -13,6 +13,13 @@ import {
 import { Avatar } from '../Avatar';
 import { logger } from '../../utils/logger';
 import type { User, Match, Group } from '../../types';
+import {
+  getMatchDescription,
+  isUserInMatch,
+  didUserWinMatch,
+  calculateUserStatsFromMatches,
+  getUserTeam
+} from '../../utils/match-helpers';
 
 interface DashboardProps {
   user: User;
@@ -48,31 +55,7 @@ export const Dashboard = memo(function Dashboard({
 
   // Memoized expensive match filtering calculation
   const userMatches = useMemo(() => {
-    return matches.filter(match => {
-      // Handle 1v1 matches
-      if (match.matchType === '1v1' || !match.matchType) {
-        if (match.player1?.id && match.player2?.id) {
-          return match.player1.id === user.id || match.player2.id === user.id;
-        }
-      }
-      // Handle 2v2 matches
-      else if (match.matchType === '2v2') {
-        if (
-          match.team1?.player1?.id &&
-          match.team1?.player2?.id &&
-          match.team2?.player1?.id &&
-          match.team2?.player2?.id
-        ) {
-          return (
-            match.team1.player1.id === user.id ||
-            match.team1.player2.id === user.id ||
-            match.team2.player1.id === user.id ||
-            match.team2.player2.id === user.id
-          );
-        }
-      }
-      return false;
-    });
+    return matches.filter(match => isUserInMatch(match, user.id));
   }, [matches, user.id]);
 
   logger.debug('User match filtering', {
@@ -84,35 +67,8 @@ export const Dashboard = memo(function Dashboard({
 
   // Memoized expensive statistics calculations
   const { actualWins, actualLosses } = useMemo(() => {
-    let wins = 0;
-    let losses = 0;
-
-    userMatches.forEach(match => {
-      if (match.matchType === '1v1' || !match.matchType) {
-        const isWinner = match.winner?.id === user.id;
-        if (isWinner) {
-          wins++;
-        } else {
-          losses++;
-        }
-      } else if (match.matchType === '2v2') {
-        const isInTeam1 =
-          match.team1?.player1.id === user.id || match.team1?.player2.id === user.id;
-        const isInTeam2 =
-          match.team2?.player1.id === user.id || match.team2?.player2.id === user.id;
-
-        if (
-          (isInTeam1 && match.winningTeam === 'team1') ||
-          (isInTeam2 && match.winningTeam === 'team2')
-        ) {
-          wins++;
-        } else if (isInTeam1 || isInTeam2) {
-          losses++;
-        }
-      }
-    });
-
-    return { actualWins: wins, actualLosses: losses };
+    const stats = calculateUserStatsFromMatches(userMatches, user.id);
+    return { actualWins: stats.wins, actualLosses: stats.losses };
   }, [userMatches, user.id]);
 
   // Use actual calculated stats instead of user profile stats
@@ -144,37 +100,13 @@ export const Dashboard = memo(function Dashboard({
   };
 
   // Helper function to format match description
-  const formatMatchDescription = (match: any) => {
-    if ((match.matchType === '1v1' || !match.matchType) && match.player1?.id && match.player2?.id) {
-      const opponent = match.player1.id === user.id ? match.player2 : match.player1;
-      return `${user.username || user.name} vs ${opponent.name}${opponent.isGuest ? ' (Guest)' : ''}`;
-    } else if (match.matchType === '2v2' && match.team1?.player1?.id) {
-      const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-      if (isInTeam1) {
-        const partner =
-          match.team1.player1.id === user.id ? match.team1.player2 : match.team1.player1;
-        return `Team with ${partner.name}${partner.isGuest ? ' (Guest)' : ''}`;
-      } else {
-        const partner =
-          match.team2.player1.id === user.id ? match.team2.player2 : match.team2.player1;
-        return `Team with ${partner.name}${partner.isGuest ? ' (Guest)' : ''}`;
-      }
-    }
-    return 'Unknown match';
+  const formatMatchDescription = (match: Match) => {
+    return getMatchDescription(match);
   };
 
   // Helper function to check if user won a match
-  const isMatchWinner = (match: any) => {
-    if (match.matchType === '1v1' || !match.matchType) {
-      return match.winner?.id === user.id;
-    } else if (match.matchType === '2v2') {
-      const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-      const isInTeam2 = match.team2.player1.id === user.id || match.team2.player2.id === user.id;
-      return (
-        (isInTeam1 && match.winningTeam === 'team1') || (isInTeam2 && match.winningTeam === 'team2')
-      );
-    }
-    return false;
+  const isMatchWinner = (match: Match) => {
+    return didUserWinMatch(match, user.id);
   };
 
   return (

@@ -289,7 +289,7 @@ export const useMigrationHealth = () => {
     queryFn: async () => {
       try {
         // Test both KV and relational endpoints
-        const kvHealth = await apiRequest('/make-server-171cbf6f/simple-health');
+        const kvHealth = await apiRequest('/simple-health');
         let relationalHealth = null;
 
         try {

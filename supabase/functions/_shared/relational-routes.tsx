@@ -1,7 +1,6 @@
 import { Hono } from 'npm:hono';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import type { User, Group, Match, MatchPlayer, MatchResult, EloChange } from '../../../src/types/index.ts';
-import { validateUserAuth } from './auth-helpers.tsx';
+import { validateUserAuth } from './auth-helpers-relational.tsx';
 
 // Create Supabase client for relational queries
 const createRelationalClient = () => {
@@ -19,8 +18,11 @@ const createRelationalClient = () => {
 export const createRelationalRoutes = (supabase: any) => {
   const app = new Hono();
 
+  console.log('🔧 Creating relational routes...');
+
   // User relational endpoints
   app.get('/user-relational', async (c) => {
+    console.log('📨 Received request for /user-relational');
     try {
       const authResult = await validateUserAuth(c, supabase);
       if (!authResult.user) {
@@ -62,6 +64,7 @@ export const createRelationalRoutes = (supabase: any) => {
 
   // Group relational endpoints
   app.get('/groups/current-relational', async (c) => {
+    console.log('📨 Received request for /groups/current-relational');
     try {
       const authResult = await validateUserAuth(c, supabase);
       if (!authResult.user) {

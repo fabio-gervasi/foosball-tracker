@@ -132,6 +132,8 @@ export interface Team {
   player2: PlayerReference;
 }
 
+
+
 /**
  * Match entity representing a completed game
  */
@@ -154,6 +156,10 @@ export interface Match {
   winner_is_guest?: boolean;
   /** Timestamp when the match was created */
   created_at: string;
+
+  // Relational database fields
+  /** Players in this match (from match_players table with user joins) */
+  players?: MatchPlayer[];
 
   // Legacy fields for backward compatibility
   /** Type of match (legacy field, use match_type instead) */
@@ -225,6 +231,14 @@ export interface MatchPlayer {
   is_guest: boolean;
   /** Guest player name (if applicable) */
   guest_name?: string | null;
+
+  // Joined user data from relational query
+  /** User data (joined from users table) */
+  users?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
 }
 
 /**

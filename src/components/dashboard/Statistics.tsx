@@ -15,6 +15,14 @@ import {
 } from 'lucide-react';
 import { Avatar } from '../Avatar';
 import type { User as UserType, Match, Group } from '../../types';
+import {
+  isUserInMatch,
+  didUserWinMatch,
+  calculateUserStatsFromMatches,
+  getTeamPlayers,
+  getPlayerDisplayName,
+  getOpponentStats
+} from '../../utils/match-helpers';
 
 // Custom SVG chart component to avoid flickering issues with Recharts
 function EloChart({ data }: { data: Array<{ date: string; elo: number; formattedDate: string }> }) {
@@ -189,57 +197,30 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   // Filter matches for this specific user - memoized
   const userMatches = useMemo(() => {
     return matches.filter(match => {
-      let isUserInMatch = false;
-
-      if (match.matchType === '1v1' || !match.matchType) {
-        isUserInMatch = match.player1?.id === user.id || match.player2?.id === user.id;
-      } else if (match.matchType === '2v2') {
-        isUserInMatch =
-          match.team1?.player1?.id === user.id ||
-          match.team1?.player2?.id === user.id ||
-          match.team2?.player1?.id === user.id ||
-          match.team2?.player2?.id === user.id;
-      }
-
-      if (!isUserInMatch) return false;
+      const isUserInMatchResult = isUserInMatch(match, user.id);
+      if (!isUserInMatchResult) return false;
 
       if (selectedMatchType === 'all') return true;
-      if (selectedMatchType === '1v1') return match.matchType === '1v1' || !match.matchType;
-      if (selectedMatchType === '2v2') return match.matchType === '2v2';
+      if (selectedMatchType === '1v1') return match.match_type === '1v1';
+      if (selectedMatchType === '2v2') return match.match_type === '2v2';
 
       return false;
     });
   }, [matches, user.id, selectedMatchType]);
 
   // Helper function to check if user won a match
-  const isMatchWinner = (match: any) => {
-    if (match.matchType === '1v1' || !match.matchType) {
-      return match.winner?.id === user.id;
-    } else if (match.matchType === '2v2') {
-      const isInTeam1 = match.team1?.player1.id === user.id || match.team1?.player2.id === user.id;
-      const isInTeam2 = match.team2?.player1.id === user.id || match.team2?.player2.id === user.id;
-      return (
-        (isInTeam1 && match.winningTeam === 'team1') || (isInTeam2 && match.winningTeam === 'team2')
-      );
-    }
-    return false;
+  const isMatchWinner = (match: Match) => {
+    return didUserWinMatch(match, user.id);
   };
 
-  // Calculate actual wins and losses from filtered matches
-  let actualWins = 0;
-  let actualLosses = 0;
-
-  userMatches.forEach(match => {
-    if (isMatchWinner(match)) {
-      actualWins++;
-    } else {
-      actualLosses++;
-    }
-  });
+  // Calculate actual wins and losses from filtered matches using helper function
+  const matchStats = calculateUserStatsFromMatches(userMatches, user.id);
+  const actualWins = matchStats.wins;
+  const actualLosses = matchStats.losses;
 
   // Calculate statistics using actual match data
-  const totalGames = actualWins + actualLosses;
-  const winRate = totalGames > 0 ? ((actualWins / totalGames) * 100).toFixed(1) : '0';
+  const totalGames = matchStats.totalGames;
+  const winRate = matchStats.winRate.toFixed(1);
 
   // Recent form (last 5 games) - reverse to get most recent first
   const recentMatches = [...userMatches].reverse().slice(0, 5);
@@ -361,55 +342,19 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const highestElo = eloValues.length > 0 ? Math.max(...eloValues) : currentFilteredElo;
   const lowestElo = eloValues.length > 0 ? Math.min(...eloValues) : currentFilteredElo;
 
-  // Calculate opponent statistics (for both 1v1 and 2v2 matches)
-  interface OpponentStats {
-    name: string;
-    wins: number;
-    losses: number;
-    total: number;
-    avatar: string;
-  }
-
-  const rawOpponentStats: Record<string, OpponentStats> = {};
-  userMatches.forEach(match => {
-    const opponents = [];
-
-    if ((match.matchType === '1v1' || !match.matchType) && match.player1?.id && match.player2?.id) {
-      const opponent = match.player1.id === user.id ? match.player2 : match.player1;
-      opponents.push({ identifier: opponent.id, opponent });
-    } else if (match.matchType === '2v2' && match.team1 && match.team2) {
-      const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-      const enemyTeam = isInTeam1 ? match.team2 : match.team1;
-      opponents.push(
-        { identifier: enemyTeam.player1.id, opponent: enemyTeam.player1 },
-        { identifier: enemyTeam.player2.id, opponent: enemyTeam.player2 }
-      );
-    }
-
-    // Process all opponents for this match
-    opponents.forEach(({ identifier, opponent }) => {
-      if (identifier && opponent) {
-        const opponentName = opponent.name || identifier;
-
-        if (!rawOpponentStats[identifier]) {
-          rawOpponentStats[identifier] = {
-            name: opponentName,
-            wins: 0,
-            losses: 0,
-            total: 0,
-            avatar: (opponent as any)?.avatar || opponentName?.[0] || identifier[0]?.toUpperCase(),
-          };
-        }
-
-        rawOpponentStats[identifier].total++;
-        if (isMatchWinner(match)) {
-          rawOpponentStats[identifier].wins++;
-        } else {
-          rawOpponentStats[identifier].losses++;
-        }
-      }
-    });
-  });
+  // Calculate opponent statistics using helper function
+  const opponentStatsData = getOpponentStats(userMatches, user.id, []);
+  const rawOpponentStats = opponentStatsData.reduce((acc, opp) => {
+    const key = opp.opponentId || `guest-${opp.opponentName}`;
+    acc[key] = {
+      name: opp.opponentName,
+      wins: opp.wins,
+      losses: opp.losses,
+      total: opp.total,
+      avatar: opp.opponentName[0]?.toUpperCase() || 'U',
+    };
+    return acc;
+  }, {} as Record<string, { name: string; wins: number; losses: number; total: number; avatar: string }>);
 
   // Now consolidate by name to handle duplicates
   const consolidatedOpponentStats: Record<string, OpponentStats> = {};
@@ -451,7 +396,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
 
   // Calculate Best Partner (best win rate with in 2v2 matches)
   const getBestPartner = () => {
-    const twoVsTwoMatches = userMatches.filter(match => match.matchType === '2v2');
+    const twoVsTwoMatches = userMatches.filter(match => match.match_type === '2v2');
 
     interface PartnerStats {
       name: string;
@@ -464,33 +409,33 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
     const rawPartnerStats: Record<string, PartnerStats> = {};
 
     twoVsTwoMatches.forEach(match => {
-      if (!match.team1 || !match.team2) return;
+      if (!match.players) return;
 
-      const isInTeam1 = match.team1.player1.id === user.id || match.team1.player2.id === user.id;
-      let partner;
-      if (isInTeam1) {
-        partner = match.team1.player1.id === user.id ? match.team1.player2 : match.team1.player1;
-      } else {
-        partner = match.team2.player1.id === user.id ? match.team2.player2 : match.team2.player1;
-      }
+      const userTeam = match.players.find(p => p.users?.id === user.id)?.team;
+      if (!userTeam) return;
 
-      if (partner?.id) {
-        const partnerName = partner.name || partner.id;
-        if (!rawPartnerStats[partner.id]) {
-          rawPartnerStats[partner.id] = {
+      const userTeamPlayers = getTeamPlayers(match, userTeam);
+      const partner = userTeamPlayers.find(p => p.users?.id !== user.id);
+
+      if (partner) {
+        const partnerId = partner.users?.id || `guest-${getPlayerDisplayName(partner)}`;
+        const partnerName = getPlayerDisplayName(partner);
+
+        if (!rawPartnerStats[partnerId]) {
+          rawPartnerStats[partnerId] = {
             name: partnerName,
             wins: 0,
             losses: 0,
             total: 0,
-            avatar: (partner as any)?.avatar || partnerName?.[0] || partner.id[0]?.toUpperCase(),
+            avatar: partnerName[0]?.toUpperCase() || 'U',
           };
         }
 
-        rawPartnerStats[partner.id].total++;
+        rawPartnerStats[partnerId].total++;
         if (isMatchWinner(match)) {
-          rawPartnerStats[partner.id].wins++;
+          rawPartnerStats[partnerId].wins++;
         } else {
-          rawPartnerStats[partner.id].losses++;
+          rawPartnerStats[partnerId].losses++;
         }
       }
     });
@@ -511,24 +456,10 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   const bestPartner = getBestPartner();
 
   // Get match type counts for filter buttons
-  const allUserMatches = matches.filter(match => {
-    if (match.matchType === '1v1' || !match.matchType) {
-      return match.player1?.id === user.id || match.player2?.id === user.id;
-    } else if (match.matchType === '2v2') {
-      return (
-        match.team1?.player1?.id === user.id ||
-        match.team1?.player2?.id === user.id ||
-        match.team2?.player1?.id === user.id ||
-        match.team2?.player2?.id === user.id
-      );
-    }
-    return false;
-  });
+  const allUserMatches = matches.filter(match => isUserInMatch(match, user.id));
 
-  const singles1v1Count = allUserMatches.filter(
-    match => match.matchType === '1v1' || !match.matchType
-  ).length;
-  const doubles2v2Count = allUserMatches.filter(match => match.matchType === '2v2').length;
+  const singles1v1Count = allUserMatches.filter(match => match.match_type === '1v1').length;
+  const doubles2v2Count = allUserMatches.filter(match => match.match_type === '2v2').length;
 
   const getMatchTypeDisplayName = () => {
     if (selectedMatchType === '1v1') return '1v1';

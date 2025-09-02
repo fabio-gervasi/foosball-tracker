@@ -1,8 +1,5 @@
 import { Hono } from 'npm:hono';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import * as kv from './kv_store.tsx';
-import { API_PREFIX } from './server-constants.tsx';
-import { validateUserAuth } from './auth-helpers.tsx';
 
 export function createDebugRoutes(supabase: any) {
   const app = new Hono();
@@ -26,15 +23,6 @@ export function createDebugRoutes(supabase: any) {
       serviceRoleStatus = `exception: ${testError.message}`;
     }
 
-    // Test KV store connection
-    let kvStatus = 'not tested';
-    try {
-      await kv.get('health-check-test');
-      kvStatus = 'working';
-    } catch (kvError) {
-      kvStatus = `error: ${kvError.message}`;
-    }
-
     return c.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -46,7 +34,7 @@ export function createDebugRoutes(supabase: any) {
       },
       services: {
         serviceRole: serviceRoleStatus,
-        kvStore: kvStatus,
+        database: 'migrated to relational tables',
       },
     });
   });

@@ -282,15 +282,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         try {
           // Validate session with our server
-          const response = await apiRequest('/user', {
+          const response = await apiRequest('/user-relational', {
             headers: {
               Authorization: `Bearer ${session.access_token}`,
             },
           });
 
-          logger.info('Session validated successfully', {
+          logger.info('Session validated successfully (relational)', {
             userName: response.user.name || response.user.username,
-            hasGroup: !!response.user.currentGroup,
+            hasGroup: !!response.user.current_group_code,
           });
           setCurrentUser(response.user);
           setAccessToken(session.access_token);

@@ -19,11 +19,15 @@ export const supabase = createClient(supabaseUrl, publicAnonKey, {
 });
 
 // API base URL for our server functions
-export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-171cbf6f`;
+export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api-working`;
 
 // Helper function to make authenticated requests
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  logger.apiRequest(endpoint, options.method || 'GET');
+  // Relational endpoints are already mounted under /make-server-171cbf6f prefix
+  // No need to add prefix again - just use the endpoint as-is
+  let fullEndpoint = endpoint;
+
+  logger.apiRequest(fullEndpoint, options.method || 'GET');
 
   // All Supabase Edge Functions require either the anon key or a user access token
   const headers: Record<string, string> = {
@@ -49,13 +53,19 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     '/matches',
     '/promote-admin',
     '/admin',
+    // Relational endpoints that require authentication
+    '/user-relational',
+    '/users-relational',
+    '/groups/current-relational',
+    '/groups/user-relational',
+    '/matches-relational',
   ];
   const needsUserAuth = authenticatedEndpoints.some(
-    authEndpoint => endpoint === authEndpoint || endpoint.startsWith(`${authEndpoint}/`)
+    authEndpoint => fullEndpoint === authEndpoint || fullEndpoint.startsWith(`${authEndpoint}/`)
   );
 
   if (needsUserAuth) {
-    logger.debug(`Endpoint ${endpoint} requires user authentication`);
+    logger.debug(`Endpoint ${fullEndpoint} requires user authentication`);
 
     // Check if Authorization header was explicitly provided
     const providedAuth = (options.headers as Record<string, string>)?.Authorization;
@@ -67,10 +77,17 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       logger.debug('Getting current session for auth token');
 
       try {
+        logger.debug('Getting current session for auth token');
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
+
+        logger.debug('Session retrieval result:', {
+          hasSession: !!session,
+          hasError: !!sessionError,
+          sessionError: sessionError?.message
+        });
 
         if (sessionError) {
           logger.error('Session error', sessionError);
@@ -128,7 +145,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     }
   }
 
-  logger.debug(`Making request to ${endpoint}`, {
+  logger.debug(`Making request to ${fullEndpoint}`, {
     needsUserAuth,
     hasAuth: !!headers.Authorization,
     authType: headers.Authorization?.split(' ')[0] || 'none',
@@ -142,12 +159,24 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   });
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    logger.debug(`Making actual fetch request to: ${API_BASE_URL}${fullEndpoint}`, {
+      method: options.method || 'GET',
+      hasAuth: !!headers.Authorization,
+      authType: headers.Authorization?.split(' ')[0] || 'none'
+    });
+
+    const response = await fetch(`${API_BASE_URL}${fullEndpoint}`, {
       ...options,
       headers,
     });
 
-    logger.apiResponse(endpoint, response.status, response.ok);
+    logger.debug(`Request completed with status: ${response.status}`, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    logger.apiResponse(fullEndpoint, response.status, response.ok);
 
     if (!response.ok) {
       let errorData;
@@ -162,7 +191,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
             // Check if it's a common server error format
             if (responseText.includes('404 Not Found')) {
-              errorData = { error: `Endpoint not found: ${endpoint}` };
+              errorData = { error: `Endpoint not found: ${fullEndpoint}` };
             } else if (
               responseText.includes('500') ||
               responseText.includes('Internal Server Error')
@@ -187,7 +216,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         errorData = { error: 'Network error or invalid response' };
       }
 
-      logger.error(`API Error ${response.status} for ${endpoint}`, errorData);
+      logger.error(`API Error ${response.status} for ${fullEndpoint}`, errorData);
 
       // Handle specific error cases
       if (response.status === 401 && needsUserAuth) {
@@ -199,14 +228,14 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         throw new Error('Authentication required');
       }
 
-      throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+              throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
     }
 
     const responseData = await response.json();
-    logger.debug(`Successful response for ${endpoint}`);
+    logger.debug(`Successful response for ${fullEndpoint}`);
     return responseData;
   } catch (fetchError) {
-    logger.error(`Fetch error for ${endpoint}`, fetchError);
+    logger.error(`Fetch error for ${fullEndpoint}`, fetchError);
     throw fetchError;
   }
 }

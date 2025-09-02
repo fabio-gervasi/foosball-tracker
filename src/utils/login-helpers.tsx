@@ -50,7 +50,7 @@ export const checkServerStatus = async (): Promise<{ isHealthy: boolean; isLoadi
     // Try the health endpoint with apiRequest (should include anon key now)
     try {
       logger.debug('Testing health endpoint with apiRequest');
-      const response = await apiRequest('/health');
+      const response = await apiRequest('/make-server-171cbf6f/simple-health');
       logger.info('Health check successful', { hasResponse: !!response });
 
       return { isHealthy: true, isLoading: false };
@@ -60,7 +60,7 @@ export const checkServerStatus = async (): Promise<{ isHealthy: boolean; isLoadi
       // Try direct fetch with anon key
       try {
         logger.debug('Trying direct fetch with anon key');
-        const directResponse = await fetch(`${API_BASE_URL}/health`, {
+        const directResponse = await fetch(`${API_BASE_URL}/make-server-171cbf6f/simple-health`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
