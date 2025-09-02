@@ -188,11 +188,11 @@ export function createAdminRoutes(supabase: any) {
                   if (match.matchType === '2v2') {
                     // For 2v2 matches - check the actual field structure
                     const isTeam1Player =
-                      playerEmail === match.team1Player1Email ||
-                      playerEmail === match.team1Player2Email;
+                      playerEmail === match.team1?.player1?.email ||
+                      playerEmail === match.team1?.player2?.email;
                     const isTeam2Player =
-                      playerEmail === match.team2Player1Email ||
-                      playerEmail === match.team2Player2Email;
+                      playerEmail === match.team2?.player1?.email ||
+                      playerEmail === match.team2?.player2?.email;
                     const isWinner =
                       (isTeam1Player && match.winningTeam === 'team1') ||
                       (isTeam2Player && match.winningTeam === 'team2');
