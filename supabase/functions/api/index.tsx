@@ -19,6 +19,7 @@ import { createMatchRoutes } from '../_shared/match-routes.tsx';
 import { createUserRoutes } from '../_shared/user-routes.tsx';
 import { createAdminRoutes } from '../_shared/admin-routes.tsx';
 import { createDataMigrationRoutes } from '../data-migration/index.tsx';
+import { createRelationalRoutes } from '../_shared/relational-routes.tsx';
 
 const app = new Hono();
 
@@ -133,6 +134,10 @@ try {
   serverLogger.info('Mounting data migration routes');
   app.route(`${API_PREFIX}/data-migration`, createDataMigrationRoutes(supabase));
   serverLogger.info('Data migration routes mounted');
+
+  serverLogger.info('Mounting relational routes');
+  app.route(`${API_PREFIX}`, createRelationalRoutes(supabase));
+  serverLogger.info('Relational routes mounted');
 
   serverLogger.info('All routes mounted successfully');
 } catch (routeError) {

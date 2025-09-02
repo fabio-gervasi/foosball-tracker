@@ -118,7 +118,7 @@ export function Profile({
   // loadUserGroups is now handled by React Query hook
 
   const handleSwitchGroup = async (groupCode: string) => {
-    if (groupCode === user.currentGroup) return;
+    if (groupCode === user.current_group_code) return;
 
     setIsSwitchingGroup(true);
     try {

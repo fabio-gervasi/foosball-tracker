@@ -366,7 +366,7 @@ export const useAppData = (): UseAppDataReturn => {
     // Core data
     users,
     matches,
-    currentGroup,
+    currentGroup: currentGroup || null,
     userGroups,
 
     // Loading states

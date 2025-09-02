@@ -14,7 +14,8 @@ const mockGroup: Group = {
   name: 'Test Group',
   code: 'TEST123',
   adminIds: ['test-user-id'],
-  createdAt: '2024-01-01T00:00:00.000Z',
+  created_at: '2024-01-01T00:00:00.000Z',
+  updated_at: '2024-01-01T00:00:00.000Z',
 };
 
 const mockUsers: User[] = [
@@ -23,26 +24,29 @@ const mockUsers: User[] = [
     email: 'test@example.com',
     username: 'testuser',
     name: 'Test User',
-    currentGroup: 'TEST123',
+    current_group_code: 'TEST123',
     rating: 1200,
     avatar: undefined,
     isAdmin: true,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
+    created_at: '2024-01-01T00:00:00.000Z',
+    updated_at: '2024-01-01T00:00:00.000Z',
   },
 ];
 
 const mockMatches: Match[] = [
   {
     id: 'test-match-id',
-    matchType: '1v1',
+    group_code: 'TEST123',
+    match_type: '1v1',
+    date: '2024-01-01T00:00:00.000Z',
+    created_at: '2024-01-01T00:00:00.000Z',
+    matchType: '1v1', // Legacy compatibility
     player1: { id: 'test-user-id', name: 'Test User' },
     player2: { id: 'other-user', name: 'Other User' },
     score1: 10,
     score2: 8,
-    groupId: 'test-group-id',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    date: '2024-01-01T00:00:00.000Z',
+    groupId: 'test-group-id', // Legacy compatibility
+    createdAt: '2024-01-01T00:00:00.000Z', // Legacy compatibility
   },
 ];
 

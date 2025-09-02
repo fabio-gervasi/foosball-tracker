@@ -141,7 +141,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     // Data state (from React Query)
     users,
     matches,
-    currentGroup,
+    currentGroup: currentGroup || null,
     isLoadingData: isLoading, // Map React Query loading to legacy name
     error,
 
