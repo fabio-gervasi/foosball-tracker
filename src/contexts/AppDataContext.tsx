@@ -45,7 +45,7 @@ interface AppDataProviderProps {
 
 export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) => {
   // Get auth context
-  const { isLoggedIn, accessToken, currentUser } = useAuth();
+  const { isLoggedIn, accessToken, currentUser, signOut } = useAuth();
 
   // Use React Query hooks for data fetching
   const {
@@ -59,6 +59,14 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     error,
     refetchAll,
   } = useAppDataQueries(accessToken);
+
+  // Handle authentication errors by signing out
+  React.useEffect(() => {
+    if (error && error.includes('Authentication failed')) {
+      logger.warn('Authentication error detected, signing out user');
+      signOut();
+    }
+  }, [error, signOut]);
 
   // Use mutation hooks
   const submitMatchMutation = useSubmitMatchMutation(accessToken);

@@ -197,13 +197,20 @@ export const useAppDataQueries = (accessToken: string | null) => {
   const isLoadingInitial =
     userQuery.isLoading || (currentGroupQuery.isLoading && !currentGroupQuery.data);
 
-  // Combined error state
-  const error =
-    userQuery.error?.message ||
-    currentGroupQuery.error?.message ||
-    usersQuery.error?.message ||
-    matchesQuery.error?.message ||
-    null;
+  // Combined error state - prioritize authentication errors
+  const authError = [userQuery, currentGroupQuery, usersQuery, matchesQuery]
+    .find(query => query.error?.message?.includes('401') ||
+                  query.error?.message?.includes('403') ||
+                  query.error?.message?.includes('Authentication') ||
+                  query.error?.message?.includes('session'));
+
+  const error = authError
+    ? 'Authentication failed. Please sign in again.'
+    : userQuery.error?.message ||
+      currentGroupQuery.error?.message ||
+      usersQuery.error?.message ||
+      matchesQuery.error?.message ||
+      null;
 
   // Refetch all function
   const refetchAll = () => {
