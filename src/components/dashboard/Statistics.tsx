@@ -282,14 +282,14 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   // Get the appropriate ELO rating based on selected filter - memoized
   const currentFilteredElo = useMemo(() => {
     if (selectedMatchType === '1v1') {
-      return user.singlesElo || user.elo || 1200;
+      return user.singles_elo || user.elo || 1200;
     } else if (selectedMatchType === '2v2') {
-      return user.doublesElo || 1200;
+      return user.doubles_elo || 1200;
     } else {
       // For 'all', show overall/legacy ELO
       return user.elo || 1200;
     }
-  }, [selectedMatchType, user.singlesElo, user.doublesElo, user.elo]);
+  }, [selectedMatchType, user.singles_elo, user.doubles_elo, user.elo]);
 
   // Build ELO timeline data for chart (memoized to prevent flickering)
   const eloTimelineData = useMemo(() => {
@@ -357,7 +357,7 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
   }, {} as Record<string, { name: string; wins: number; losses: number; total: number; avatar: string }>);
 
   // Now consolidate by name to handle duplicates
-  const consolidatedOpponentStats: Record<string, OpponentStats> = {};
+  const consolidatedOpponentStats: Record<string, { name: string; wins: number; losses: number; total: number; avatar: string }> = {};
   Object.values(rawOpponentStats).forEach(stats => {
     const normalizedName = stats.name.toLowerCase().trim();
 

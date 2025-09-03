@@ -23,7 +23,7 @@ export function getPlayerDisplayName(player: MatchPlayer): string {
  * Get the user ID for a match player (or null for guests)
  */
 export function getPlayerUserId(player: MatchPlayer): string | null {
-  return player.users?.id || null;
+  return player.users?.id || player.user_id || null;
 }
 
 /**
@@ -61,20 +61,39 @@ export function getOpponentPlayers(match: Match, userId: string): MatchPlayer[] 
  * Determine if a user won a match
  */
 export function didUserWinMatch(match: Match, userId: string): boolean {
-  if (!match.players || !match.winner_email) return false;
+  if (!match.players) return false;
 
   // Find the user in the match
   const userPlayer = match.players.find(player => getPlayerUserId(player) === userId);
   if (!userPlayer) return false;
 
-  // Check if the winner email matches any player in the user's team
-  const userTeam = userPlayer.team;
-  const userTeamPlayers = getTeamPlayers(match, userTeam);
+  // Method 1: Check if winner_email contains the user's ID (new format)
+  if (match.winner_email && match.winner_email === userPlayer.user_id) {
+    return true;
+  }
 
-  return userTeamPlayers.some(player =>
-    (player.users?.email === match.winner_email) ||
-    (player.is_guest && player.guest_name === match.winner_email)
-  );
+  // Method 2: Check if winner_email contains the user's email (legacy format)
+  if (match.winner_email && userPlayer.users?.email === match.winner_email) {
+    return true;
+  }
+
+  // Method 3: Check if winner_email contains the user's name (legacy format)
+  if (match.winner_email && userPlayer.users?.name === match.winner_email) {
+    return true;
+  }
+
+  // Method 4: Check if winner_email contains guest name (legacy format)
+  if (match.winner_email && userPlayer.is_guest && userPlayer.guest_name === match.winner_email) {
+    return true;
+  }
+
+  // Method 5: Determine winner from match results if available
+  if (match.match_results && match.match_results.length > 0) {
+    const winningTeam = match.match_results[0].winning_team;
+    return userPlayer.team === winningTeam;
+  }
+
+  return false;
 }
 
 /**

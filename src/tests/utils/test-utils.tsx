@@ -59,6 +59,7 @@ const defaultAuthContext: AuthContextType = {
   error: null,
   login: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn().mockResolvedValue(undefined),
+  signOut: vi.fn().mockResolvedValue(undefined),
   checkSession: vi.fn().mockResolvedValue(undefined),
   clearError: vi.fn(),
 };

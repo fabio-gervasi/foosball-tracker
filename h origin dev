@@ -1,0 +1,29 @@
+warning: in the working copy of 'src/components/AdminPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/admin/UserManagement.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/auth/Login.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/dashboard/Leaderboard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/dashboard/MatchEntry.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/dashboard/Statistics.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/contexts/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/utils/admin-format-helpers.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/utils/supabase/client.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'supabase/config.toml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'supabase/functions/api-working/index.ts', LF will be replaced by CRLF the next time Git touches it
+playwright.config.ts
+src/components/AdminPanel.tsx
+src/components/MatchHistory.tsx
+src/components/PlayerProfile.tsx
+src/components/Profile.tsx
+src/components/admin/MatchManagement.tsx
+src/components/admin/UserManagement.tsx
+src/components/auth/Login.tsx
+src/components/dashboard/Leaderboard.tsx
+src/components/dashboard/MatchEntry.tsx
+src/components/dashboard/Statistics.tsx
+src/contexts/AuthContext.tsx
+src/tests/utils/test-utils.tsx
+src/utils/admin-format-helpers.tsx
+src/utils/match-helpers.ts
+src/utils/supabase/client.tsx
+supabase/config.toml
+supabase/functions/api-working/index.ts

@@ -55,13 +55,12 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
     if (matchData.matchType === '1v1') {
       // Get player ratings
       const player1User = matchData.player1IsGuest ? null :
-        (await supabase.from('users').select('id, singles_elo').eq('email', matchData.player1Email).maybeSingle()).data;
+        (await supabase.from('users').select('id, singles_elo').eq('email', matchData.player1Email).single()).data;
       const player2User = matchData.player2IsGuest ? null :
-        (await supabase.from('users').select('id, singles_elo').eq('email', matchData.player2Email).maybeSingle()).data;
+        (await supabase.from('users').select('id, singles_elo').eq('email', matchData.player2Email).single()).data;
 
       if (player1User && player2User) {
-        // Determine winner - winnerEmail now contains player ID, not email
-        const isPlayer1Winner = matchData.winnerEmail === player1User.id;
+        const isPlayer1Winner = matchData.winnerEmail === matchData.player1Email;
 
         const eloResult = calculateELOChanges(
           player1User.singles_elo || 1200,
@@ -117,13 +116,13 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
     } else if (matchData.matchType === '2v2') {
       // Get player ratings for 2v2
       const team1Player1 = matchData.team1Player1IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team1Player1Email).maybeSingle()).data;
+        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team1Player1Email).single()).data;
       const team1Player2 = matchData.team1Player2IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team1Player2Email).maybeSingle()).data;
+        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team1Player2Email).single()).data;
       const team2Player1 = matchData.team2Player1IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team2Player1Email).maybeSingle()).data;
+        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team2Player1Email).single()).data;
       const team2Player2 = matchData.team2Player2IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team2Player2Email).maybeSingle()).data;
+        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team2Player2Email).single()).data;
 
       if (team1Player1 && team1Player2 && team2Player1 && team2Player2) {
         const isTeam1Winner = matchData.winningTeam === 'team1';
@@ -237,16 +236,8 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
   }
 }
 
-// MINIMAL TEST FUNCTION - Test DELETE request handling
-console.log("STARTING EDGE FUNCTION - VERSION WITH DELETE DEBUG");
-
 Deno.serve(async (req) => {
-  console.log("REQUEST RECEIVED - Method:", req.method, "URL:", req.url);
-
-
-
-  // For non-DELETE requests, continue with original logic
-  console.log("=== REQUEST RECEIVED (ORIGINAL LOGIC) ===");
+  console.log("=== REQUEST RECEIVED ===");
   console.log("Method:", req.method);
   console.log("URL:", req.url);
 
@@ -1100,7 +1091,7 @@ Deno.serve(async (req) => {
         // Handle 1v1 match players
         if (matchData.player1Email) {
           const player1User = matchData.player1IsGuest ? null :
-            (await supabase.from('users').select('id').eq('email', matchData.player1Email).maybeSingle()).data;
+            (await supabase.from('users').select('id').eq('email', matchData.player1Email).single()).data;
 
           matchPlayers.push({
             match_id: matchId,
@@ -1114,7 +1105,7 @@ Deno.serve(async (req) => {
 
         if (matchData.player2Email) {
           const player2User = matchData.player2IsGuest ? null :
-            (await supabase.from('users').select('id').eq('email', matchData.player2Email).maybeSingle()).data;
+            (await supabase.from('users').select('id').eq('email', matchData.player2Email).single()).data;
 
           matchPlayers.push({
             match_id: matchId,
@@ -1137,7 +1128,7 @@ Deno.serve(async (req) => {
         for (const player of teamPlayers) {
           if (player.email) {
             const playerUser = player.isGuest ? null :
-              (await supabase.from('users').select('id').eq('email', player.email).maybeSingle()).data;
+              (await supabase.from('users').select('id').eq('email', player.email).single()).data;
 
             matchPlayers.push({
               match_id: matchId,
@@ -1353,7 +1344,7 @@ Deno.serve(async (req) => {
         return addCorsHeaders(errorResponse);
       }
 
-      // Get all matches for the user's group with player details, ELO changes, and match results
+      // Get all matches for the user's group with player details and ELO changes
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select(`
@@ -1374,10 +1365,6 @@ Deno.serve(async (req) => {
               name,
               email
             )
-          ),
-          match_results (
-            game_number,
-            winning_team
           ),
           elo_changes (
             user_id,
@@ -1459,347 +1446,6 @@ Deno.serve(async (req) => {
       const errorData = {
         error: "Internal Server Error",
         message: "Failed to fetch admin matches data",
-        timestamp: new Date().toISOString()
-      };
-      const errorResponse = new Response(JSON.stringify(errorData), {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      });
-      return addCorsHeaders(errorResponse);
-    }
-  }
-
-  // Admin data cleanup endpoint - Identify incomplete matches
-  if ((path === '/admin/cleanup-matches' || path === '/api-working/admin/cleanup-matches') && req.method === 'POST') {
-    console.log('🎯 Admin cleanup matches endpoint called');
-
-    // Get authenticated user
-    const authHeader = req.headers.get('Authorization');
-    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
-
-    if (!user) {
-      const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
-      };
-      const errorResponse = new Response(JSON.stringify(errorData), {
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      });
-      return errorResponse;
-    }
-
-    // Check if user is admin
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-
-    if (userError || !userData?.is_admin) {
-      const errorData = {
-        error: "Forbidden",
-        message: "Admin privileges required",
-        timestamp: new Date().toISOString()
-      };
-      const errorResponse = new Response(JSON.stringify(errorData), {
-        status: 403,
-        headers: { "Content-Type": "application/json" }
-      });
-      return errorResponse;
-    }
-
-    try {
-      // Find matches with results but no players (incomplete data)
-      const { data: incompleteMatches, error: incompleteError } = await supabase
-        .from('matches')
-        .select(`
-          id,
-          match_type,
-          created_at,
-          match_results!inner(match_id),
-          match_players(match_id)
-        `)
-        .eq('group_code', 'ONEAXA')
-        .is('winner_email', null);
-
-      if (incompleteError) {
-        throw incompleteError;
-      }
-
-      // Filter to only matches with results but no players
-      const trulyIncompleteMatches = (incompleteMatches || []).filter(match =>
-        match.match_results &&
-        match.match_results.length > 0 &&
-        (!match.match_players || match.match_players.length === 0)
-      );
-
-      const cleanupResults = trulyIncompleteMatches.map(match => ({
-        id: match.id,
-        match_type: match.match_type,
-        created_at: match.created_at,
-        has_results: match.match_results.length > 0,
-        player_count: match.match_players?.length || 0,
-        recommended_action: 'mark_as_incomplete'
-      }));
-
-      const successData = {
-        success: true,
-        message: `Found ${cleanupResults.length} incomplete matches`,
-        totalIncompleteMatches: cleanupResults.length,
-        cleanupResults,
-        timestamp: new Date().toISOString()
-      };
-
-      const response = new Response(JSON.stringify(successData), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-      return response;
-
-    } catch (error) {
-      console.error('❌ Cleanup error:', error);
-      const errorData = {
-        error: "Cleanup failed",
-        message: error.message,
-        timestamp: new Date().toISOString()
-      };
-      const errorResponse = new Response(JSON.stringify(errorData), {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      });
-      return errorResponse;
-    }
-  }
-
-  // Admin data migration endpoint - Fix winner_email for existing matches
-  if ((path === '/admin/migrate-winners' || path === '/api-working/admin/migrate-winners') && req.method === 'POST') {
-    console.log('🎯 Admin migrate winners endpoint called');
-
-    // Get authenticated user
-    const authHeader = req.headers.get('Authorization');
-    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
-
-    if (!user) {
-      const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
-      };
-      const errorResponse = new Response(JSON.stringify(errorData), {
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      });
-      return addCorsHeaders(errorResponse);
-    }
-
-    try {
-      // Create a Supabase client to query the database
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-
-      // Check if user is admin
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-
-      if (userError || !userData?.is_admin) {
-        const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
-        };
-        const errorResponse = new Response(JSON.stringify(errorData), {
-          status: 403,
-          headers: { "Content-Type": "application/json" }
-        });
-        return addCorsHeaders(errorResponse);
-      }
-
-      // Get user's current group
-      const { data: currentUserData, error: currentUserError } = await supabase
-        .from('users')
-        .select('current_group_code')
-        .eq('id', user.id)
-        .single();
-
-      if (currentUserError || !currentUserData?.current_group_code) {
-        const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
-        };
-        const errorResponse = new Response(JSON.stringify(errorData), {
-          status: 404,
-          headers: { "Content-Type": "application/json" }
-        });
-        return addCorsHeaders(errorResponse);
-      }
-
-      // Find matches that need winner_email migration (have null winner_email but have match_results)
-      const { data: matchesToMigrate, error: migrationQueryError } = await supabase
-        .from('matches')
-        .select(`
-          id,
-          winner_email,
-          match_results (
-            winning_team
-          ),
-          match_players (
-            user_id,
-            team,
-            users (
-              email
-            )
-          )
-        `)
-        .eq('group_code', currentUserData.current_group_code)
-        .is('winner_email', null)
-        .not('match_results', 'is', null);
-
-      if (migrationQueryError) {
-        console.error('❌ Error querying matches for migration:', migrationQueryError);
-        const errorData = {
-          error: "Database Error",
-          message: "Failed to query matches for migration",
-          details: migrationQueryError.message,
-          timestamp: new Date().toISOString()
-        };
-        const errorResponse = new Response(JSON.stringify(errorData), {
-          status: 500,
-          headers: { "Content-Type": "application/json" }
-        });
-        return addCorsHeaders(errorResponse);
-      }
-
-      let migratedCount = 0;
-      const migrationResults = [];
-
-      // Process each match that needs migration
-      for (const match of matchesToMigrate || []) {
-        if (!match.match_results || match.match_results.length === 0) {
-          migrationResults.push({
-            matchId: match.id,
-            status: 'skipped',
-            reason: 'No match results found'
-          });
-          continue;
-        }
-
-        const winningTeam = match.match_results[0].winning_team;
-
-        // Find ALL players from the winning team (both registered users and guests)
-        const winningTeamPlayers = match.match_players?.filter(player =>
-          player.team === winningTeam
-        ) || [];
-
-        if (winningTeamPlayers.length === 0) {
-          migrationResults.push({
-            matchId: match.id,
-            status: 'skipped',
-            reason: 'No players found in winning team',
-            winningTeam: winningTeam
-          });
-          continue;
-        }
-
-        // First try to find a registered user in the winning team
-        const registeredPlayers = winningTeamPlayers.filter(player =>
-          !player.is_guest && player.user_id
-        );
-
-        let winnerIdentifier = null;
-
-        if (registeredPlayers.length > 0) {
-          // Use the first registered player's ID (preferred)
-          winnerIdentifier = registeredPlayers[0].user_id;
-        } else {
-          // If no registered users, try to find a guest player
-          const guestPlayers = winningTeamPlayers.filter(player =>
-            player.is_guest && player.guest_name
-          );
-
-          if (guestPlayers.length > 0) {
-            // Use guest identifier format
-            winnerIdentifier = `guest:${guestPlayers[0].guest_name}`;
-          }
-        }
-
-        if (winnerIdentifier) {
-          // Update the match - store both winner_email (for backward compatibility) and winner_player_id
-          const updateData: any = {};
-
-          if (winnerIdentifier.startsWith('guest:')) {
-            // For guest players, store the guest identifier in winner_email
-            updateData.winner_email = winnerIdentifier;
-            updateData.winner_is_guest = true;
-          } else {
-            // For registered users, store the player ID in winner_email (for now, to maintain compatibility)
-            // TODO: Add winner_player_id field to matches table and use that instead
-            updateData.winner_email = winnerIdentifier; // This should be the player ID, not email
-            updateData.winner_is_guest = false;
-          }
-
-          const { error: updateError } = await supabase
-            .from('matches')
-            .update(updateData)
-            .eq('id', match.id);
-
-          if (updateError) {
-            console.error(`❌ Error updating match ${match.id}:`, updateError);
-            migrationResults.push({
-              matchId: match.id,
-              status: 'error',
-              error: updateError.message,
-              winnerEmail: winnerEmail,
-              winningTeam: winningTeam
-            });
-          } else {
-            migratedCount++;
-            migrationResults.push({
-              matchId: match.id,
-              status: 'success',
-              winnerEmail: winnerEmail,
-              winningTeam: winningTeam,
-              playerType: registeredPlayers.length > 0 ? 'registered' : 'guest'
-            });
-          }
-        } else {
-          migrationResults.push({
-            matchId: match.id,
-            status: 'skipped',
-            reason: 'No suitable winner found in winning team',
-            winningTeam: winningTeam,
-            playerCount: winningTeamPlayers.length
-          });
-        }
-      }
-
-      const data = {
-        success: true,
-        message: `Migration completed. ${migratedCount} matches updated.`,
-        migratedCount,
-        totalMatchesFound: matchesToMigrate?.length || 0,
-        migrationResults,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log(`✅ Migration completed: ${migratedCount} matches updated`);
-
-      const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
-      });
-      return addCorsHeaders(response);
-    } catch (error) {
-      console.error('❌ Error in admin migrate winners endpoint:', error);
-      const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to migrate winner data",
         timestamp: new Date().toISOString()
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
@@ -2061,7 +1707,7 @@ Deno.serve(async (req) => {
   console.log('  Path segments:', path.split('/'));
   console.log('  Path length:', path.split('/').length);
 
-  if (((path.startsWith('/admin/users/') && path.endsWith('/admin')) || (path.startsWith('/api-working/admin/users/') && path.endsWith('/admin'))) && req.method === 'PUT') {
+  if ((path.startsWith('/admin/users/') && path.endsWith('/admin')) && req.method === 'PUT') {
     console.log('🎯 ENTERED: Admin toggle user admin status endpoint called');
     console.log('  User ID:', path.split('/')[path.split('/').length - 2]);
     
@@ -2177,7 +1823,7 @@ Deno.serve(async (req) => {
   console.log('  Path segments:', path.split('/'));
   console.log('  Path length:', path.split('/').length);
 
-  if (((path.startsWith('/admin/users/') && !path.endsWith('/admin')) || (path.startsWith('/api-working/admin/users/') && !path.endsWith('/admin'))) && req.method === 'DELETE') {
+  if ((path.startsWith('/admin/users/') && !path.endsWith('/admin')) && req.method === 'DELETE') {
     console.log('🎯 ENTERED: Admin delete user endpoint called');
     console.log('  User ID:', path.split('/').pop());
     
@@ -2306,7 +1952,7 @@ Deno.serve(async (req) => {
   console.log('  Path segments:', path.split('/'));
   console.log('  Path length:', path.split('/').length);
 
-  if (((path.startsWith('/admin/matches/') && !path.endsWith('/admin')) || (path.startsWith('/api-working/admin/matches/') && !path.endsWith('/admin'))) && req.method === 'DELETE') {
+  if ((path.startsWith('/admin/matches/') && !path.endsWith('/admin')) && req.method === 'DELETE') {
     console.log('🎯 ENTERED: Admin delete match endpoint called');
     console.log('  Match ID:', path.split('/').pop());
     

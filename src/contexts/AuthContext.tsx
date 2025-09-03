@@ -14,6 +14,7 @@ interface AuthContextType {
   // Auth actions
   login: (user: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
+  signOut: () => Promise<void>;
   checkSession: () => Promise<void>;
   clearError: () => void;
 }
@@ -363,6 +364,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signOut = logout; // Alias for logout
+
   const clearError = () => {
     setError(null);
   };
@@ -378,6 +381,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Actions
     login,
     logout,
+    signOut,
     checkSession,
     clearError,
   };

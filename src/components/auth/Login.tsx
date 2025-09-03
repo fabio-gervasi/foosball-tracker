@@ -168,12 +168,48 @@ export function Login({ onLogin }: LoginProps) {
           await login(response.user, data.session.access_token);
           foosballAnalytics.trackUserLogin('email', false);
         } else {
-          // Username login: convert username to email format and use Supabase auth
-          // First, we need to get the user's email from their username
-          // Since we don't have a direct endpoint, we'll try a different approach
+          // Username login: look up the user's email from their username
+          console.log('Attempting username login for:', email);
+          
+          // Step 1: Look up the user's email from their username
+          const lookupResponse = await apiRequest('/username-lookup', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: email }),
+          });
 
-          // For now, show an error message asking user to use email
-          throw new Error('Please sign in with your email address instead of username. Username login is temporarily unavailable.');
+          if (!lookupResponse.email) {
+            throw new Error('Username not found. Please check your username and try again.');
+          }
+
+          console.log('Found email for username:', lookupResponse.email);
+
+          // Step 2: Authenticate with Supabase using the found email
+          const { data, error: authError } = await supabase.auth.signInWithPassword({
+            email: lookupResponse.email,
+            password,
+          });
+
+          if (authError) {
+            throw authError;
+          }
+
+          if (!data.session?.access_token) {
+            throw new Error('No access token received');
+          }
+
+          // Step 3: Validate with relational endpoint and get user profile
+          const response = await apiRequest('/user-relational', {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${data.session.access_token}`,
+            },
+          });
+
+          await login(response.user, data.session.access_token);
+          foosballAnalytics.trackUserLogin('username', false);
         }
       } else {
         // Step 1: Create account with Supabase Auth

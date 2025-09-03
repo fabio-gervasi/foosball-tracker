@@ -25,7 +25,7 @@ export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api-w
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   // Relational endpoints are already mounted under /make-server-171cbf6f prefix
   // No need to add prefix again - just use the endpoint as-is
-  let fullEndpoint = endpoint;
+  const fullEndpoint = endpoint;
 
   logger.apiRequest(fullEndpoint, options.method || 'GET');
 
@@ -53,6 +53,10 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     '/matches',
     '/promote-admin',
     '/admin',
+    // Admin operations that require authentication
+    '/admin/users',
+    '/admin/matches',
+    '/admin/groups',
     // Relational endpoints that require authentication
     '/user-relational',
     '/users-relational',

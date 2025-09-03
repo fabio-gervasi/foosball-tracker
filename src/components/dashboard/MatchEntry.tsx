@@ -270,6 +270,11 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
         let matchData: MatchSubmissionData;
 
         if (seriesType === 'bo1') {
+          // Determine winner email from the winning team (use first player from winning team)
+          const winnerEmail = winningTeam === 1
+            ? getPlayerIdentifier(team1Player1)
+            : getPlayerIdentifier(team2Player1);
+
           matchData = {
             matchType: '2v2',
             seriesType,
@@ -282,6 +287,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             team2Player1IsGuest: isGuestPlayer(team2Player1),
             team2Player2IsGuest: isGuestPlayer(team2Player2),
             winningTeam: winningTeam === 1 ? 'team1' : 'team2',
+            winnerEmail: winnerEmail, // Add winnerEmail for admin panel display
             score1: winningTeam === 1 ? 1 : 0,
             score2: winningTeam === 2 ? 1 : 0,
             groupId: '',
@@ -292,6 +298,13 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           // Best of 3 data
           const overallWinner = getOverallWinner();
           const seriesScore = getSeriesScore();
+
+          // Determine winner email from the winning team for bo3 (use first player from winning team)
+          const winnerEmail = overallWinner === 'team1'
+            ? getPlayerIdentifier(team1Player1)
+            : overallWinner === 'team2'
+            ? getPlayerIdentifier(team2Player1)
+            : '';
 
           matchData = {
             matchType: '2v2',
@@ -305,6 +318,7 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
             team2Player1IsGuest: isGuestPlayer(team2Player1),
             team2Player2IsGuest: isGuestPlayer(team2Player2),
             winningTeam: overallWinner,
+            winnerEmail: winnerEmail, // Add winnerEmail for admin panel display
             score1: seriesScore ? seriesScore.player1Wins : 0,
             score2: seriesScore ? seriesScore.player2Wins : 0,
             groupId: '',

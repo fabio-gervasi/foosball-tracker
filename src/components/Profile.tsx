@@ -536,7 +536,7 @@ export function Profile({
         <>
           <h2 className='text-2xl text-gray-800'>{user.username || user.name}</h2>
           <p className='text-gray-600 text-sm'>@{user.username || emailToUsername(user.email)}</p>
-          {user.isAdmin && (
+          {user.is_admin && (
             <div className='inline-flex items-center space-x-1 bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm mt-2'>
               <Shield className='w-3 h-3' />
               <span>Admin</span>
@@ -744,7 +744,7 @@ export function Profile({
           </div>
 
           {/* Admin Section */}
-          {user.isAdmin && (
+          {user.is_admin && (
             <div className='pt-3 border-t border-gray-200'>
               <div className='flex items-center justify-between'>
                 <div className='flex items-center space-x-3'>

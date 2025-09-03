@@ -109,17 +109,17 @@ export function UserManagement({
                       <p className='text-sm text-gray-500'>{user.email}</p>
                       <div className='flex items-center space-x-4 text-xs text-gray-600 mt-1'>
                         <span>
-                          Singles: {user.singlesWins || 0}W-{user.singlesLosses || 0}L
+                          Singles: {user.singles_wins || 0}W-{user.singles_losses || 0}L
                         </span>
                         <span>
-                          Doubles: {user.doublesWins || 0}W-{user.doublesLosses || 0}L
+                          Doubles: {user.doubles_wins || 0}W-{user.doubles_losses || 0}L
                         </span>
                       </div>
                     </div>
                   </div>
 
                   <div className='flex items-center space-x-2'>
-                    {user.isAdmin && (
+                    {user.is_admin && (
                       <span className='px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full flex items-center'>
                         <Crown className='w-3 h-3 mr-1' />
                         Admin
@@ -129,14 +129,14 @@ export function UserManagement({
                     {user.id !== currentUser.id && (
                       <>
                         <button
-                          onClick={() => handleToggleAdminStatus(user.id, user.isAdmin || false)}
+                          onClick={() => handleToggleAdminStatus(user.id, user.is_admin || false)}
                           className={`px-3 py-1 text-xs rounded transition-colors ${
-                            user.isAdmin
+                            user.is_admin
                               ? 'bg-red-100 text-red-700 hover:bg-red-200'
                               : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                           }`}
                         >
-                          {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                          {user.is_admin ? 'Remove Admin' : 'Make Admin'}
                         </button>
 
                         <AlertDialog>

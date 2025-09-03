@@ -175,15 +175,34 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     const currentUserWon = didUserWinMatch(match, currentUser.id);
 
     let winner = 'Unknown';
-    if (match.winner_email) {
+
+    // Method 1: Determine winner from match results (most reliable)
+    if (match.match_results && match.match_results.length > 0) {
+      const winningTeam = match.match_results[0].winning_team;
+      const winningTeamPlayers = getTeamPlayers(match, winningTeam);
+
+      if (winningTeamPlayers.length > 0) {
+        // Use the first player from the winning team (prefer registered users)
+        const registeredWinner = winningTeamPlayers.find(p => p.users && !p.is_guest);
+        const winnerPlayer = registeredWinner || winningTeamPlayers[0];
+        winner = getPlayerDisplayName(winnerPlayer);
+      }
+    }
+    // Method 2: Fallback to winner_email if match results not available
+    else if (match.winner_email) {
       // Try to find the winner's name from the players
       if (match.players) {
         const winnerPlayer = match.players.find(player =>
-          (player.users?.email === match.winner_email) ||
-          (player.is_guest && player.guest_name === match.winner_email)
+          (player.user_id === match.winner_email) || // New format: player ID
+          (player.users?.email === match.winner_email) || // Legacy: email
+          (player.users?.name === match.winner_email) || // Legacy: name
+          (player.is_guest && player.guest_name === match.winner_email) // Legacy: guest name
         );
         if (winnerPlayer) {
           winner = getPlayerDisplayName(winnerPlayer);
+        } else {
+          // If we can't find a matching player, show the winner_email as-is
+          winner = match.winner_email;
         }
       }
     }
@@ -504,11 +523,21 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   const team2Player1Name = team2Player1 ? getPlayerDisplayName(team2Player1) : 'Unknown';
                   const team2Player2Name = team2Player2 ? getPlayerDisplayName(team2Player2) : 'Unknown';
 
-                  // Determine winning team based on winner_email
-                  const userTeam = team1Player1?.team === 'team1' ? 'team1' : 'team2';
-                  const userInTeam1 = team1Players.some(p => p.users?.id === currentUser.id);
-                  const team1Won = userInTeam1 ? matchDisplay.currentUserWon : !matchDisplay.currentUserWon;
-                  const team2Won = !team1Won;
+                  // Determine winning team from match results or winner determination
+                  let team1Won = false;
+                  let team2Won = false;
+
+                  if (match.match_results && match.match_results.length > 0) {
+                    // Use match results for most accurate winner determination
+                    const winningTeam = match.match_results[0].winning_team;
+                    team1Won = winningTeam === 'team1';
+                    team2Won = winningTeam === 'team2';
+                  } else {
+                    // Fallback to user-based determination
+                    const userInTeam1 = team1Players.some(p => p.users?.id === currentUser.id);
+                    team1Won = userInTeam1 ? matchDisplay.currentUserWon : !matchDisplay.currentUserWon;
+                    team2Won = !team1Won;
+                  }
 
                   return (
                     <div
@@ -836,7 +865,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                 )}
                               </div>
-                              {player1 && match.winner_email === player1.users?.email && (
+                              {player1 && didUserWinMatch(match, player1.user_id || '') && (
                                 <Crown className='w-4 h-4 text-yellow-600 flex-shrink-0' />
                               )}
                             </div>
@@ -882,7 +911,7 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                                   </div>
                                 )}
                               </div>
-                              {player2 && match.winner_email === player2.users?.email && (
+                              {player2 && didUserWinMatch(match, player2.user_id || '') && (
                                 <Crown className='w-4 h-4 text-yellow-600 flex-shrink-0' />
                               )}
                             </div>

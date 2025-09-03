@@ -3,6 +3,9 @@
 [functions.api]
 entrypoint = './functions/api/index.tsx'
 
+[functions.api-working]
+entrypoint = './functions/api-working/index.ts'
+
 [functions.data-migration]
 entrypoint = './functions/data-migration/index.tsx'
 

@@ -109,45 +109,32 @@ export function MatchManagement({
                           <strong>Winner:</strong> {matchDisplay.winner}
                         </p>
 
-                        {match.eloChanges && (
+                        {match.eloChanges && Object.keys(match.eloChanges).length > 0 && (
                           <div className='text-xs text-gray-600'>
                             <strong>ELO Changes:</strong>{' '}
                             {Object.entries(match.eloChanges).map(
-                              ([playerId, change]: [string, any]) => {
-                                // Find player name by ID (works for both registered users and guests)
-                                let playerName = playerId;
-                                if (match.matchType === '1v1') {
-                                  if (match.player1?.id === playerId) {
-                                    playerName = match.player1.name;
-                                  } else if (match.player2?.id === playerId) {
-                                    playerName = match.player2.name;
-                                  }
-                                } else if (match.matchType === '2v2') {
-                                  if (match.team1?.player1?.id === playerId) {
-                                    playerName = match.team1.player1.name;
-                                  } else if (match.team1?.player2?.id === playerId) {
-                                    playerName = match.team1.player2.name;
-                                  } else if (match.team2?.player1?.id === playerId) {
-                                    playerName = match.team2.player1.name;
-                                  } else if (match.team2?.player2?.id === playerId) {
-                                    playerName = match.team2.player2.name;
+                              ([userId, change]: [string, any]) => {
+                                // Find player name using the new relational structure
+                                let playerName = userId; // Default to userId if not found
+
+                                // Look through match.players array to find the player
+                                if (match.players && Array.isArray(match.players)) {
+                                  const player = match.players.find(p => p.user_id === userId);
+                                  if (player) {
+                                    // Use guest name if it's a guest, otherwise use user name
+                                    playerName = player.is_guest ? player.guest_name : (player.users?.name || userId);
                                   }
                                 }
-                                // Fallback: try to find by email if we have player data
-                                if (playerName === playerId && match.matchType === '1v1') {
-                                  const user = users.find(
-                                    u =>
-                                      (match.player1?.id === playerId &&
-                                        u.email === match.player1?.email) ||
-                                      (match.player2?.id === playerId &&
-                                        u.email === match.player2?.email)
-                                  );
+
+                                // Fallback: try to find by email in users array
+                                if (playerName === userId) {
+                                  const user = users.find(u => u.id === userId);
                                   if (user) playerName = user.name;
                                 }
 
                                 return (
                                   <span
-                                    key={playerId}
+                                    key={userId}
                                     className={`ml-2 ${change.change > 0 ? 'text-green-600' : 'text-red-600'}`}
                                   >
                                     {playerName}: {change.change > 0 ? '+' : ''}

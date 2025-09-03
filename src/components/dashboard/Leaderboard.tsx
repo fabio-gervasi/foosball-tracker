@@ -17,13 +17,13 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
 
   const getSortedUsers = () => {
     return [...users].sort((a, b) => {
-      const aWins = gameMode === 'singles' ? a.singlesWins || 0 : a.doublesWins || 0;
-      const aLosses = gameMode === 'singles' ? a.singlesLosses || 0 : a.doublesLosses || 0;
-      const aElo = gameMode === 'singles' ? a.singlesElo || 1200 : a.doublesElo || 1200;
+      const aWins = gameMode === 'singles' ? a.singles_wins || 0 : a.doubles_wins || 0;
+      const aLosses = gameMode === 'singles' ? a.singles_losses || 0 : a.doubles_losses || 0;
+      const aElo = gameMode === 'singles' ? a.singles_elo || 1200 : a.doubles_elo || 1200;
 
-      const bWins = gameMode === 'singles' ? b.singlesWins || 0 : b.doublesWins || 0;
-      const bLosses = gameMode === 'singles' ? b.singlesLosses || 0 : b.doublesLosses || 0;
-      const bElo = gameMode === 'singles' ? b.singlesElo || 1200 : b.doublesElo || 1200;
+      const bWins = gameMode === 'singles' ? b.singles_wins || 0 : b.doubles_wins || 0;
+      const bLosses = gameMode === 'singles' ? b.singles_losses || 0 : b.doubles_losses || 0;
+      const bElo = gameMode === 'singles' ? b.singles_elo || 1200 : b.doubles_elo || 1200;
 
       switch (sortBy) {
         case 'elo':
@@ -198,10 +198,10 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
         <div className='divide-y divide-gray-200'>
           {sortedUsers.map((user, index) => {
             const rank = index + 1;
-            const wins = gameMode === 'singles' ? user.singlesWins || 0 : user.doublesWins || 0;
+            const wins = gameMode === 'singles' ? user.singles_wins || 0 : user.doubles_wins || 0;
             const losses =
-              gameMode === 'singles' ? user.singlesLosses || 0 : user.doublesLosses || 0;
-            const elo = gameMode === 'singles' ? user.singlesElo || 1200 : user.doublesElo || 1200;
+              gameMode === 'singles' ? user.singles_losses || 0 : user.doubles_losses || 0;
+            const elo = gameMode === 'singles' ? user.singles_elo || 1200 : user.doubles_elo || 1200;
             const totalGames = wins + losses;
             const winRate = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : '0';
 
@@ -289,7 +289,7 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
           <div>
             <TrendingUp className='w-8 h-8 text-green-600 mx-auto mb-2' />
             <p className='text-2xl text-gray-800'>
-              {users.reduce((total, user) => total + (user.wins || 0) + (user.losses || 0), 0)}
+              {users.reduce((total, user) => total + (user.singles_wins || 0) + (user.singles_losses || 0) + (user.doubles_wins || 0) + (user.doubles_losses || 0), 0)}
             </p>
             <p className='text-sm text-gray-600'>Total Matches</p>
           </div>

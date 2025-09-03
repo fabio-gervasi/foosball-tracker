@@ -105,10 +105,10 @@ export function PlayerProfile({
 
   const wins = player.wins || 0;
   const losses = player.losses || 0;
-  const singlesWins = player.singlesWins || 0;
-  const singlesLosses = player.singlesLosses || 0;
-  const doublesWins = player.doublesWins || 0;
-  const doublesLosses = player.doublesLosses || 0;
+  const singlesWins = player.singles_wins || 0;
+  const singlesLosses = player.singles_losses || 0;
+  const doublesWins = player.doubles_wins || 0;
+  const doublesLosses = player.doubles_losses || 0;
 
   const winRate = wins + losses > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '0';
   const singlesWinRate =
@@ -257,7 +257,7 @@ export function PlayerProfile({
             <div className='flex justify-between'>
               <span className='text-gray-600'>Wins / Losses</span>
               <span className='text-gray-800'>
-                {player.singlesWins || 0}W / {player.singlesLosses || 0}L
+                {player.singles_wins || 0}W / {player.singles_losses || 0}L
               </span>
             </div>
             <div className='flex justify-between'>
@@ -284,7 +284,7 @@ export function PlayerProfile({
             <div className='flex justify-between'>
               <span className='text-gray-600'>Wins / Losses</span>
               <span className='text-gray-800'>
-                {player.doublesWins || 0}W / {player.doublesLosses || 0}L
+                {player.doubles_wins || 0}W / {player.doubles_losses || 0}L
               </span>
             </div>
             <div className='flex justify-between'>
