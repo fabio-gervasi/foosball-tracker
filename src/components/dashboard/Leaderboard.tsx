@@ -201,7 +201,8 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
             const wins = gameMode === 'singles' ? user.singles_wins || 0 : user.doubles_wins || 0;
             const losses =
               gameMode === 'singles' ? user.singles_losses || 0 : user.doubles_losses || 0;
-            const elo = gameMode === 'singles' ? user.singles_elo || 1200 : user.doubles_elo || 1200;
+            const elo =
+              gameMode === 'singles' ? user.singles_elo || 1200 : user.doubles_elo || 1200;
             const totalGames = wins + losses;
             const winRate = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : '0';
 
@@ -289,7 +290,15 @@ export function Leaderboard({ users, group, currentUser, accessToken }: Leaderbo
           <div>
             <TrendingUp className='w-8 h-8 text-green-600 mx-auto mb-2' />
             <p className='text-2xl text-gray-800'>
-              {users.reduce((total, user) => total + (user.singles_wins || 0) + (user.singles_losses || 0) + (user.doubles_wins || 0) + (user.doubles_losses || 0), 0)}
+              {users.reduce(
+                (total, user) =>
+                  total +
+                  (user.singles_wins || 0) +
+                  (user.singles_losses || 0) +
+                  (user.doubles_wins || 0) +
+                  (user.doubles_losses || 0),
+                0
+              )}
             </p>
             <p className='text-sm text-gray-600'>Total Matches</p>
           </div>

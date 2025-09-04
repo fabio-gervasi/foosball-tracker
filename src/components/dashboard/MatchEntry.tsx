@@ -271,9 +271,10 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
 
         if (seriesType === 'bo1') {
           // Determine winner email from the winning team (use first player from winning team)
-          const winnerEmail = winningTeam === 1
-            ? getPlayerIdentifier(team1Player1)
-            : getPlayerIdentifier(team2Player1);
+          const winnerEmail =
+            winningTeam === 1
+              ? getPlayerIdentifier(team1Player1)
+              : getPlayerIdentifier(team2Player1);
 
           matchData = {
             matchType: '2v2',
@@ -300,11 +301,12 @@ export function MatchEntry({ users, onMatchSubmit }: MatchEntryProps) {
           const seriesScore = getSeriesScore();
 
           // Determine winner email from the winning team for bo3 (use first player from winning team)
-          const winnerEmail = overallWinner === 'team1'
-            ? getPlayerIdentifier(team1Player1)
-            : overallWinner === 'team2'
-            ? getPlayerIdentifier(team2Player1)
-            : '';
+          const winnerEmail =
+            overallWinner === 'team1'
+              ? getPlayerIdentifier(team1Player1)
+              : overallWinner === 'team2'
+                ? getPlayerIdentifier(team2Player1)
+                : '';
 
           matchData = {
             matchType: '2v2',

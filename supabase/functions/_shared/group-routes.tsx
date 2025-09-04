@@ -1,7 +1,19 @@
 import { Hono } from 'npm:hono';
-import * as kv from './kv_store.tsx';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { INITIAL_ELO } from './server-constants.tsx';
-import { validateUserAuth } from './auth-helpers.tsx';
+import { validateUserAuth } from './auth-helpers-relational.tsx';
+
+// Create Supabase client for relational queries
+const createRelationalClient = () => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase credentials');
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
+};
 
 export function createGroupRoutes(supabase: any) {
   const app = new Hono();
@@ -27,61 +39,90 @@ export function createGroupRoutes(supabase: any) {
         return c.json({ error: 'Group name must be at least 3 characters' }, 400);
       }
 
+      const relationalClient = createRelationalClient();
+
       // Generate a unique group code
       let groupCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-      // Check if group code already exists (very unlikely but possible)
-      const existingGroup = await kv.get(`group:${groupCode}`);
+      // Check if group code already exists in database
+      const { data: existingGroup } = await relationalClient
+        .from('groups')
+        .select('code')
+        .eq('code', groupCode)
+        .single();
+
       if (existingGroup) {
         // Try again with a different code
         groupCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const secondCheck = await kv.get(`group:${groupCode}`);
+        const { data: secondCheck } = await relationalClient
+          .from('groups')
+          .select('code')
+          .eq('code', groupCode)
+          .single();
+
         if (secondCheck) {
           return c.json({ error: 'Failed to generate unique group code, please try again' }, 500);
         }
       }
 
-      // Create group
-      const groupData = {
-        code: groupCode,
-        name,
-        createdBy: authResult.user.id,
-        createdAt: new Date().toISOString(),
-        members: [authResult.user.id], // Creator is automatically a member
-        memberCount: 1,
-        admins: [authResult.user.id], // Creator is automatically an admin
-      };
-
-      await kv.set(`group:${groupCode}`, groupData);
-
-      // Create group-user relationship entry (new pattern)
-      await kv.set(`group:${groupCode}:user:${authResult.user.id}`, authResult.user.id);
-
-      // Update user's current group and groups list
-      const userProfile = await kv.get(`user:${authResult.user.id}`);
-      if (userProfile) {
-        // Initialize groups array if not exists
-        if (!userProfile.groups || !Array.isArray(userProfile.groups)) {
-          userProfile.groups = [];
-        }
-
-        // Add group to user's groups list
-        userProfile.groups.push({
+      // Create group in database
+      const { data: groupData, error: groupError } = await relationalClient
+        .from('groups')
+        .insert({
           code: groupCode,
           name,
-          joinedAt: new Date().toISOString(),
+          created_by: authResult.user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (groupError) {
+        console.error('Failed to create group in database:', groupError);
+        return c.json({ error: 'Failed to create group' }, 500);
+      }
+
+      // Create group-user relationship in database
+      const { error: relationError } = await relationalClient
+        .from('user_groups')
+        .insert({
+          user_id: authResult.user.id,
+          group_code: groupCode,
+          joined_at: new Date().toISOString(),
         });
 
-        userProfile.currentGroup = groupCode;
-        userProfile.joinedGroupAt = new Date().toISOString();
-        userProfile.isAdmin = true; // Creator is automatically an admin
-        await kv.set(`user:${authResult.user.id}`, userProfile);
+      if (relationError) {
+        console.error('Failed to create user-group relationship:', relationError);
+        // Continue anyway - the group was created
+      }
+
+      // Update user's current group in database
+      const { error: userError } = await relationalClient
+        .from('users')
+        .update({
+          current_group_code: groupCode,
+          is_admin: true, // Creator is automatically an admin
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false);
+
+      if (userError) {
+        console.error('Failed to update user with new group:', userError);
+        // Continue anyway - the group was created
       }
 
       console.log('Group created successfully:', groupCode);
       return c.json({
         message: 'Group created successfully',
-        group: groupData,
+        group: {
+          ...groupData,
+          id: groupData.code, // Legacy compatibility
+          members: [authResult.user.id],
+          memberCount: 1,
+          admins: [authResult.user.id],
+        },
       });
     } catch (error) {
       console.error('=== Create group error ===', error);
@@ -453,24 +494,35 @@ export function createGroupRoutes(supabase: any) {
       }
       console.log('✅ Auth validation successful, user ID:', authResult.user.id);
 
+      const relationalClient = createRelationalClient();
+
       console.log('Step 2: Getting user profile...');
-      const userProfile = await kv.get(`user:${authResult.user.id}`);
-      if (!userProfile || !userProfile.currentGroup) {
-        console.log('User profile not found or no group:', {
-          hasProfile: !!userProfile,
-          currentGroup: userProfile?.currentGroup,
-        });
+      const { data: userData, error: userError } = await relationalClient
+        .from('users')
+        .select('id, current_group_code, is_admin')
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        console.log('User profile not found:', userError);
         return c.json({ error: 'User is not in any group' }, 404);
       }
+
+      if (!userData.current_group_code) {
+        console.log('User has no current group');
+        return c.json({ error: 'User is not in any group' }, 404);
+      }
+
       console.log(
         '✅ User profile found, group:',
-        userProfile.currentGroup,
+        userData.current_group_code,
         'isAdmin:',
-        userProfile.isAdmin
+        userData.is_admin
       );
 
       // Check if user is admin
-      if (!userProfile.isAdmin) {
+      if (!userData.is_admin) {
         console.log('User is not admin, denying access');
         return c.json({ error: 'Admin privileges required' }, 403);
       }
@@ -652,30 +704,24 @@ export function createGroupRoutes(supabase: any) {
       console.log('✅ Signed URL created successfully');
 
       console.log('Step 10: Updating group record...');
-      let group;
-      try {
-        group = await kv.get(`group:${userProfile.currentGroup}`);
-      } catch (kvError) {
-        console.error('❌ Failed to get group from KV store:', kvError);
-        return c.json({ error: `Failed to access group data: ${kvError.message}` }, 500);
-      }
 
-      if (!group) {
-        console.error('❌ Group not found when updating icon:', userProfile.currentGroup);
-        return c.json({ error: 'Group not found' }, 404);
-      }
+      // Update group with icon in database
+      const { data: updatedGroup, error: updateError } = await relationalClient
+        .from('groups')
+        .update({
+          icon: signedUrlData.signedUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('code', userData.current_group_code)
+        .select()
+        .single();
 
-      try {
-        group.icon = signedUrlData.signedUrl;
-        group.iconFileName = fileName;
-        group.updatedAt = new Date().toISOString();
-        group.updatedBy = authResult.user.id;
-        await kv.set(`group:${userProfile.currentGroup}`, group);
-        console.log('✅ Group updated with new icon successfully');
-      } catch (updateError) {
+      if (updateError) {
         console.error('❌ Failed to update group with icon:', updateError);
         return c.json({ error: `Failed to update group with icon: ${updateError.message}` }, 500);
       }
+
+      console.log('✅ Group updated with new icon successfully');
 
       console.log('🎉 Group icon upload completed successfully!');
       return c.json({
@@ -714,6 +760,106 @@ export function createGroupRoutes(supabase: any) {
         },
         500
       );
+    }
+  });
+
+  // Delete group icon (admin only)
+  app.delete('/groups/current/icon', async c => {
+    console.log('=== Delete group icon request received ===');
+
+    try {
+      console.log('Step 1: Validating user authentication...');
+      const authResult = await validateUserAuth(c, supabase);
+      if (authResult.error) {
+        console.log('Auth validation failed:', authResult.error);
+        return c.json({ error: authResult.error }, authResult.status);
+      }
+      console.log('✅ Auth validation successful, user ID:', authResult.user.id);
+
+      const relationalClient = createRelationalClient();
+
+      console.log('Step 2: Getting user profile...');
+      const { data: userData, error: userError } = await relationalClient
+        .from('users')
+        .select('id, current_group_code, is_admin')
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        console.log('User profile not found:', userError);
+        return c.json({ error: 'User is not in any group' }, 404);
+      }
+
+      if (!userData.current_group_code) {
+        console.log('User has no current group');
+        return c.json({ error: 'User is not in any group' }, 404);
+      }
+
+      console.log(
+        '✅ User profile found, group:',
+        userData.current_group_code,
+        'isAdmin:',
+        userData.is_admin
+      );
+
+      // Check if user is admin
+      if (!userData.is_admin) {
+        console.log('User is not admin, denying access');
+        return c.json({ error: 'Admin privileges required' }, 403);
+      }
+
+      console.log('Step 3: Getting group data...');
+      const { data: groupData, error: groupError } = await relationalClient
+        .from('groups')
+        .select('code, name, icon')
+        .eq('code', userData.current_group_code)
+        .single();
+
+      if (groupError || !groupData) {
+        console.error('❌ Group not found:', groupError);
+        return c.json({ error: 'Group not found' }, 404);
+      }
+      console.log('✅ Group found:', groupData.name);
+
+      // If group has no icon, nothing to delete
+      if (!groupData.icon) {
+        return c.json({ message: 'No icon to delete' });
+      }
+
+      console.log('Step 4: Updating group record...');
+      // Update group to remove icon
+      const { data: updatedGroup, error: updateError } = await relationalClient
+        .from('groups')
+        .update({
+          icon: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('code', userData.current_group_code)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('❌ Failed to update group:', updateError);
+        return c.json({ error: `Failed to delete group icon: ${updateError.message}` }, 500);
+      }
+
+      console.log('✅ Group updated successfully');
+
+      console.log('🎉 Group icon deletion completed successfully!');
+      return c.json({
+        message: 'Group icon deleted successfully',
+        group: {
+          code: updatedGroup.code,
+          name: updatedGroup.name,
+          icon: updatedGroup.icon,
+          updatedAt: updatedGroup.updated_at,
+        },
+      });
+    } catch (error) {
+      console.error('=== CRITICAL: Delete group icon error ===');
+      console.error(error);
+      return c.json({ error: 'Internal server error while deleting group icon' }, 500);
     }
   });
 

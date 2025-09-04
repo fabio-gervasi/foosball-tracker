@@ -21,7 +21,7 @@ import {
   calculateUserStatsFromMatches,
   getTeamPlayers,
   getPlayerDisplayName,
-  getOpponentStats
+  getOpponentStats,
 } from '../../utils/match-helpers';
 
 // Custom SVG chart component to avoid flickering issues with Recharts
@@ -344,20 +344,29 @@ export function Statistics({ user, matches, group }: StatisticsProps) {
 
   // Calculate opponent statistics using helper function
   const opponentStatsData = getOpponentStats(userMatches, user.id, []);
-  const rawOpponentStats = opponentStatsData.reduce((acc, opp) => {
-    const key = opp.opponentId || `guest-${opp.opponentName}`;
-    acc[key] = {
-      name: opp.opponentName,
-      wins: opp.wins,
-      losses: opp.losses,
-      total: opp.total,
-      avatar: opp.opponentName[0]?.toUpperCase() || 'U',
-    };
-    return acc;
-  }, {} as Record<string, { name: string; wins: number; losses: number; total: number; avatar: string }>);
+  const rawOpponentStats = opponentStatsData.reduce(
+    (acc, opp) => {
+      const key = opp.opponentId || `guest-${opp.opponentName}`;
+      acc[key] = {
+        name: opp.opponentName,
+        wins: opp.wins,
+        losses: opp.losses,
+        total: opp.total,
+        avatar: opp.opponentName[0]?.toUpperCase() || 'U',
+      };
+      return acc;
+    },
+    {} as Record<
+      string,
+      { name: string; wins: number; losses: number; total: number; avatar: string }
+    >
+  );
 
   // Now consolidate by name to handle duplicates
-  const consolidatedOpponentStats: Record<string, { name: string; wins: number; losses: number; total: number; avatar: string }> = {};
+  const consolidatedOpponentStats: Record<
+    string,
+    { name: string; wins: number; losses: number; total: number; avatar: string }
+  > = {};
   Object.values(rawOpponentStats).forEach(stats => {
     const normalizedName = stats.name.toLowerCase().trim();
 

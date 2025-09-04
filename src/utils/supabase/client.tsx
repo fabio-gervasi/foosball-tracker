@@ -19,11 +19,23 @@ export const supabase = createClient(supabaseUrl, publicAnonKey, {
 });
 
 // API base URL for our server functions
-export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api-working`;
+export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api`;
+
+// Helper function to construct avatar URL from filename
+export function getAvatarUrl(avatar: string | null): string | null {
+  if (!avatar || avatar.length <= 1 || avatar.includes('/')) {
+    // This is initials or already a URL, return null to use fallback
+    return null;
+  }
+
+  // Construct Supabase storage URL
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  return `https://${projectId}.supabase.co/storage/v1/object/public/make-171cbf6f-avatars/${avatar}`;
+}
 
 // Helper function to make authenticated requests
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  // Relational endpoints are already mounted under /make-server-171cbf6f prefix
+  // Relational endpoints are already mounted under /api prefix
   // No need to add prefix again - just use the endpoint as-is
   const fullEndpoint = endpoint;
 
@@ -90,7 +102,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         logger.debug('Session retrieval result:', {
           hasSession: !!session,
           hasError: !!sessionError,
-          sessionError: sessionError?.message
+          sessionError: sessionError?.message,
         });
 
         if (sessionError) {
@@ -166,7 +178,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     logger.debug(`Making actual fetch request to: ${API_BASE_URL}${fullEndpoint}`, {
       method: options.method || 'GET',
       hasAuth: !!headers.Authorization,
-      authType: headers.Authorization?.split(' ')[0] || 'none'
+      authType: headers.Authorization?.split(' ')[0] || 'none',
     });
 
     const response = await fetch(`${API_BASE_URL}${fullEndpoint}`, {
@@ -177,7 +189,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     logger.debug(`Request completed with status: ${response.status}`, {
       status: response.status,
       statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
+      headers: Object.fromEntries(response.headers.entries()),
     });
 
     logger.apiResponse(fullEndpoint, response.status, response.ok);
@@ -232,7 +244,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         throw new Error('Authentication required');
       }
 
-              throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+      throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
     }
 
     const responseData = await response.json();

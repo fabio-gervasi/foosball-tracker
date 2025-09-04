@@ -42,17 +42,21 @@ export const AppRouter: React.FC = () => {
   const [lastMatchResult, setLastMatchResult] = useState<any | null>(null);
 
   // Get contexts
-  const { currentUser, accessToken } = useAuth();
+  const { currentUser: authUser, accessToken } = useAuth();
   const {
     users,
     matches,
     currentGroup,
+    currentUser: appDataUser,
     error,
     handleMatchSubmit,
     handleProfileUpdate,
     handleGroupChanged,
     refreshData,
   } = useAppData();
+
+  // Use the more up-to-date user data from AppData if available, otherwise fall back to Auth
+  const currentUser = appDataUser || authUser;
 
   // Memoized navigation handlers for better performance
   const handleNavigate = useCallback((event: any) => {

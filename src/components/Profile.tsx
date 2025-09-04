@@ -14,7 +14,6 @@ import {
   Plus,
 } from 'lucide-react';
 import { apiRequest, supabase } from '../utils/supabase/client';
-import { projectId } from '../utils/supabase/info';
 import { Avatar } from './Avatar';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { logger } from '../utils/logger';

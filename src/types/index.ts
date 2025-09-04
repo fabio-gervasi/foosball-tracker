@@ -132,8 +132,6 @@ export interface Team {
   player2: PlayerReference;
 }
 
-
-
 /**
  * Match entity representing a completed game
  */
@@ -197,6 +195,10 @@ export interface Match {
   >;
   /** Group code (legacy, use group_code) */
   groupCode?: string;
+  /** Match results for series matches */
+  match_results?: MatchResult[];
+  /** Alternative match results property */
+  results?: MatchResult[];
 }
 
 // =============================================================================

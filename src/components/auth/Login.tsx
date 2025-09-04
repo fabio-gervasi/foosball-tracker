@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User, Lock, Mail, Server, AlertCircle } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import foosballIcon from '../../assets/foosball-icon.png';
-import { apiRequest, supabase } from '../../utils/supabase/client';
+import { apiRequest, supabase, API_BASE_URL } from '../../utils/supabase/client';
+import { publicAnonKey, projectId } from '../../utils/supabase/info';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialogContext } from '../common/DialogProvider';
 import { foosballAnalytics } from '../../utils/analytics';
@@ -168,48 +169,76 @@ export function Login({ onLogin }: LoginProps) {
           await login(response.user, data.session.access_token);
           foosballAnalytics.trackUserLogin('email', false);
         } else {
-          // Username login: look up the user's email from their username
-          console.log('Attempting username login for:', email);
-          
-          // Step 1: Look up the user's email from their username
-          const lookupResponse = await apiRequest('/username-lookup', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username: email }),
-          });
+          // Username login: Lookup email for username, then authenticate
+          console.info('Username login attempted:', email);
 
-          if (!lookupResponse.email) {
-            throw new Error('Username not found. Please check your username and try again.');
+          try {
+            // Step 1: Lookup email for username using the username-lookup function
+            const lookupUrl = `https://${projectId}.supabase.co/functions/v1/username-lookup`;
+            const lookupResponse = await fetch(lookupUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${publicAnonKey}`,
+              },
+              body: JSON.stringify({ username: email.trim() }),
+            });
+
+            if (!lookupResponse.ok) {
+              if (lookupResponse.status === 404) {
+                throw new Error('Username not found');
+              }
+              throw new Error('Failed to lookup username');
+            }
+
+            const lookupData = await lookupResponse.json();
+
+            if (!lookupData.email) {
+              throw new Error('Username not found');
+            }
+
+            console.info('Found email for username:', lookupData.email);
+
+            // Step 2: Authenticate with Supabase using the found email
+            const { data, error: authError } = await supabase.auth.signInWithPassword({
+              email: lookupData.email,
+              password,
+            });
+
+            if (authError) {
+              throw authError;
+            }
+
+            if (!data.session?.access_token) {
+              throw new Error('No access token received');
+            }
+
+            // Step 3: Validate with relational endpoint and get user profile
+            const response = await apiRequest('/user-relational', {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${data.session.access_token}`,
+              },
+            });
+
+            await login(response.user, data.session.access_token);
+            foosballAnalytics.trackUserLogin('username', false);
+          } catch (lookupError) {
+            console.error('Username lookup failed:', lookupError);
+
+            // Provide specific error messages for username login issues
+            if (lookupError instanceof Error) {
+              if (lookupError.message.includes('Username not found')) {
+                throw new Error(
+                  'Username not found. Please check your username or use your email to login instead.'
+                );
+              } else if (lookupError.message.includes('Invalid login credentials')) {
+                throw new Error('Invalid username or password. Please check your credentials.');
+              }
+            }
+
+            throw new Error('Username login failed. Please try using your email address instead.');
           }
-
-          console.log('Found email for username:', lookupResponse.email);
-
-          // Step 2: Authenticate with Supabase using the found email
-          const { data, error: authError } = await supabase.auth.signInWithPassword({
-            email: lookupResponse.email,
-            password,
-          });
-
-          if (authError) {
-            throw authError;
-          }
-
-          if (!data.session?.access_token) {
-            throw new Error('No access token received');
-          }
-
-          // Step 3: Validate with relational endpoint and get user profile
-          const response = await apiRequest('/user-relational', {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${data.session.access_token}`,
-            },
-          });
-
-          await login(response.user, data.session.access_token);
-          foosballAnalytics.trackUserLogin('username', false);
         }
       } else {
         // Step 1: Create account with Supabase Auth
@@ -220,8 +249,8 @@ export function Login({ onLogin }: LoginProps) {
             data: {
               name: name.trim(),
               username: username.trim(),
-            }
-          }
+            },
+          },
         });
 
         if (signUpError) {

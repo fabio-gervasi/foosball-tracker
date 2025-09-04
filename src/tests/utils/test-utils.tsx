@@ -68,6 +68,7 @@ const defaultAppDataContext: AppDataContextType = {
   users: mockUsers,
   matches: mockMatches,
   currentGroup: mockGroup,
+  currentUser: mockUsers[0],
   isLoadingData: false,
   error: null,
   isFetching: false,

@@ -29,6 +29,7 @@ CREATE TABLE users (
 CREATE TABLE groups (
   code TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  icon TEXT,
   created_by UUID REFERENCES users(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
