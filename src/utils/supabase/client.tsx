@@ -19,11 +19,11 @@ export const supabase = createClient(supabaseUrl, publicAnonKey, {
 });
 
 // API base URL for our server functions
-export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api-working`;
+export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api`;
 
 // Helper function to make authenticated requests
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  // Relational endpoints are already mounted under /make-server-171cbf6f prefix
+  // Relational endpoints are already mounted under /api prefix
   // No need to add prefix again - just use the endpoint as-is
   const fullEndpoint = endpoint;
 

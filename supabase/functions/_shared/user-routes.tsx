@@ -1,6 +1,18 @@
 import { Hono } from 'npm:hono';
-import * as kv from './kv_store.tsx';
-import { validateUserAuth } from './auth-helpers.tsx';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { validateUserAuth } from './auth-helpers-relational.tsx';
+
+// Create Supabase client for relational queries
+const createRelationalClient = () => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase credentials');
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
+};
 
 export function createUserRoutes(supabase: any) {
   const app = new Hono();
@@ -15,86 +27,81 @@ export function createUserRoutes(supabase: any) {
         return c.json({ error: authResult.error }, authResult.status);
       }
 
-      const userProfile = await kv.get(`user:${authResult.user.id}`);
-      if (!userProfile) {
+      const relationalClient = createRelationalClient();
+
+      // Get the current user to find their group
+      const { data: userData, error: userError } = await relationalClient
+        .from('users')
+        .select('current_group_code')
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        console.log('User not found or error:', userError);
         return c.json({ error: 'User profile not found' }, 404);
       }
 
-      if (!userProfile.currentGroup) {
+      if (!userData.current_group_code) {
         console.log('User has no group, returning empty users array');
         return c.json({ users: [] });
       }
 
-      console.log('Getting users for group:', userProfile.currentGroup);
-      console.log('User profile details:', {
-        id: userProfile.id,
-        name: userProfile.name,
-        username: userProfile.username,
-        currentGroup: userProfile.currentGroup,
+      console.log('Getting users for group:', userData.current_group_code);
+
+      // Get all users in the same group using the junction table
+      const { data: usersData, error: usersError } = await relationalClient
+        .from('user_groups')
+        .select(`
+          user_id,
+          users!inner (
+            id,
+            email,
+            username,
+            name,
+            avatar,
+            is_admin,
+            singles_elo,
+            doubles_elo,
+            singles_wins,
+            singles_losses,
+            doubles_wins,
+            doubles_losses,
+            current_group_code,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('group_code', userData.current_group_code);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        return c.json({ error: 'Failed to fetch users' }, 500);
+      }
+
+      // Transform the data to match the expected format
+      const users = (usersData || []).map(item => {
+        const user = item.users;
+        return {
+          ...user,
+          avatarUrl: user.avatar, // Map avatar to avatarUrl for frontend compatibility
+          isAdmin: user.is_admin,
+          singlesElo: user.singles_elo,
+          doublesElo: user.doubles_elo,
+          singlesWins: user.singles_wins,
+          singlesLosses: user.singles_losses,
+          doublesWins: user.doubles_wins,
+          doublesLosses: user.doubles_losses,
+          currentGroup: user.current_group_code,
+          // Remove sensitive information
+          password: undefined,
+        };
       });
-
-      // Get all users in the same group
-      const groupUserPrefix = `group:${userProfile.currentGroup}:user:`;
-      console.log('Searching for group-user entries with prefix:', groupUserPrefix);
-      const groupUserEntries = await kv.getByPrefix(groupUserPrefix);
-
-      console.log(`Found ${groupUserEntries.length} user entries in group`);
-      if (groupUserEntries.length > 0) {
-        console.log(
-          'Sample group-user entries:',
-          groupUserEntries.slice(0, 3).map(e => ({
-            key: e.key,
-            value: e.value,
-          }))
-        );
-      } else {
-        console.log(
-          'No group-user entries found. This suggests the group-user relationships are missing.'
-        );
-
-        // Let's also check if the group exists and has members
-        const groupData = await kv.get(`group:${userProfile.currentGroup}`);
-        console.log(
-          'Group data:',
-          groupData
-            ? {
-                code: groupData.code,
-                name: groupData.name,
-                memberCount: groupData.memberCount,
-                membersArrayLength: Array.isArray(groupData.members)
-                  ? groupData.members.length
-                  : 'not an array',
-                members: groupData.members,
-              }
-            : 'Group not found'
-        );
-      }
-
-      const users = [];
-
-      for (const entry of groupUserEntries) {
-        try {
-          const userId = entry.value;
-          const user = await kv.get(`user:${userId}`);
-
-          if (user && !user.isDeleted) {
-            // Remove sensitive information before sending
-            const safeUser = {
-              ...user,
-              password: undefined, // Never send passwords
-            };
-            users.push(safeUser);
-          }
-        } catch (userError) {
-          console.error('Error getting user from group entry:', userError);
-          // Continue with other users
-        }
-      }
 
       // Sort users by name for consistent ordering
       users.sort((a, b) => (a.name || a.username || '').localeCompare(b.name || b.username || ''));
 
-      console.log(`Returning ${users.length} users for group ${userProfile.currentGroup}`);
+      console.log(`Returning ${users.length} users for group ${userData.current_group_code}`);
       return c.json({ users });
     } catch (error) {
       console.error('=== Get users error ===', error);
@@ -113,25 +120,48 @@ export function createUserRoutes(supabase: any) {
       }
 
       const userId = c.req.param('userId');
-      const requestingUserProfile = await kv.get(`user:${authResult.user.id}`);
-      const targetUserProfile = await kv.get(`user:${userId}`);
+      const relationalClient = createRelationalClient();
 
-      if (!requestingUserProfile) {
+      // Get both users' group information
+      const { data: usersData, error: usersError } = await relationalClient
+        .from('users')
+        .select('id, current_group_code, name, email, username, avatar, is_admin, singles_elo, doubles_elo, singles_wins, singles_losses, doubles_wins, doubles_losses, created_at, updated_at')
+        .in('id', [authResult.user.id, userId])
+        .eq('is_deleted', false);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        return c.json({ error: 'Failed to fetch user data' }, 500);
+      }
+
+      const requestingUser = usersData?.find(u => u.id === authResult.user.id);
+      const targetUser = usersData?.find(u => u.id === userId);
+
+      if (!requestingUser) {
         return c.json({ error: 'Requesting user profile not found' }, 404);
       }
 
-      if (!targetUserProfile || targetUserProfile.isDeleted) {
+      if (!targetUser) {
         return c.json({ error: 'User not found' }, 404);
       }
 
       // Check if both users are in the same group
-      if (requestingUserProfile.currentGroup !== targetUserProfile.currentGroup) {
+      if (requestingUser.current_group_code !== targetUser.current_group_code) {
         return c.json({ error: 'User not in your group' }, 403);
       }
 
       // Return safe user data (without sensitive information)
       const safeUser = {
-        ...targetUserProfile,
+        ...targetUser,
+        avatarUrl: targetUser.avatar, // Map avatar to avatarUrl for frontend compatibility
+        isAdmin: targetUser.is_admin,
+        singlesElo: targetUser.singles_elo,
+        doublesElo: targetUser.doubles_elo,
+        singlesWins: targetUser.singles_wins,
+        singlesLosses: targetUser.singles_losses,
+        doublesWins: targetUser.doubles_wins,
+        doublesLosses: targetUser.doubles_losses,
+        currentGroup: targetUser.current_group_code,
         password: undefined, // Never send passwords
       };
 
@@ -154,59 +184,104 @@ export function createUserRoutes(supabase: any) {
       }
 
       const userId = c.req.param('userId');
-      const requestingUserProfile = await kv.get(`user:${authResult.user.id}`);
-      const targetUserProfile = await kv.get(`user:${userId}`);
+      const relationalClient = createRelationalClient();
 
-      if (!requestingUserProfile) {
+      // Get both users to verify they are in the same group
+      const { data: usersData, error: usersError } = await relationalClient
+        .from('users')
+        .select('id, current_group_code')
+        .in('id', [authResult.user.id, userId])
+        .eq('is_deleted', false);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        return c.json({ error: 'Failed to fetch user data' }, 500);
+      }
+
+      const requestingUser = usersData?.find(u => u.id === authResult.user.id);
+      const targetUser = usersData?.find(u => u.id === userId);
+
+      if (!requestingUser) {
         return c.json({ error: 'Requesting user profile not found' }, 404);
       }
 
-      if (!targetUserProfile || targetUserProfile.isDeleted) {
+      if (!targetUser) {
         return c.json({ error: 'User not found' }, 404);
       }
 
       // Check if both users are in the same group
-      if (requestingUserProfile.currentGroup !== targetUserProfile.currentGroup) {
+      if (requestingUser.current_group_code !== targetUser.current_group_code) {
         return c.json({ error: 'User not in your group' }, 403);
       }
 
-      const groupId = requestingUserProfile.currentGroup;
+      const groupCode = requestingUser.current_group_code;
 
-      // Get all matches for the group
-      const matchPrefix = `group:${groupId}:match:`;
-      console.log('Getting matches with prefix:', matchPrefix);
-      const matchEntries = await kv.getByPrefix(matchPrefix);
+      // Get all matches for the group using relational database
+      const { data: matchesData, error: matchesError } = await relationalClient
+        .from('matches')
+        .select(`
+          id,
+          date,
+          group_code,
+          match_type,
+          series_type,
+          recorded_by,
+          winner_email,
+          winner_is_guest,
+          created_at,
+          match_players (
+            user_id,
+            team,
+            position,
+            is_guest,
+            guest_name
+          ),
+          match_results (
+            game_number,
+            winning_team
+          )
+        `)
+        .eq('group_code', groupCode)
+        .order('created_at', { ascending: false });
+
+      if (matchesError) {
+        console.error('Error fetching matches:', matchesError);
+        return c.json({ error: 'Failed to fetch matches' }, 500);
+      }
 
       const userMatches = [];
-      const playerId = targetUserProfile.id;
 
-      for (const entry of matchEntries) {
+      for (const matchData of matchesData || []) {
         try {
-          const match = entry.value;
-
-          // Check if the target user participated in this match using the new data structure
-          let participated = false;
-          if (match.matchType === '1v1' || !match.matchType) {
-            participated = match.player1?.id === playerId || match.player2?.id === playerId;
-          } else if (match.matchType === '2v2') {
-            participated =
-              match.team1?.player1?.id === playerId ||
-              match.team1?.player2?.id === playerId ||
-              match.team2?.player1?.id === playerId ||
-              match.team2?.player2?.id === playerId;
-          }
+          // Check if the target user participated in this match
+          const participated = (matchData.match_players || []).some((player: any) =>
+            player.user_id === userId
+          );
 
           if (participated) {
+            // Transform to legacy format for frontend compatibility
+            const match = {
+              id: matchData.id,
+              date: matchData.date,
+              groupCode: matchData.group_code,
+              matchType: matchData.match_type,
+              seriesType: matchData.series_type,
+              recordedBy: matchData.recorded_by,
+              winnerEmail: matchData.winner_email,
+              winnerIsGuest: matchData.winner_is_guest,
+              createdAt: matchData.created_at,
+              created_at: matchData.created_at,
+              group_code: matchData.group_code,
+              match_type: matchData.match_type,
+            };
+
             userMatches.push(match);
           }
         } catch (matchError) {
-          console.error('Error processing match entry:', matchError);
+          console.error('Error processing match:', matchError);
           // Continue with other matches
         }
       }
-
-      // Sort matches by date (most recent first)
-      userMatches.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       console.log(`Returning ${userMatches.length} matches for user ${userId}`);
       return c.json({ matches: userMatches });
@@ -226,17 +301,13 @@ export function createUserRoutes(supabase: any) {
         return c.json({ error: authResult.error }, authResult.status);
       }
 
-      const userProfile = await kv.get(`user:${authResult.user.id}`);
-      if (!userProfile) {
-        return c.json({ error: 'User profile not found' }, 404);
-      }
-
+      const relationalClient = createRelationalClient();
       const updateData = await c.req.json();
       console.log('Profile update data:', updateData);
 
       // Only allow updating certain fields
-      const allowedFields = ['name'];
-      const updates = {};
+      const allowedFields = ['name', 'username'];
+      const updates: any = {};
 
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
@@ -248,13 +319,38 @@ export function createUserRoutes(supabase: any) {
         return c.json({ error: 'No valid fields to update' }, 400);
       }
 
-      const updatedProfile = {
-        ...userProfile,
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
+      // Add updated_at timestamp
+      updates.updated_at = new Date().toISOString();
 
-      await kv.set(`user:${authResult.user.id}`, updatedProfile);
+      // Update the user in the database
+      const { data, error } = await relationalClient
+        .from('users')
+        .update(updates)
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating user profile:', error);
+        return c.json({ error: 'Failed to update profile' }, 500);
+      }
+
+      // Transform the response to match expected format
+      const updatedProfile = {
+        ...data,
+        avatarUrl: data.avatar,
+        isAdmin: data.is_admin,
+        singlesElo: data.singles_elo,
+        doublesElo: data.doubles_elo,
+        singlesWins: data.singles_wins,
+        singlesLosses: data.singles_losses,
+        doublesWins: data.doubles_wins,
+        doublesLosses: data.doubles_losses,
+        currentGroup: data.current_group_code,
+        updatedAt: data.updated_at,
+        password: undefined, // Never send passwords
+      };
 
       console.log('Profile updated successfully');
       return c.json({
@@ -277,8 +373,18 @@ export function createUserRoutes(supabase: any) {
         return c.json({ error: authResult.error }, authResult.status);
       }
 
-      const userProfile = await kv.get(`user:${authResult.user.id}`);
-      if (!userProfile) {
+      const relationalClient = createRelationalClient();
+
+      // Verify user exists in database
+      const { data: userData, error: userError } = await relationalClient
+        .from('users')
+        .select('id, avatar')
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        console.log('User not found in database:', userError);
         return c.json({ error: 'User profile not found' }, 404);
       }
 
@@ -359,15 +465,38 @@ export function createUserRoutes(supabase: any) {
         return c.json({ error: 'Failed to create avatar URL' }, 500);
       }
 
-      // Update user profile with avatar URL
-      const updatedProfile = {
-        ...userProfile,
-        avatarUrl: signedUrlData.signedUrl,
-        avatarPath: filePath, // Store the path for future reference
-        updatedAt: new Date().toISOString(),
-      };
+      // Update user profile with avatar URL in database
+      const { data: updatedUser, error: updateError } = await relationalClient
+        .from('users')
+        .update({
+          avatar: signedUrlData.signedUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .select()
+        .single();
 
-      await kv.set(`user:${authResult.user.id}`, updatedProfile);
+      if (updateError) {
+        console.error('Failed to update user avatar in database:', updateError);
+        return c.json({ error: 'Failed to update user profile' }, 500);
+      }
+
+      // Transform response to match expected format
+      const updatedProfile = {
+        ...updatedUser,
+        avatarUrl: updatedUser.avatar,
+        isAdmin: updatedUser.is_admin,
+        singlesElo: updatedUser.singles_elo,
+        doublesElo: updatedUser.doubles_elo,
+        singlesWins: updatedUser.singles_wins,
+        singlesLosses: updatedUser.singles_losses,
+        doublesWins: updatedUser.doubles_wins,
+        doublesLosses: updatedUser.doubles_losses,
+        currentGroup: updatedUser.current_group_code,
+        updatedAt: updatedUser.updated_at,
+        password: undefined, // Never send passwords
+      };
 
       console.log('Profile updated with avatar URL');
       return c.json({
@@ -378,6 +507,79 @@ export function createUserRoutes(supabase: any) {
     } catch (error) {
       console.error('=== Avatar upload error ===', error);
       return c.json({ error: 'Internal server error while uploading avatar' }, 500);
+    }
+  });
+
+  // Delete user avatar
+  app.delete('/profile/avatar', async c => {
+    try {
+      console.log('=== Avatar delete request received ===');
+
+      const authResult = await validateUserAuth(c, supabase);
+      if (authResult.error) {
+        return c.json({ error: authResult.error }, authResult.status);
+      }
+
+      const relationalClient = createRelationalClient();
+
+      // Get current user data
+      const { data: userData, error: userError } = await relationalClient
+        .from('users')
+        .select('id, avatar')
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        return c.json({ error: 'User profile not found' }, 404);
+      }
+
+      // If user has no avatar, nothing to delete
+      if (!userData.avatar) {
+        return c.json({ message: 'No avatar to delete' });
+      }
+
+      // Update user profile to remove avatar
+      const { data: updatedUser, error: updateError } = await relationalClient
+        .from('users')
+        .update({
+          avatar: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', authResult.user.id)
+        .eq('is_deleted', false)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update user avatar in database:', updateError);
+        return c.json({ error: 'Failed to delete avatar' }, 500);
+      }
+
+      // Transform response to match expected format
+      const updatedProfile = {
+        ...updatedUser,
+        avatarUrl: null,
+        isAdmin: updatedUser.is_admin,
+        singlesElo: updatedUser.singles_elo,
+        doublesElo: updatedUser.doubles_elo,
+        singlesWins: updatedUser.singles_wins,
+        singlesLosses: updatedUser.singles_losses,
+        doublesWins: updatedUser.doubles_wins,
+        doublesLosses: updatedUser.doubles_losses,
+        currentGroup: updatedUser.current_group_code,
+        updatedAt: updatedUser.updated_at,
+        password: undefined, // Never send passwords
+      };
+
+      console.log('Avatar deleted successfully');
+      return c.json({
+        message: 'Avatar deleted successfully',
+        user: updatedProfile,
+      });
+    } catch (error) {
+      console.error('=== Avatar delete error ===', error);
+      return c.json({ error: 'Internal server error' }, 500);
     }
   });
 

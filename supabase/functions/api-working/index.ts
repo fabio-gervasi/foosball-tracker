@@ -258,10 +258,7 @@ Deno.serve(async (req) => {
   // Strip Supabase function prefix for route matching
   if (path.startsWith('/functions/v1/api-working')) {
     path = path.substring('/functions/v1/api-working'.length);
-    console.log('Stripped path:', path);
   }
-
-  console.log('Final routing path:', path);
   console.log('=== END PATH PROCESSING ===');
 
   // Helper function to add CORS headers
@@ -2398,6 +2395,1083 @@ Deno.serve(async (req) => {
       const errorData = {
         error: "Internal Server Error",
         message: "Failed to delete match",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Profile avatar upload endpoint
+  if ((path === '/profile/avatar' || path === '/api-working/profile/avatar' || path === '/api-working/api-working/profile/avatar') && req.method === 'POST') {
+    console.log('🎯 Profile avatar upload endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get the uploaded file from form data
+      const formData = await req.formData();
+      const file = formData.get('avatar') as File;
+
+      if (!file) {
+        const errorData = {
+          error: "No file uploaded",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        const errorData = {
+          error: "Invalid file type. Only JPG, PNG, and WebP images are allowed.",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        const errorData = {
+          error: "File too large. Maximum size is 5MB.",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Create avatars bucket if it doesn't exist
+      const bucketName = 'make-171cbf6f-avatars';
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+
+      if (!bucketExists) {
+        console.log('Creating avatars bucket...');
+        const { error: bucketError } = await supabase.storage.createBucket(bucketName, {
+          public: false,
+          allowedMimeTypes: allowedTypes,
+          fileSizeLimit: maxSize,
+        });
+
+        if (bucketError) {
+          console.error('Failed to create avatars bucket:', bucketError);
+          const errorData = {
+            error: "Failed to create storage bucket",
+            timestamp: new Date().toISOString()
+          };
+          const errorResponse = new Response(JSON.stringify(errorData), {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          });
+          return addCorsHeaders(errorResponse);
+        }
+        console.log('Avatars bucket created successfully');
+      }
+
+      // Generate unique filename
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Convert file to ArrayBuffer for Supabase upload
+      const fileBuffer = await file.arrayBuffer();
+
+      // Upload to Supabase Storage
+      console.log('Uploading avatar file:', filePath);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, fileBuffer, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Failed to upload avatar:', uploadError);
+        const errorData = {
+          error: "Failed to upload avatar",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      console.log('Avatar uploaded successfully:', uploadData.path);
+
+      // Generate signed URL for the uploaded avatar (valid for 1 year)
+      const { data: signedUrlData, error: urlError } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+      if (urlError) {
+        console.error('Failed to create signed URL:', urlError);
+        const errorData = {
+          error: "Failed to create avatar URL",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Update user profile with avatar URL in database
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update({
+          avatar: signedUrlData.signedUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update user avatar in database:', updateError);
+        const errorData = {
+          error: "Failed to update user profile",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Transform response to match expected format
+      const updatedProfile = {
+        ...updatedUser,
+        avatarUrl: updatedUser.avatar,
+        isAdmin: updatedUser.is_admin,
+        singlesElo: updatedUser.singles_elo,
+        doublesElo: updatedUser.doubles_elo,
+        singlesWins: updatedUser.singles_wins,
+        singlesLosses: updatedUser.singles_losses,
+        doublesWins: updatedUser.doubles_wins,
+        doublesLosses: updatedUser.doubles_losses,
+        currentGroup: updatedUser.current_group_code,
+        updatedAt: updatedUser.updated_at,
+        password: undefined, // Never send passwords
+      };
+
+      console.log('Profile updated with avatar URL');
+      const data = {
+        message: 'Avatar uploaded successfully',
+        avatarUrl: signedUrlData.signedUrl,
+        user: updatedProfile,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in profile avatar upload endpoint:', error);
+      const errorData = {
+        error: "Internal server error while uploading avatar",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Profile avatar delete endpoint
+  if ((path === '/profile/avatar' || path === '/api-working/profile/avatar' || path === '/api-working/api-working/profile/avatar') && req.method === 'DELETE') {
+    console.log('🎯 Profile avatar delete endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, avatar')
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        const errorData = {
+          error: "User profile not found",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // If user has no avatar, nothing to delete
+      if (!userData.avatar) {
+        const data = {
+          message: 'No avatar to delete',
+          timestamp: new Date().toISOString()
+        };
+        const response = new Response(JSON.stringify(data), {
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(response);
+      }
+
+      // Update user profile to remove avatar
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update({
+          avatar: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update user avatar in database:', updateError);
+        const errorData = {
+          error: "Failed to delete avatar",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Transform response to match expected format
+      const updatedProfile = {
+        ...updatedUser,
+        avatarUrl: null,
+        isAdmin: updatedUser.is_admin,
+        singlesElo: updatedUser.singles_elo,
+        doublesElo: updatedUser.doubles_elo,
+        singlesWins: updatedUser.singles_wins,
+        singlesLosses: updatedUser.singles_losses,
+        doublesWins: updatedUser.doubles_wins,
+        doublesLosses: updatedUser.doubles_losses,
+        currentGroup: updatedUser.current_group_code,
+        updatedAt: updatedUser.updated_at,
+        password: undefined, // Never send passwords
+      };
+
+      console.log('Avatar deleted successfully');
+      const data = {
+        message: 'Avatar deleted successfully',
+        user: updatedProfile,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in profile avatar delete endpoint:', error);
+      const errorData = {
+        error: "Internal server error",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Groups current icon upload endpoint (admin only)
+  if ((path === '/groups/current/icon' || path === '/api-working/groups/current/icon') && req.method === 'POST') {
+    console.log('🎯 Groups current icon upload endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get user's current group and check if admin
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('current_group_code, is_admin')
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        const errorData = {
+          error: "User profile not found",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      if (!userData.current_group_code) {
+        const errorData = {
+          error: "User is not in any group",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      if (!userData.is_admin) {
+        const errorData = {
+          error: "Admin privileges required",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 403,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Get the uploaded file from form data
+      const formData = await req.formData();
+      const file = formData.get('icon') as File;
+
+      if (!file) {
+        const errorData = {
+          error: "No file uploaded",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        const errorData = {
+          error: "File must be an image",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        const errorData = {
+          error: "File size must be less than 5MB",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Create group icons bucket if it doesn't exist
+      const bucketName = 'make-171cbf6f-group-icons';
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+
+      if (!bucketExists) {
+        console.log('Creating group icons bucket...');
+        const { error: bucketError } = await supabase.storage.createBucket(bucketName, {
+          public: false,
+          allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+          fileSizeLimit: maxSize,
+        });
+
+        if (bucketError) {
+          console.error('Failed to create group icons bucket:', bucketError);
+          const errorData = {
+            error: "Failed to create storage bucket",
+            timestamp: new Date().toISOString()
+          };
+          const errorResponse = new Response(JSON.stringify(errorData), {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          });
+          return addCorsHeaders(errorResponse);
+        }
+        console.log('Group icons bucket created successfully');
+      }
+
+      // Generate unique filename
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const fileName = `${userData.current_group_code}-${Date.now()}.${fileExtension}`;
+      const filePath = fileName;
+
+      // Convert file to ArrayBuffer for Supabase upload
+      const fileBuffer = await file.arrayBuffer();
+
+      // Upload to Supabase Storage
+      console.log('Uploading group icon file:', filePath);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, fileBuffer, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Failed to upload group icon:', uploadError);
+        const errorData = {
+          error: "Failed to upload image",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      console.log('Group icon uploaded successfully:', uploadData.path);
+
+      // Generate signed URL for the uploaded icon (valid for 1 year)
+      const { data: signedUrlData, error: urlError } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+      if (urlError) {
+        console.error('Failed to create signed URL:', urlError);
+        const errorData = {
+          error: "Failed to get image URL",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Update group with icon URL in database
+      const { data: updatedGroup, error: updateError } = await supabase
+        .from('groups')
+        .update({
+          icon: signedUrlData.signedUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('code', userData.current_group_code)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update group icon in database:', updateError);
+        const errorData = {
+          error: "Failed to update group with icon",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      console.log('Group updated with icon successfully');
+      const data = {
+        message: 'Group icon uploaded successfully',
+        iconUrl: signedUrlData.signedUrl,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in groups current icon upload endpoint:', error);
+      const errorData = {
+        error: "Internal server error while uploading group icon",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Groups current icon delete endpoint (admin only)
+  if ((path === '/groups/current/icon' || path === '/api-working/groups/current/icon') && req.method === 'DELETE') {
+    console.log('🎯 Groups current icon delete endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get user's current group and check if admin
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('current_group_code, is_admin')
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError || !userData) {
+        const errorData = {
+          error: "User profile not found",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      if (!userData.current_group_code) {
+        const errorData = {
+          error: "User is not in any group",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      if (!userData.is_admin) {
+        const errorData = {
+          error: "Admin privileges required",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 403,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Get current group data
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('code, name, icon')
+        .eq('code', userData.current_group_code)
+        .single();
+
+      if (groupError || !groupData) {
+        const errorData = {
+          error: "Group not found",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // If group has no icon, nothing to delete
+      if (!groupData.icon) {
+        const data = {
+          message: 'No icon to delete',
+          timestamp: new Date().toISOString()
+        };
+        const response = new Response(JSON.stringify(data), {
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(response);
+      }
+
+      // Update group to remove icon
+      const { data: updatedGroup, error: updateError } = await supabase
+        .from('groups')
+        .update({
+          icon: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('code', userData.current_group_code)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update group:', updateError);
+        const errorData = {
+          error: "Failed to delete group icon",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      console.log('Group icon deleted successfully');
+      const data = {
+        message: 'Group icon deleted successfully',
+        group: {
+          code: updatedGroup.code,
+          name: updatedGroup.name,
+          icon: updatedGroup.icon,
+          updatedAt: updatedGroup.updated_at,
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in groups current icon delete endpoint:', error);
+      const errorData = {
+        error: "Internal server error while deleting group icon",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Groups current relational endpoint
+  if ((path === '/groups/current-relational' || path === '/api-working/groups/current-relational') && req.method === 'GET') {
+    console.log('🎯 Groups current relational endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get user's current group
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('current_group_code')
+        .eq('id', user.id)
+        .single();
+
+      if (userError || !userData?.current_group_code) {
+        const errorData = {
+          error: "No Current Group",
+          message: "User does not have a current group set",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Get group details
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('code, name, created_at, updated_at')
+        .eq('code', userData.current_group_code)
+        .single();
+
+      if (groupError || !groupData) {
+        const errorData = {
+          error: "Group Not Found",
+          message: "Current group not found in database",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Get member count
+      const { count: memberCount, error: countError } = await supabase
+        .from('user_groups')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_code', userData.current_group_code);
+
+      const data = {
+        group: {
+          code: groupData.code,
+          name: groupData.name,
+          memberCount: memberCount || 0,
+          createdAt: groupData.created_at,
+          updatedAt: groupData.updated_at,
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in groups current relational endpoint:', error);
+      const errorData = {
+        error: "Internal Server Error",
+        message: "Failed to fetch current group data",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Groups user relational endpoint
+  if ((path === '/groups/user-relational' || path === '/api-working/groups/user-relational') && req.method === 'GET') {
+    console.log('🎯 Groups user relational endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get user's groups
+      const { data: userGroups, error: userGroupsError } = await supabase
+        .from('user_groups')
+        .select(`
+          group_code,
+          joined_at,
+          groups (
+            code,
+            name,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (userGroupsError) {
+        console.error('Error fetching user groups:', userGroupsError);
+        const errorData = {
+          error: "Database Error",
+          message: "Failed to fetch user groups",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Transform the data
+      const groups = userGroups?.map(ug => ({
+        code: ug.groups.code,
+        name: ug.groups.name,
+        memberCount: 0, // We'll calculate this separately if needed
+        joinedAt: ug.joined_at,
+        createdAt: ug.groups.created_at,
+        updatedAt: ug.groups.updated_at,
+      })) || [];
+
+      const data = {
+        groups,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in groups user relational endpoint:', error);
+      const errorData = {
+        error: "Internal Server Error",
+        message: "Failed to fetch user groups",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+  }
+
+  // Matches relational endpoint
+  if ((path === '/matches-relational' || path === '/api-working/matches-relational') && req.method === 'GET') {
+    console.log('🎯 Matches relational endpoint called');
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
+
+    if (!user) {
+      const errorData = {
+        error: "Unauthorized",
+        message: "Valid authentication required",
+        timestamp: new Date().toISOString()
+      };
+      const errorResponse = new Response(JSON.stringify(errorData), {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(errorResponse);
+    }
+
+    try {
+      // Create a Supabase client to query the database
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      // Get user's current group
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('current_group_code')
+        .eq('id', user.id)
+        .single();
+
+      if (userError || !userData?.current_group_code) {
+        const data = {
+          matches: [],
+          timestamp: new Date().toISOString(),
+        };
+        const response = new Response(JSON.stringify(data), {
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(response);
+      }
+
+      // Get matches for the group
+      const { data: matches, error: matchesError } = await supabase
+        .from('matches')
+        .select(`
+          id,
+          date,
+          match_type,
+          series_type,
+          winner_email,
+          winner_is_guest,
+          created_at,
+          match_players (
+            user_id,
+            team,
+            position,
+            is_guest,
+            guest_name,
+            users (
+              id,
+              name,
+              username,
+              email
+            )
+          )
+        `)
+        .eq('group_code', userData.current_group_code)
+        .order('date', { ascending: false })
+        .limit(50);
+
+      if (matchesError) {
+        console.error('Error fetching matches:', matchesError);
+        const errorData = {
+          error: "Database Error",
+          message: "Failed to fetch matches",
+          timestamp: new Date().toISOString()
+        };
+        const errorResponse = new Response(JSON.stringify(errorData), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+        return addCorsHeaders(errorResponse);
+      }
+
+      // Transform matches to include player details
+      const transformedMatches = matches?.map(match => {
+        const players = match.match_players || [];
+        const team1Players = players.filter(p => p.team === 'team1').sort((a, b) => a.position - b.position);
+        const team2Players = players.filter(p => p.team === 'team2').sort((a, b) => a.position - b.position);
+
+        return {
+          id: match.id,
+          date: match.date,
+          matchType: match.match_type,
+          seriesType: match.series_type,
+          winnerEmail: match.winner_email,
+          winnerIsGuest: match.winner_is_guest,
+          createdAt: match.created_at,
+          team1: team1Players.map(p => ({
+            id: p.user_id || p.guest_name,
+            name: p.is_guest ? p.guest_name : (p.users?.name || p.users?.username || p.users?.email),
+            isGuest: p.is_guest,
+          })),
+          team2: team2Players.map(p => ({
+            id: p.user_id || p.guest_name,
+            name: p.is_guest ? p.guest_name : (p.users?.name || p.users?.username || p.users?.email),
+            isGuest: p.is_guest,
+          })),
+        };
+      }) || [];
+
+      const data = {
+        matches: transformedMatches,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+      return addCorsHeaders(response);
+    } catch (error) {
+      console.error('Error in matches relational endpoint:', error);
+      const errorData = {
+        error: "Internal Server Error",
+        message: "Failed to fetch matches",
         timestamp: new Date().toISOString()
       };
       const errorResponse = new Response(JSON.stringify(errorData), {

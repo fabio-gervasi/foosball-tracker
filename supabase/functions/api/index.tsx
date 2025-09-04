@@ -3,112 +3,329 @@
 // This enables autocomplete, go to definition, etc.
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { Hono } from 'npm:hono';
-import { cors } from 'npm:hono/cors';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-console.log('🚀 Starting Foosball Tracker API function...');
+console.log("🚀 Starting Foosball Tracker API function...");
 
-const app = new Hono();
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-// Middleware
-app.use(
-  '*',
-  cors({
-    origin: '*',
-    allowHeaders: ['Authorization', 'Content-Type', 'Accept', 'Origin', 'X-Requested-With'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  }),
-);
+console.log('🔧 Initializing Supabase client...');
+console.log('SUPABASE_URL available:', !!supabaseUrl);
+console.log('SUPABASE_SERVICE_ROLE_KEY available:', !!serviceRoleKey);
+console.log('SUPABASE_ANON_KEY available:', !!anonKey);
 
-// Add request logging middleware
-app.use('*', async (c, next) => {
-  console.log(`📨 ${c.req.method} ${c.req.path}`);
-  await next();
-});
+let supabase;
+if (supabaseUrl && serviceRoleKey) {
+  console.log('✅ Using SERVICE_ROLE_KEY');
+  supabase = createClient(supabaseUrl, serviceRoleKey);
+} else if (supabaseUrl && anonKey) {
+  console.log('⚠️ Using ANON_KEY (limited permissions)');
+  supabase = createClient(supabaseUrl, anonKey);
+} else {
+  console.error('❌ No Supabase credentials available');
+  supabase = createClient('', ''); // Fallback to prevent errors
+}
 
-// Basic test endpoint
-app.get('/test', c => {
-  console.log('🎯 Test endpoint called');
-  return c.json({
-    message: 'API working',
-    timestamp: new Date().toISOString(),
-  });
-});
+console.log('✅ Supabase client initialized');
 
-// Relational endpoints
-app.get('/user-relational', async (c) => {
-  console.log('🎯 User relational endpoint called');
-  return c.json({
-    user: {
-      id: 'test-user',
-      name: 'Test User',
-      email: 'test@example.com',
-      current_group_code: 'DEMO01'
-    },
-    timestamp: new Date().toISOString(),
-  });
-});
+Deno.serve(async (req) => {
+  console.log(`📨 ${req.method} ${req.url}`);
 
-app.get('/users-relational', async (c) => {
-  console.log('🎯 Users relational endpoint called');
-  return c.json({
-    users: [
-      {
-        id: 'test-user-1',
-        name: 'Test User 1',
-        email: 'test1@example.com'
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
       },
-      {
-        id: 'test-user-2',
-        name: 'Test User 2',
-        email: 'test2@example.com'
+    });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const path = url.pathname.replace('/api', ''); // Remove /api prefix
+
+    console.log(`Processing path: ${path}`);
+
+    // Test endpoint
+    if (path === '/test' && req.method === 'GET') {
+      return new Response(JSON.stringify({
+        message: 'API working',
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+
+    // User relational endpoint
+    if (path === '/user-relational' && req.method === 'GET') {
+      console.log('🎯 User relational endpoint called');
+
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
       }
-    ],
-    timestamp: new Date().toISOString(),
-  });
-});
 
-app.get('/groups/current-relational', async (c) => {
-  console.log('🎯 Groups current relational endpoint called');
-  return c.json({
-    group: {
-      code: 'DEMO01',
-      name: 'Demo Group',
-      memberCount: 2
-    },
-    timestamp: new Date().toISOString(),
-  });
-});
+      const token = authHeader.substring(7);
 
-app.get('/groups/user-relational', async (c) => {
-  console.log('🎯 Groups user relational endpoint called');
-  return c.json({
-    groups: [
-      {
-        code: 'DEMO01',
-        name: 'Demo Group',
-        memberCount: 2
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        console.error('Auth error:', authError);
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
       }
-    ],
-    timestamp: new Date().toISOString(),
-  });
-});
 
-app.get('/matches-relational', async (c) => {
-  console.log('🎯 Matches relational endpoint called');
-  return c.json({
-    matches: [
-      {
-        id: 'match-1',
-        matchType: '1v1',
-        date: new Date().toISOString(),
-        groupCode: 'DEMO01'
+      console.log('Authenticated user:', user.id);
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError) {
+        console.error('Database error:', userError);
+        return new Response(JSON.stringify({ error: 'Database error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
       }
-    ],
-    timestamp: new Date().toISOString(),
-  });
+
+      if (!userData) {
+        return new Response(JSON.stringify({ error: 'User not found' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        user: {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          username: userData.username,
+          current_group_code: userData.current_group_code,
+          is_admin: userData.is_admin,
+          avatar: userData.avatar,
+          singles_elo: userData.singles_elo,
+          doubles_elo: userData.doubles_elo,
+          singles_wins: userData.singles_wins,
+          singles_losses: userData.singles_losses,
+          doubles_wins: userData.doubles_wins,
+          doubles_losses: userData.doubles_losses,
+          created_at: userData.created_at,
+          updated_at: userData.updated_at
+        },
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    // Users relational endpoint
+    if (path === '/users-relational' && req.method === 'GET') {
+      console.log('🎯 Users relational endpoint called');
+
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const token = authHeader.substring(7);
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        console.error('Auth error:', authError);
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('current_group_code')
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError) {
+        console.error('Database error getting user:', userError);
+        return new Response(JSON.stringify({ error: 'Database error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      if (!userData?.current_group_code) {
+        return new Response(JSON.stringify({ error: 'User is not in any group' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { data: groupUsers, error: groupUsersError } = await supabase
+        .from('user_groups')
+        .select(`
+          user_id,
+          users (
+            id,
+            name,
+            email,
+            username,
+            avatar,
+            is_admin,
+            singles_elo,
+            doubles_elo,
+            singles_wins,
+            singles_losses,
+            doubles_wins,
+            doubles_losses,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('group_code', userData.current_group_code);
+
+      if (groupUsersError) {
+        console.error('Database error getting group users:', groupUsersError);
+        return new Response(JSON.stringify({ error: 'Database error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const users = groupUsers
+        .map(ug => ug.users)
+        .filter(user => user !== null);
+
+      return new Response(JSON.stringify({
+        users,
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    // Groups current relational endpoint
+    if (path === '/groups/current-relational' && req.method === 'GET') {
+      console.log('🎯 Groups current relational endpoint called');
+
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const token = authHeader.substring(7);
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        console.error('Auth error:', authError);
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('current_group_code')
+        .eq('id', user.id)
+        .eq('is_deleted', false)
+        .single();
+
+      if (userError) {
+        console.error('Database error getting user:', userError);
+        return new Response(JSON.stringify({ error: 'Database error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      if (!userData?.current_group_code) {
+        return new Response(JSON.stringify({ error: 'User is not in any group' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('code', userData.current_group_code)
+        .single();
+
+      if (groupError) {
+        console.error('Database error getting group:', groupError);
+        return new Response(JSON.stringify({ error: 'Database error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      if (!groupData) {
+        return new Response(JSON.stringify({ error: 'Group not found' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const { count: memberCount } = await supabase
+        .from('user_groups')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_code', userData.current_group_code);
+
+      return new Response(JSON.stringify({
+        group: {
+          code: groupData.code,
+          name: groupData.name,
+          icon: groupData.icon,
+          memberCount: memberCount || 0,
+          created_at: groupData.created_at,
+          updated_at: groupData.updated_at
+        },
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+
+    // Not found
+    return new Response(JSON.stringify({
+      error: 'Endpoint not found',
+      path: path,
+      method: req.method
+    }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+
+  } catch (error) {
+    console.error('API error:', error);
+    return new Response(JSON.stringify({
+      error: error.message || 'Internal server error'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
 });
-
-console.log('✅ API initialized');
-
-Deno.serve(app.fetch);
