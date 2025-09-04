@@ -40,7 +40,10 @@ CREATE TABLE IF NOT EXISTS kv_store_backup AS
 SELECT * FROM kv_store_171cbf6f;
 
 -- Add comment to backup table
-COMMENT ON TABLE kv_store_backup IS 'Backup of KV store data created during cleanup migration on ' || NOW();
+DO $$
+BEGIN
+    EXECUTE 'COMMENT ON TABLE kv_store_backup IS ''Backup of KV store data created during cleanup migration on ' || NOW() || '''';
+END $$;
 
 -- Drop the original KV store table
 DROP TABLE IF EXISTS kv_store_171cbf6f CASCADE;

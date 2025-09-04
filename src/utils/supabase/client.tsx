@@ -21,6 +21,18 @@ export const supabase = createClient(supabaseUrl, publicAnonKey, {
 // API base URL for our server functions
 export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/api`;
 
+// Helper function to construct avatar URL from filename
+export function getAvatarUrl(avatar: string | null): string | null {
+  if (!avatar || avatar.length <= 1 || avatar.includes('/')) {
+    // This is initials or already a URL, return null to use fallback
+    return null;
+  }
+
+  // Construct Supabase storage URL
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  return `https://${projectId}.supabase.co/storage/v1/object/public/make-171cbf6f-avatars/${avatar}`;
+}
+
 // Helper function to make authenticated requests
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   // Relational endpoints are already mounted under /api prefix

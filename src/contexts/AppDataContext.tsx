@@ -15,6 +15,7 @@ interface AppDataContextType {
   users: User[];
   matches: Match[];
   currentGroup: Group | null;
+  currentUser: User | undefined;
   isLoadingData: boolean;
   error: string | null;
 
@@ -152,6 +153,8 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     currentGroup: currentGroup || null,
     isLoadingData: isLoading, // Map React Query loading to legacy name
     error,
+    // Add currentUser from React Query (more up-to-date than AuthContext)
+    currentUser,
 
     // Additional React Query states
     isFetching,

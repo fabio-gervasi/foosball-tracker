@@ -19,10 +19,10 @@ console.log('SUPABASE_ANON_KEY available:', !!anonKey);
 
 let supabase;
 if (supabaseUrl && serviceRoleKey) {
-  console.log('✅ Using SERVICE_ROLE_KEY');
+  console.log('✅ Using SERVICE_ROLE_KEY for username lookup');
   supabase = createClient(supabaseUrl, serviceRoleKey);
 } else if (supabaseUrl && anonKey) {
-  console.log('⚠️ Using ANON_KEY (limited permissions)');
+  console.log('⚠️ Using ANON_KEY (limited permissions) - this may fail due to RLS');
   supabase = createClient(supabaseUrl, anonKey);
 } else {
   console.error('❌ No credentials available');
@@ -49,10 +49,14 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const path = url.pathname;
 
-    console.log(`Processing path: ${path}`);
+    console.log(`Processing request:`);
+    console.log(`- URL: ${req.url}`);
+    console.log(`- Path: ${path}`);
+    console.log(`- Method: ${req.method}`);
+    console.log(`- Full URL: ${url.href}`);
 
-    // Username lookup endpoint
-    if (path === '/' && req.method === 'POST') {
+    // Username lookup endpoint - handle any POST request
+    if (req.method === 'POST') {
       console.log('🎯 Username lookup endpoint called');
 
       const body = await req.json();
@@ -67,6 +71,8 @@ Deno.serve(async (req) => {
         });
       }
 
+      // TEMPORARY: Use direct users table query with existing RLS policy
+      // TODO: Replace with secure username_lookup table once migration is applied
       const { data: user, error } = await supabase
         .from('users')
         .select('email')
@@ -103,7 +109,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Test endpoint
+    // Test endpoint - handle GET requests to /test
     if (path === '/test' && req.method === 'GET') {
       console.log('🎯 Test endpoint called');
       return new Response(JSON.stringify({
