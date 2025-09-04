@@ -46,7 +46,7 @@ interface AppDataProviderProps {
 
 export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) => {
   // Get auth context
-  const { isLoggedIn, accessToken, currentUser, signOut } = useAuth();
+  const { accessToken, currentUser, signOut } = useAuth();
 
   // Use React Query hooks for data fetching
   const {
@@ -61,6 +61,9 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     refetchAll,
   } = useAppDataQueries(accessToken);
 
+  // Use React Query user data if available, otherwise fall back to auth user
+  const effectiveUser = reactQueryUser || currentUser;
+
   // Handle authentication errors by signing out
   React.useEffect(() => {
     if (error && error.includes('Authentication failed')) {
@@ -72,7 +75,6 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   // Use mutation hooks
   const submitMatchMutation = useSubmitMatchMutation(accessToken);
   const updateProfileMutation = useUpdateProfileMutation(accessToken);
-  const groupSwitchMutation = useGroupSwitchMutation(accessToken);
   const refreshDataMutation = useRefreshDataMutation();
 
   // Backward compatibility functions
@@ -81,13 +83,13 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     refreshDataMutation.mutate();
   };
 
-  const updateUser = (user: User) => {
+  const updateUser = (_user: User) => {
     // With React Query, we don't need manual state updates
     // The cache will be updated through mutations or refetches
     logger.debug('updateUser called - React Query will handle updates automatically');
   };
 
-  const addMatch = (match: Match) => {
+  const addMatch = (_match: Match) => {
     // With React Query, we don't need manual state updates
     // The optimistic updates in mutations handle this
     logger.debug('addMatch called - React Query optimistic updates will handle this');

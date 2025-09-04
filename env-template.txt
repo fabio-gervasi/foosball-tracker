@@ -7,3 +7,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Admin Secret (Optional - has fallback)
 ADMIN_SECRET=your_admin_secret_here
+
+# MCP Server Authentication (Required for Cursor MCP tools)
+GITHUB_TOKEN=your_github_personal_access_token_here
+PERPLEXITY_API_KEY=your_perplexity_api_key_here
