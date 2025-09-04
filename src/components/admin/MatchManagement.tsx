@@ -122,7 +122,9 @@ export function MatchManagement({
                                   const player = match.players.find(p => p.user_id === userId);
                                   if (player) {
                                     // Use guest name if it's a guest, otherwise use user name
-                                    playerName = player.is_guest ? player.guest_name : (player.users?.name || userId);
+                                    playerName = player.is_guest
+                                      ? player.guest_name || userId
+                                      : player.users?.name || userId;
                                   }
                                 }
 

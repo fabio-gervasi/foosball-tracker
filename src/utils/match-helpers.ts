@@ -158,14 +158,17 @@ export function getMatchPlayersWithNames(match: Match): Array<{
     userId: getPlayerUserId(player),
     name: getPlayerDisplayName(player),
     team: player.team,
-    isGuest: player.is_guest
+    isGuest: player.is_guest,
   }));
 }
 
 /**
  * Calculate wins and losses for a user from match data
  */
-export function calculateUserStatsFromMatches(matches: Match[], userId: string): {
+export function calculateUserStatsFromMatches(
+  matches: Match[],
+  userId: string
+): {
   wins: number;
   losses: number;
   totalGames: number;
@@ -191,14 +194,18 @@ export function calculateUserStatsFromMatches(matches: Match[], userId: string):
     wins,
     losses,
     totalGames,
-    winRate
+    winRate,
   };
 }
 
 /**
  * Get opponent information for head-to-head statistics
  */
-export function getOpponentStats(matches: Match[], userId: string, users: User[]): Array<{
+export function getOpponentStats(
+  matches: Match[],
+  userId: string,
+  users: User[]
+): Array<{
   opponentId: string | null;
   opponentName: string;
   wins: number;
@@ -206,14 +213,17 @@ export function getOpponentStats(matches: Match[], userId: string, users: User[]
   total: number;
   isGuest: boolean;
 }> {
-  const opponentMap = new Map<string, {
-    opponentId: string | null;
-    opponentName: string;
-    wins: number;
-    losses: number;
-    total: number;
-    isGuest: boolean;
-  }>();
+  const opponentMap = new Map<
+    string,
+    {
+      opponentId: string | null;
+      opponentName: string;
+      wins: number;
+      losses: number;
+      total: number;
+      isGuest: boolean;
+    }
+  >();
 
   matches.forEach(match => {
     if (!isUserInMatch(match, userId) || !match.players) return;
@@ -233,7 +243,7 @@ export function getOpponentStats(matches: Match[], userId: string, users: User[]
           wins: 0,
           losses: 0,
           total: 0,
-          isGuest: opponent.is_guest
+          isGuest: opponent.is_guest,
         });
       }
 

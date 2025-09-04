@@ -12,19 +12,13 @@ import { AnalyticsProvider } from './providers/AnalyticsProvider';
 
 // Main App Content Component (uses contexts)
 const AppContent: React.FC = () => {
-  let authContext, appDataContext;
-
-  try {
-    authContext = useAuth();
-    appDataContext = useAppData();
-  } catch (error) {
-    // Context not available during HMR, return loading state
-    return <LoadingScreen message='Loading application...' showLogo={true} variant='full' />;
-  }
+  // Always call hooks at the top level
+  const authContext = useAuth();
+  const appDataContext = useAppData();
+  const [currentRoute, setCurrentRoute] = useState('');
 
   const { isLoggedIn, currentUser, accessToken, isLoading, error } = authContext;
   const { handleGroupSelected } = appDataContext;
-  const [currentRoute, setCurrentRoute] = useState('');
 
   // Check URL for password reset route
   useEffect(() => {

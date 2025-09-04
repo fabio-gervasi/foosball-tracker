@@ -1,15 +1,5 @@
-import React, { useState, useEffect, memo, useMemo } from 'react';
-import {
-  Trophy,
-  Target,
-  TrendingUp,
-  Calendar,
-  RefreshCw,
-  Users,
-  Code,
-  History,
-  BarChart3,
-} from 'lucide-react';
+import React, { memo, useMemo } from 'react';
+import { Trophy, Target, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import { Avatar } from '../Avatar';
 import { logger } from '../../utils/logger';
 import type { User, Match, Group } from '../../types';
@@ -18,7 +8,6 @@ import {
   isUserInMatch,
   didUserWinMatch,
   calculateUserStatsFromMatches,
-  getUserTeam
 } from '../../utils/match-helpers';
 
 interface DashboardProps {
@@ -38,6 +27,20 @@ export const Dashboard = memo(function Dashboard({
   error,
   accessToken,
 }: DashboardProps) {
+  // Always call hooks at the top level before any conditional returns
+  const userIdentifier = user.username || user.email;
+
+  // Memoized expensive match filtering calculation
+  const userMatches = useMemo(() => {
+    return matches.filter(match => isUserInMatch(match, user.id));
+  }, [matches, user.id]);
+
+  // Memoized expensive statistics calculations
+  const { actualWins, actualLosses } = useMemo(() => {
+    const stats = calculateUserStatsFromMatches(userMatches, user.id);
+    return { actualWins: stats.wins, actualLosses: stats.losses };
+  }, [userMatches, user.id]);
+
   // Add debugging logs
   logger.debug('Dashboard Data - Start');
   logger.debug('Dashboard User Data', {
@@ -52,27 +55,45 @@ export const Dashboard = memo(function Dashboard({
   logger.debug('Dashboard group', { hasGroup: !!group });
   logger.debug('Dashboard error', { error });
 
+  logger.debug('User match filtering', {
+    hasUserIdentifier: !!userIdentifier,
+    userMatchesFound: userMatches.length,
+    profileStats: (user.wins || 0) + (user.losses || 0),
+    actualMatches: userMatches.length,
+  });
+
   // Show error state if authentication failed
   if (error && error.includes('Authentication failed')) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-              <div className="text-red-500 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+      <div className='min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800'>
+        <div className='container mx-auto px-4 py-8'>
+          <div className='max-w-2xl mx-auto text-center'>
+            <div className='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8'>
+              <div className='text-red-500 mb-4'>
+                <svg
+                  className='w-16 h-16 mx-auto'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z'
+                  />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
                 Authentication Required
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Your session has expired. Please sign in again to view your match data and statistics.
+              <p className='text-gray-600 dark:text-gray-300 mb-6'>
+                Your session has expired. Please sign in again to view your match data and
+                statistics.
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                className='bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors'
               >
                 Sign In Again
               </button>
@@ -82,26 +103,6 @@ export const Dashboard = memo(function Dashboard({
       </div>
     );
   }
-
-  const userIdentifier = user.username || user.email;
-
-  // Memoized expensive match filtering calculation
-  const userMatches = useMemo(() => {
-    return matches.filter(match => isUserInMatch(match, user.id));
-  }, [matches, user.id]);
-
-  logger.debug('User match filtering', {
-    hasUserIdentifier: !!userIdentifier,
-    userMatchesFound: userMatches.length,
-    profileStats: (user.wins || 0) + (user.losses || 0),
-    actualMatches: userMatches.length,
-  });
-
-  // Memoized expensive statistics calculations
-  const { actualWins, actualLosses } = useMemo(() => {
-    const stats = calculateUserStatsFromMatches(userMatches, user.id);
-    return { actualWins: stats.wins, actualLosses: stats.losses };
-  }, [userMatches, user.id]);
 
   // Use actual calculated stats instead of user profile stats
   const totalGames = actualWins + actualLosses;

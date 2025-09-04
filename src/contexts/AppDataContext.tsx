@@ -156,7 +156,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     isLoadingData: isLoading, // Map React Query loading to legacy name
     error,
     // Add currentUser from React Query (more up-to-date than AuthContext)
-    currentUser,
+    currentUser: currentUser || undefined,
 
     // Additional React Query states
     isFetching,

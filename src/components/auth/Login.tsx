@@ -170,7 +170,7 @@ export function Login({ onLogin }: LoginProps) {
           foosballAnalytics.trackUserLogin('email', false);
         } else {
           // Username login: Lookup email for username, then authenticate
-          console.log('Username login attempted:', email);
+          console.info('Username login attempted:', email);
 
           try {
             // Step 1: Lookup email for username using the username-lookup function
@@ -179,7 +179,7 @@ export function Login({ onLogin }: LoginProps) {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${publicAnonKey}`,
+                Authorization: `Bearer ${publicAnonKey}`,
               },
               body: JSON.stringify({ username: email.trim() }),
             });
@@ -197,7 +197,7 @@ export function Login({ onLogin }: LoginProps) {
               throw new Error('Username not found');
             }
 
-            console.log('Found email for username:', lookupData.email);
+            console.info('Found email for username:', lookupData.email);
 
             // Step 2: Authenticate with Supabase using the found email
             const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -229,7 +229,9 @@ export function Login({ onLogin }: LoginProps) {
             // Provide specific error messages for username login issues
             if (lookupError instanceof Error) {
               if (lookupError.message.includes('Username not found')) {
-                throw new Error('Username not found. Please check your username or use your email to login instead.');
+                throw new Error(
+                  'Username not found. Please check your username or use your email to login instead.'
+                );
               } else if (lookupError.message.includes('Invalid login credentials')) {
                 throw new Error('Invalid username or password. Please check your credentials.');
               }
@@ -247,8 +249,8 @@ export function Login({ onLogin }: LoginProps) {
             data: {
               name: name.trim(),
               username: username.trim(),
-            }
-          }
+            },
+          },
         });
 
         if (signUpError) {

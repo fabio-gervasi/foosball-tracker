@@ -102,7 +102,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         logger.debug('Session retrieval result:', {
           hasSession: !!session,
           hasError: !!sessionError,
-          sessionError: sessionError?.message
+          sessionError: sessionError?.message,
         });
 
         if (sessionError) {
@@ -178,7 +178,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     logger.debug(`Making actual fetch request to: ${API_BASE_URL}${fullEndpoint}`, {
       method: options.method || 'GET',
       hasAuth: !!headers.Authorization,
-      authType: headers.Authorization?.split(' ')[0] || 'none'
+      authType: headers.Authorization?.split(' ')[0] || 'none',
     });
 
     const response = await fetch(`${API_BASE_URL}${fullEndpoint}`, {
@@ -189,7 +189,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     logger.debug(`Request completed with status: ${response.status}`, {
       status: response.status,
       statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
+      headers: Object.fromEntries(response.headers.entries()),
     });
 
     logger.apiResponse(fullEndpoint, response.status, response.ok);
@@ -244,7 +244,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         throw new Error('Authentication required');
       }
 
-              throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+      throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
     }
 
     const responseData = await response.json();

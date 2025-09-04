@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Code, ArrowRight, AlertCircle } from 'lucide-react';
-import { apiRequest, supabase } from '../utils/supabase/client';
+import { supabase } from '../utils/supabase/client';
 import { logger } from '../utils/logger';
 
 interface GroupSelectionProps {

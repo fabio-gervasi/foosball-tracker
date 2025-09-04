@@ -23,7 +23,7 @@ import {
   didUserWinMatch,
   getTeamPlayers,
   getPlayerDisplayName,
-  hasGuestPlayers
+  hasGuestPlayers,
 } from '../utils/match-helpers';
 import _exampleImage from 'figma:asset/b116ece610e7864347e2bdd75f97d694d0ba8cab.png';
 
@@ -192,11 +192,12 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
     else if (match.winner_email) {
       // Try to find the winner's name from the players
       if (match.players) {
-        const winnerPlayer = match.players.find(player =>
-          (player.user_id === match.winner_email) || // New format: player ID
-          (player.users?.email === match.winner_email) || // Legacy: email
-          (player.users?.name === match.winner_email) || // Legacy: name
-          (player.is_guest && player.guest_name === match.winner_email) // Legacy: guest name
+        const winnerPlayer = match.players.find(
+          player =>
+            player.user_id === match.winner_email || // New format: player ID
+            player.users?.email === match.winner_email || // Legacy: email
+            player.users?.name === match.winner_email || // Legacy: name
+            (player.is_guest && player.guest_name === match.winner_email) // Legacy: guest name
         );
         if (winnerPlayer) {
           winner = getPlayerDisplayName(winnerPlayer);
@@ -518,10 +519,18 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   const team2Player1Info = getUserAvatarInfo(team2Player1?.user_id || undefined);
                   const team2Player2Info = getUserAvatarInfo(team2Player2?.user_id || undefined);
 
-                  const team1Player1Name = team1Player1 ? getPlayerDisplayName(team1Player1) : 'Unknown';
-                  const team1Player2Name = team1Player2 ? getPlayerDisplayName(team1Player2) : 'Unknown';
-                  const team2Player1Name = team2Player1 ? getPlayerDisplayName(team2Player1) : 'Unknown';
-                  const team2Player2Name = team2Player2 ? getPlayerDisplayName(team2Player2) : 'Unknown';
+                  const team1Player1Name = team1Player1
+                    ? getPlayerDisplayName(team1Player1)
+                    : 'Unknown';
+                  const team1Player2Name = team1Player2
+                    ? getPlayerDisplayName(team1Player2)
+                    : 'Unknown';
+                  const team2Player1Name = team2Player1
+                    ? getPlayerDisplayName(team2Player1)
+                    : 'Unknown';
+                  const team2Player2Name = team2Player2
+                    ? getPlayerDisplayName(team2Player2)
+                    : 'Unknown';
 
                   // Determine winning team from match results or winner determination
                   let team1Won = false;
@@ -535,7 +544,9 @@ export function MatchHistory({ currentUser, accessToken, group, users }: MatchHi
                   } else {
                     // Fallback to user-based determination
                     const userInTeam1 = team1Players.some(p => p.users?.id === currentUser.id);
-                    team1Won = userInTeam1 ? matchDisplay.currentUserWon : !matchDisplay.currentUserWon;
+                    team1Won = userInTeam1
+                      ? matchDisplay.currentUserWon
+                      : !matchDisplay.currentUserWon;
                     team2Won = !team1Won;
                   }
 
