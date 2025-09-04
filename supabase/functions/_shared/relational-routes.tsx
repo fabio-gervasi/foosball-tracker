@@ -21,7 +21,7 @@ export const createRelationalRoutes = (supabase: any) => {
   console.log('🔧 Creating relational routes...');
 
   // User relational endpoints
-  app.get('/user-relational', async (c) => {
+  app.get('/user-relational', async c => {
     console.log('📨 Received request for /user-relational');
     try {
       const authResult = await validateUserAuth(c, supabase);
@@ -41,7 +41,7 @@ export const createRelationalRoutes = (supabase: any) => {
     }
   });
 
-  app.get('/users-relational', async (c) => {
+  app.get('/users-relational', async c => {
     try {
       const authResult = await validateUserAuth(c, supabase);
       if (!authResult.user) {
@@ -63,7 +63,7 @@ export const createRelationalRoutes = (supabase: any) => {
   });
 
   // Group relational endpoints
-  app.get('/groups/current-relational', async (c) => {
+  app.get('/groups/current-relational', async c => {
     console.log('📨 Received request for /groups/current-relational');
     try {
       const authResult = await validateUserAuth(c, supabase);
@@ -88,7 +88,7 @@ export const createRelationalRoutes = (supabase: any) => {
     }
   });
 
-  app.get('/groups/user-relational', async (c) => {
+  app.get('/groups/user-relational', async c => {
     try {
       const authResult = await validateUserAuth(c, supabase);
       if (!authResult.user) {
@@ -104,7 +104,7 @@ export const createRelationalRoutes = (supabase: any) => {
   });
 
   // Match relational endpoints
-  app.get('/matches-relational', async (c) => {
+  app.get('/matches-relational', async c => {
     try {
       const authResult = await validateUserAuth(c, supabase);
       if (!authResult.user) {
@@ -131,7 +131,7 @@ export const createRelationalRoutes = (supabase: any) => {
   });
 
   // Profile avatar upload endpoint
-  app.post('/profile/avatar', async (c) => {
+  app.post('/profile/avatar', async c => {
     console.log('🎯 Relational profile avatar upload endpoint called');
 
     const authResult = await validateUserAuth(c, supabase);
@@ -207,9 +207,13 @@ export const createRelationalRoutes = (supabase: any) => {
       console.log('Avatar uploaded successfully:', uploadData.path);
 
       // Generate signed URL for the uploaded avatar (valid for 1 year)
+      // Use the actual uploaded path instead of the intended path
+      const actualFilePath = uploadData.path || filePath;
+      console.log('Creating signed URL for path:', actualFilePath);
+
       const { data: signedUrlData, error: urlError } = await supabase.storage
         .from(bucketName)
-        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+        .createSignedUrl(actualFilePath, 60 * 60 * 24 * 365); // 1 year
 
       if (urlError) {
         console.error('Failed to create signed URL:', urlError);
@@ -262,7 +266,7 @@ export const createRelationalRoutes = (supabase: any) => {
   });
 
   // Profile avatar delete endpoint
-  app.delete('/profile/avatar', async (c) => {
+  app.delete('/profile/avatar', async c => {
     console.log('🎯 Relational profile avatar delete endpoint called');
 
     const authResult = await validateUserAuth(c, supabase);
@@ -333,7 +337,7 @@ export const createRelationalRoutes = (supabase: any) => {
   });
 
   // Group icon upload endpoint (admin only)
-  app.post('/groups/current/icon', async (c) => {
+  app.post('/groups/current/icon', async c => {
     console.log('🎯 Relational groups current icon upload endpoint called');
 
     const authResult = await validateUserAuth(c, supabase);
@@ -462,7 +466,7 @@ export const createRelationalRoutes = (supabase: any) => {
   });
 
   // Group icon delete endpoint (admin only)
-  app.delete('/groups/current/icon', async (c) => {
+  app.delete('/groups/current/icon', async c => {
     console.log('🎯 Relational groups current icon delete endpoint called');
 
     const authResult = await validateUserAuth(c, supabase);
@@ -833,6 +837,7 @@ export const buildRelationalMatchWithDetails = async (matchData: any): Promise<M
     team2,
     eloChanges: eloChangesObj,
     gameResults,
-    winningTeam: results && results.length > 0 ? results[results.length - 1]?.winning_team : undefined,
+    winningTeam:
+      results && results.length > 0 ? results[results.length - 1]?.winning_team : undefined,
   };
 };

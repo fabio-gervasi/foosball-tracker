@@ -3,13 +3,13 @@
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // Import ELO calculation functions
 import { calculateELOChanges, calculateFoosballELOChanges } from './elo-system.tsx';
 
-console.log("🚀 Starting API Working function...");
+console.log('🚀 Starting API Working function...');
 
 // Helper function to get authenticated user from JWT
 async function getAuthenticatedUser(authHeader: string) {
@@ -33,7 +33,10 @@ async function getAuthenticatedUser(authHeader: string) {
       }
     );
 
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       console.error('Error getting user:', error);
@@ -54,10 +57,24 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
 
     if (matchData.matchType === '1v1') {
       // Get player ratings
-      const player1User = matchData.player1IsGuest ? null :
-        (await supabase.from('users').select('id, singles_elo').eq('email', matchData.player1Email).maybeSingle()).data;
-      const player2User = matchData.player2IsGuest ? null :
-        (await supabase.from('users').select('id, singles_elo').eq('email', matchData.player2Email).maybeSingle()).data;
+      const player1User = matchData.player1IsGuest
+        ? null
+        : (
+            await supabase
+              .from('users')
+              .select('id, singles_elo')
+              .eq('email', matchData.player1Email)
+              .maybeSingle()
+          ).data;
+      const player2User = matchData.player2IsGuest
+        ? null
+        : (
+            await supabase
+              .from('users')
+              .select('id, singles_elo')
+              .eq('email', matchData.player2Email)
+              .maybeSingle()
+          ).data;
 
       if (player1User && player2User) {
         // Determine winner - winnerEmail now contains player ID, not email
@@ -77,7 +94,7 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
             old_rating: eloResult.player1.oldRating,
             new_rating: eloResult.player1.newRating,
             rating_type: 'singles',
-            change_amount: eloResult.player1.change
+            change_amount: eloResult.player1.change,
           },
           {
             match_id: matchId,
@@ -85,51 +102,90 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
             old_rating: eloResult.player2.oldRating,
             new_rating: eloResult.player2.newRating,
             rating_type: 'singles',
-            change_amount: eloResult.player2.change
-          }
+            change_amount: eloResult.player2.change,
+          },
         ]);
 
         // Update user ELO ratings
-        await supabase.from('users').update({
-          singles_elo: eloResult.player1.newRating,
-          singles_wins: isPlayer1Winner ? player1User.singles_wins + 1 : player1User.singles_wins,
-          singles_losses: isPlayer1Winner ? player1User.singles_losses : player1User.singles_losses + 1
-        }).eq('id', player1User.id);
+        await supabase
+          .from('users')
+          .update({
+            singles_elo: eloResult.player1.newRating,
+            singles_wins: isPlayer1Winner ? player1User.singles_wins + 1 : player1User.singles_wins,
+            singles_losses: isPlayer1Winner
+              ? player1User.singles_losses
+              : player1User.singles_losses + 1,
+          })
+          .eq('id', player1User.id);
 
-        await supabase.from('users').update({
-          singles_elo: eloResult.player2.newRating,
-          singles_wins: isPlayer1Winner ? player2User.singles_wins : player2User.singles_wins + 1,
-          singles_losses: isPlayer1Winner ? player2User.singles_losses + 1 : player2User.singles_losses
-        }).eq('id', player2User.id);
+        await supabase
+          .from('users')
+          .update({
+            singles_elo: eloResult.player2.newRating,
+            singles_wins: isPlayer1Winner ? player2User.singles_wins : player2User.singles_wins + 1,
+            singles_losses: isPlayer1Winner
+              ? player2User.singles_losses + 1
+              : player2User.singles_losses,
+          })
+          .eq('id', player2User.id);
 
         eloChanges[player1User.id] = {
           oldRating: eloResult.player1.oldRating,
           newRating: eloResult.player1.newRating,
-          change: eloResult.player1.change
+          change: eloResult.player1.change,
         };
 
         eloChanges[player2User.id] = {
           oldRating: eloResult.player2.oldRating,
           newRating: eloResult.player2.newRating,
-          change: eloResult.player2.change
+          change: eloResult.player2.change,
         };
       }
     } else if (matchData.matchType === '2v2') {
       // Get player ratings for 2v2
-      const team1Player1 = matchData.team1Player1IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team1Player1Email).maybeSingle()).data;
-      const team1Player2 = matchData.team1Player2IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team1Player2Email).maybeSingle()).data;
-      const team2Player1 = matchData.team2Player1IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team2Player1Email).maybeSingle()).data;
-      const team2Player2 = matchData.team2Player2IsGuest ? null :
-        (await supabase.from('users').select('id, doubles_elo, singles_wins, singles_losses').eq('email', matchData.team2Player2Email).maybeSingle()).data;
+      const team1Player1 = matchData.team1Player1IsGuest
+        ? null
+        : (
+            await supabase
+              .from('users')
+              .select('id, doubles_elo, singles_wins, singles_losses')
+              .eq('email', matchData.team1Player1Email)
+              .maybeSingle()
+          ).data;
+      const team1Player2 = matchData.team1Player2IsGuest
+        ? null
+        : (
+            await supabase
+              .from('users')
+              .select('id, doubles_elo, singles_wins, singles_losses')
+              .eq('email', matchData.team1Player2Email)
+              .maybeSingle()
+          ).data;
+      const team2Player1 = matchData.team2Player1IsGuest
+        ? null
+        : (
+            await supabase
+              .from('users')
+              .select('id, doubles_elo, singles_wins, singles_losses')
+              .eq('email', matchData.team2Player1Email)
+              .maybeSingle()
+          ).data;
+      const team2Player2 = matchData.team2Player2IsGuest
+        ? null
+        : (
+            await supabase
+              .from('users')
+              .select('id, doubles_elo, singles_wins, singles_losses')
+              .eq('email', matchData.team2Player2Email)
+              .maybeSingle()
+          ).data;
 
       if (team1Player1 && team1Player2 && team2Player1 && team2Player2) {
         const isTeam1Winner = matchData.winningTeam === 'team1';
 
         // Calculate games played for K-factor
-        const getGamesPlayed = (player: any) => (player.singles_wins || 0) + (player.singles_losses || 0);
+        const getGamesPlayed = (player: any) =>
+          (player.singles_wins || 0) + (player.singles_losses || 0);
 
         const eloResult = calculateFoosballELOChanges(
           team1Player1.doubles_elo || 1200,
@@ -151,7 +207,7 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
             old_rating: eloResult.team1Player1.oldRating,
             new_rating: eloResult.team1Player1.newRating,
             rating_type: 'doubles',
-            change_amount: eloResult.team1Player1.change
+            change_amount: eloResult.team1Player1.change,
           },
           {
             match_id: matchId,
@@ -159,7 +215,7 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
             old_rating: eloResult.team1Player2.oldRating,
             new_rating: eloResult.team1Player2.newRating,
             rating_type: 'doubles',
-            change_amount: eloResult.team1Player2.change
+            change_amount: eloResult.team1Player2.change,
           },
           {
             match_id: matchId,
@@ -167,7 +223,7 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
             old_rating: eloResult.team2Player1.oldRating,
             new_rating: eloResult.team2Player1.newRating,
             rating_type: 'doubles',
-            change_amount: eloResult.team2Player1.change
+            change_amount: eloResult.team2Player1.change,
           },
           {
             match_id: matchId,
@@ -175,57 +231,77 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
             old_rating: eloResult.team2Player2.oldRating,
             new_rating: eloResult.team2Player2.newRating,
             rating_type: 'doubles',
-            change_amount: eloResult.team2Player2.change
-          }
+            change_amount: eloResult.team2Player2.change,
+          },
         ]);
 
         // Update user ELO ratings and stats
-        await supabase.from('users').update({
-          doubles_elo: eloResult.team1Player1.newRating,
-          doubles_wins: isTeam1Winner ? team1Player1.doubles_wins + 1 : team1Player1.doubles_wins,
-          doubles_losses: isTeam1Winner ? team1Player1.doubles_losses : team1Player1.doubles_losses + 1
-        }).eq('id', team1Player1.id);
+        await supabase
+          .from('users')
+          .update({
+            doubles_elo: eloResult.team1Player1.newRating,
+            doubles_wins: isTeam1Winner ? team1Player1.doubles_wins + 1 : team1Player1.doubles_wins,
+            doubles_losses: isTeam1Winner
+              ? team1Player1.doubles_losses
+              : team1Player1.doubles_losses + 1,
+          })
+          .eq('id', team1Player1.id);
 
-        await supabase.from('users').update({
-          doubles_elo: eloResult.team1Player2.newRating,
-          doubles_wins: isTeam1Winner ? team1Player2.doubles_wins + 1 : team1Player2.doubles_wins,
-          doubles_losses: isTeam1Winner ? team1Player2.doubles_losses : team1Player2.doubles_losses + 1
-        }).eq('id', team1Player2.id);
+        await supabase
+          .from('users')
+          .update({
+            doubles_elo: eloResult.team1Player2.newRating,
+            doubles_wins: isTeam1Winner ? team1Player2.doubles_wins + 1 : team1Player2.doubles_wins,
+            doubles_losses: isTeam1Winner
+              ? team1Player2.doubles_losses
+              : team1Player2.doubles_losses + 1,
+          })
+          .eq('id', team1Player2.id);
 
-        await supabase.from('users').update({
-          doubles_elo: eloResult.team2Player1.newRating,
-          doubles_wins: isTeam1Winner ? team2Player1.doubles_wins : team2Player1.doubles_wins + 1,
-          doubles_losses: isTeam1Winner ? team2Player1.doubles_losses + 1 : team2Player1.doubles_losses
-        }).eq('id', team2Player1.id);
+        await supabase
+          .from('users')
+          .update({
+            doubles_elo: eloResult.team2Player1.newRating,
+            doubles_wins: isTeam1Winner ? team2Player1.doubles_wins : team2Player1.doubles_wins + 1,
+            doubles_losses: isTeam1Winner
+              ? team2Player1.doubles_losses + 1
+              : team2Player1.doubles_losses,
+          })
+          .eq('id', team2Player1.id);
 
-        await supabase.from('users').update({
-          doubles_elo: eloResult.team2Player2.newRating,
-          doubles_wins: isTeam1Winner ? team2Player2.doubles_wins : team2Player2.doubles_wins + 1,
-          doubles_losses: isTeam1Winner ? team2Player2.doubles_losses + 1 : team2Player2.doubles_losses
-        }).eq('id', team2Player2.id);
+        await supabase
+          .from('users')
+          .update({
+            doubles_elo: eloResult.team2Player2.newRating,
+            doubles_wins: isTeam1Winner ? team2Player2.doubles_wins : team2Player2.doubles_wins + 1,
+            doubles_losses: isTeam1Winner
+              ? team2Player2.doubles_losses + 1
+              : team2Player2.doubles_losses,
+          })
+          .eq('id', team2Player2.id);
 
         eloChanges[team1Player1.id] = {
           oldRating: eloResult.team1Player1.oldRating,
           newRating: eloResult.team1Player1.newRating,
-          change: eloResult.team1Player1.change
+          change: eloResult.team1Player1.change,
         };
 
         eloChanges[team1Player2.id] = {
           oldRating: eloResult.team1Player2.oldRating,
           newRating: eloResult.team1Player2.newRating,
-          change: eloResult.team1Player2.change
+          change: eloResult.team1Player2.change,
         };
 
         eloChanges[team2Player1.id] = {
           oldRating: eloResult.team2Player1.oldRating,
           newRating: eloResult.team2Player1.newRating,
-          change: eloResult.team2Player1.change
+          change: eloResult.team2Player1.change,
         };
 
         eloChanges[team2Player2.id] = {
           oldRating: eloResult.team2Player2.oldRating,
           newRating: eloResult.team2Player2.newRating,
-          change: eloResult.team2Player2.change
+          change: eloResult.team2Player2.change,
         };
       }
     }
@@ -238,17 +314,15 @@ async function calculateMatchELOChanges(matchData: any, supabase: any, matchId: 
 }
 
 // MINIMAL TEST FUNCTION - Test DELETE request handling
-console.log("STARTING EDGE FUNCTION - VERSION WITH DELETE DEBUG");
+console.log('STARTING EDGE FUNCTION - VERSION WITH DELETE DEBUG');
 
-Deno.serve(async (req) => {
-  console.log("REQUEST RECEIVED - Method:", req.method, "URL:", req.url);
-
-
+Deno.serve(async req => {
+  console.log('REQUEST RECEIVED - Method:', req.method, 'URL:', req.url);
 
   // For non-DELETE requests, continue with original logic
-  console.log("=== REQUEST RECEIVED (ORIGINAL LOGIC) ===");
-  console.log("Method:", req.method);
-  console.log("URL:", req.url);
+  console.log('=== REQUEST RECEIVED (ORIGINAL LOGIC) ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
 
   const url = new URL(req.url);
   let path = url.pathname;
@@ -266,7 +340,10 @@ Deno.serve(async (req) => {
     const newHeaders = new Headers(response.headers);
     newHeaders.set('Access-Control-Allow-Origin', '*');
     newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    newHeaders.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, Origin, X-Requested-With');
+    newHeaders.set(
+      'Access-Control-Allow-Headers',
+      'Authorization, Content-Type, Accept, Origin, X-Requested-With'
+    );
 
     return new Response(response.body, {
       status: response.status,
@@ -282,7 +359,8 @@ Deno.serve(async (req) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, Origin, X-Requested-With',
+        'Access-Control-Allow-Headers':
+          'Authorization, Content-Type, Accept, Origin, X-Requested-With',
       },
     });
   }
@@ -293,7 +371,10 @@ Deno.serve(async (req) => {
   console.log('  Condition 1:', path === '/test');
   console.log('  Condition 2:', path === '/api-working/test');
   console.log('  Condition 3:', req.method === 'GET');
-  console.log('  Combined condition:', (path === '/test' || path === '/api-working/test') && req.method === 'GET');
+  console.log(
+    '  Combined condition:',
+    (path === '/test' || path === '/api-working/test') && req.method === 'GET'
+  );
 
   if ((path === '/test' || path === '/api-working/test') && req.method === 'GET') {
     console.log('🎯 ENTERED: Test endpoint called');
@@ -302,13 +383,16 @@ Deno.serve(async (req) => {
       timestamp: new Date().toISOString(),
     };
     const response = new Response(JSON.stringify(data), {
-      headers: { "Content-Type": "application/json" }
+      headers: { 'Content-Type': 'application/json' },
     });
     return addCorsHeaders(response);
   }
 
   // User relational endpoint
-  if ((path === '/user-relational' || path === '/api-working/user-relational') && req.method === 'GET') {
+  if (
+    (path === '/user-relational' || path === '/api-working/user-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 User relational endpoint called');
 
     // Get authenticated user
@@ -317,13 +401,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -339,20 +423,22 @@ Deno.serve(async (req) => {
       console.log('🔍 Getting user data from database:', user.id);
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, name, email, username, is_admin, current_group_code, singles_elo, singles_wins, singles_losses, doubles_elo, doubles_wins, doubles_losses, created_at, updated_at')
+        .select(
+          'id, name, email, username, is_admin, current_group_code, singles_elo, singles_wins, singles_losses, doubles_elo, doubles_wins, doubles_losses, created_at, updated_at'
+        )
         .eq('id', user.id)
         .single();
 
       if (userError || !userData) {
         console.error('Error fetching user data:', userError);
         const errorData = {
-          error: "User Not Found",
-          message: "User data not found in database",
-          timestamp: new Date().toISOString()
+          error: 'User Not Found',
+          message: 'User data not found in database',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -365,26 +451,29 @@ Deno.serve(async (req) => {
       console.log('✅ Returning user data for:', user.email);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error fetching user data:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch user data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch user data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Users relational endpoint
-  if ((path === '/users-relational' || path === '/api-working/users-relational') && req.method === 'GET') {
+  if (
+    (path === '/users-relational' || path === '/api-working/users-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Users relational endpoint called');
 
     // Get authenticated user
@@ -393,13 +482,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -429,13 +518,13 @@ Deno.serve(async (req) => {
       if (userError || !userData?.current_group_code) {
         console.log('❌ No current group found for user:', user.id);
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -444,26 +533,28 @@ Deno.serve(async (req) => {
       console.log('🔍 Querying users for group:', userData.current_group_code);
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, name, email, avatar, singles_elo, doubles_elo, singles_wins, singles_losses, doubles_wins, doubles_losses, current_group_code')
+        .select(
+          'id, name, email, avatar, singles_elo, doubles_elo, singles_wins, singles_losses, doubles_wins, doubles_losses, current_group_code'
+        )
         .eq('current_group_code', userData.current_group_code);
 
       console.log('📊 Users query result:', {
         dataLength: usersData?.length || 0,
         error: usersError,
-        groupCode: userData.current_group_code
+        groupCode: userData.current_group_code,
       });
 
       if (usersError) {
         console.error('❌ Error fetching users:', usersError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch users data",
+          error: 'Database Error',
+          message: 'Failed to fetch users data',
           details: usersError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -473,29 +564,37 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
       };
 
-      console.log('✅ Returning real users for group:', userData.current_group_code, 'Count:', usersData?.length || 0);
+      console.log(
+        '✅ Returning real users for group:',
+        userData.current_group_code,
+        'Count:',
+        usersData?.length || 0
+      );
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in users-relational endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch users data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch users data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Groups current relational endpoint
-  if ((path === '/groups/current-relational' || path === '/api-working/groups/current-relational') && req.method === 'GET') {
+  if (
+    (path === '/groups/current-relational' || path === '/api-working/groups/current-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Groups current relational endpoint called');
 
     // Get authenticated user
@@ -504,13 +603,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -533,14 +632,16 @@ Deno.serve(async (req) => {
       console.log('🔍 Querying current group for user:', user.id);
       const { data: userGroupData, error: userGroupError } = await supabase
         .from('user_groups')
-        .select(`
+        .select(
+          `
           group_code,
           joined_at,
           groups (
             code,
             name
           )
-        `)
+        `
+        )
         .eq('user_id', user.id)
         .order('joined_at', { ascending: false })
         .limit(1)
@@ -549,20 +650,20 @@ Deno.serve(async (req) => {
       console.log('📊 Current group query result:', {
         data: userGroupData,
         error: userGroupError,
-        hasGroups: !!userGroupData?.groups
+        hasGroups: !!userGroupData?.groups,
       });
 
       if (userGroupError || !userGroupData?.groups) {
         console.log('❌ No group membership found for user:', user.id, 'Error:', userGroupError);
         const errorData = {
-          error: "No Current Group",
-          message: "User is not a member of any group",
-          details: userGroupError?.message || "No group data found",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User is not a member of any group',
+          details: userGroupError?.message || 'No group data found',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -571,13 +672,13 @@ Deno.serve(async (req) => {
 
       if (!groupData) {
         const errorData = {
-          error: "Group Not Found",
+          error: 'Group Not Found',
           message: `Group data not available`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -592,7 +693,7 @@ Deno.serve(async (req) => {
         group: {
           code: groupData.code,
           name: groupData.name,
-          memberCount: memberCount || 1
+          memberCount: memberCount || 1,
         },
         timestamp: new Date().toISOString(),
       };
@@ -600,26 +701,29 @@ Deno.serve(async (req) => {
       console.log('✅ Returning current group data for:', groupData.code, groupData.name);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error fetching current group:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch current group data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch current group data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Groups user relational endpoint
-  if ((path === '/groups/user-relational' || path === '/api-working/groups/user-relational') && req.method === 'GET') {
+  if (
+    (path === '/groups/user-relational' || path === '/api-working/groups/user-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Groups user relational endpoint called');
 
     // Get authenticated user
@@ -628,13 +732,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -657,34 +761,36 @@ Deno.serve(async (req) => {
       console.log('🔍 Querying user_groups for user:', user.id);
       const { data: userGroupsData, error: userGroupsError } = await supabase
         .from('user_groups')
-        .select(`
+        .select(
+          `
           group_code,
           joined_at,
           groups (
             code,
             name
           )
-        `)
+        `
+        )
         .eq('user_id', user.id)
         .order('joined_at', { ascending: false });
 
       console.log('📊 User groups query result:', {
         data: userGroupsData,
         error: userGroupsError,
-        dataLength: userGroupsData?.length || 0
+        dataLength: userGroupsData?.length || 0,
       });
 
       if (userGroupsError) {
         console.error('❌ Error fetching user groups:', userGroupsError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch user groups",
+          error: 'Database Error',
+          message: 'Failed to fetch user groups',
           details: userGroupsError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -704,7 +810,7 @@ Deno.serve(async (req) => {
           return {
             code: group.code,
             name: group.name,
-            memberCount: memberCount || 1
+            memberCount: memberCount || 1,
           };
         })
       );
@@ -720,19 +826,19 @@ Deno.serve(async (req) => {
       console.log('✅ Returning user groups for:', user.email, 'Groups:', validGroups.length);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error fetching user groups:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch user groups",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch user groups',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -748,13 +854,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -766,13 +872,13 @@ Deno.serve(async (req) => {
 
       if (!groupCode) {
         const errorData = {
-          error: "Bad Request",
-          message: "Group code is required",
-          timestamp: new Date().toISOString()
+          error: 'Bad Request',
+          message: 'Group code is required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -784,12 +890,12 @@ Deno.serve(async (req) => {
       if (groupCode === 'ONEAXA') {
         const data = {
           success: true,
-          message: "Successfully joined group",
+          message: 'Successfully joined group',
           group: {
             code: groupCode,
-            name: "AXA Foosball Group",
+            name: 'AXA Foosball Group',
             memberCount: 15,
-            joined: true
+            joined: true,
           },
           timestamp: new Date().toISOString(),
         };
@@ -798,39 +904,42 @@ Deno.serve(async (req) => {
 
         const response = new Response(JSON.stringify(data), {
           status: 200,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(response);
       } else {
         // Group not found
         const errorData = {
-          error: "Group Not Found",
+          error: 'Group Not Found',
           message: `Group with code '${groupCode}' not found`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
     } catch (error) {
       console.error('Error processing group join request:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to process group join request",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to process group join request',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Matches relational endpoint
-  if ((path === '/matches-relational' || path === '/api-working/matches-relational') && req.method === 'GET') {
+  if (
+    (path === '/matches-relational' || path === '/api-working/matches-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Matches relational endpoint called');
 
     // Get authenticated user
@@ -839,13 +948,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -868,13 +977,13 @@ Deno.serve(async (req) => {
       if (userError || !userData?.current_group_code) {
         console.log('❌ No current group found for user:', user.id);
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -883,7 +992,8 @@ Deno.serve(async (req) => {
       console.log('🔍 Querying matches for group:', userData.current_group_code);
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           date,
           match_type,
@@ -909,27 +1019,28 @@ Deno.serve(async (req) => {
             rating_type,
             change_amount
           )
-        `)
+        `
+        )
         .eq('group_code', userData.current_group_code)
         .order('date', { ascending: false });
 
       console.log('📊 Matches query result:', {
         dataLength: matchesData?.length || 0,
         error: matchesError,
-        groupCode: userData.current_group_code
+        groupCode: userData.current_group_code,
       });
 
       if (matchesError) {
         console.error('❌ Error fetching matches:', matchesError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch matches data",
+          error: 'Database Error',
+          message: 'Failed to fetch matches data',
           details: matchesError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -937,13 +1048,14 @@ Deno.serve(async (req) => {
       // Transform the data to match the expected format
       const transformedMatches = (matchesData || []).map(match => {
         // Transform ELO changes into a keyed object by user ID
-        const eloChanges: Record<string, { oldRating: number; newRating: number; change: number }> = {};
+        const eloChanges: Record<string, { oldRating: number; newRating: number; change: number }> =
+          {};
         (match.elo_changes || []).forEach(change => {
           if (change.user_id) {
             eloChanges[change.user_id] = {
               oldRating: change.old_rating,
               newRating: change.new_rating,
-              change: change.change_amount
+              change: change.change_amount,
             };
           }
         });
@@ -955,20 +1067,23 @@ Deno.serve(async (req) => {
           groupCode: match.group_code,
           recordedBy: match.recorded_by,
           winnerEmail: match.winner_email,
-          players: match.match_players?.map(player => ({
-            match_id: match.id,
-            user_id: player.user_id,
-            team: player.team,
-            position: player.position,
-            is_guest: player.is_guest,
-            guest_name: player.guest_name,
-            users: player.users ? {
-              id: player.users.id,
-              name: player.users.name,
-              email: player.users.email
-            } : null
-          })) || [],
-          eloChanges
+          players:
+            match.match_players?.map(player => ({
+              match_id: match.id,
+              user_id: player.user_id,
+              team: player.team,
+              position: player.position,
+              is_guest: player.is_guest,
+              guest_name: player.guest_name,
+              users: player.users
+                ? {
+                    id: player.users.id,
+                    name: player.users.name,
+                    email: player.users.email,
+                  }
+                : null,
+            })) || [],
+          eloChanges,
         };
       });
 
@@ -977,22 +1092,27 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
       };
 
-      console.log('✅ Returning real matches for group:', userData.current_group_code, 'Count:', transformedMatches.length);
+      console.log(
+        '✅ Returning real matches for group:',
+        userData.current_group_code,
+        'Count:',
+        transformedMatches.length
+      );
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in matches-relational endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch matches data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch matches data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1008,13 +1128,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1046,13 +1166,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.current_group_code) {
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1070,7 +1190,7 @@ Deno.serve(async (req) => {
           match_type: matchData.matchType || '1v1',
           recorded_by: user.id,
           winner_email: matchData.winnerEmail,
-          winner_is_guest: matchData.winnerIsGuest || false
+          winner_is_guest: matchData.winnerIsGuest || false,
         })
         .select()
         .single();
@@ -1078,14 +1198,14 @@ Deno.serve(async (req) => {
       if (matchError) {
         console.error('Error inserting match:', matchError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to create match",
+          error: 'Database Error',
+          message: 'Failed to create match',
           details: matchError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1096,8 +1216,15 @@ Deno.serve(async (req) => {
       if (matchData.matchType === '1v1') {
         // Handle 1v1 match players
         if (matchData.player1Email) {
-          const player1User = matchData.player1IsGuest ? null :
-            (await supabase.from('users').select('id').eq('email', matchData.player1Email).maybeSingle()).data;
+          const player1User = matchData.player1IsGuest
+            ? null
+            : (
+                await supabase
+                  .from('users')
+                  .select('id')
+                  .eq('email', matchData.player1Email)
+                  .maybeSingle()
+              ).data;
 
           matchPlayers.push({
             match_id: matchId,
@@ -1105,13 +1232,20 @@ Deno.serve(async (req) => {
             team: 'team1',
             position: 1,
             is_guest: matchData.player1IsGuest || false,
-            guest_name: matchData.player1IsGuest ? matchData.player1Email : null
+            guest_name: matchData.player1IsGuest ? matchData.player1Email : null,
           });
         }
 
         if (matchData.player2Email) {
-          const player2User = matchData.player2IsGuest ? null :
-            (await supabase.from('users').select('id').eq('email', matchData.player2Email).maybeSingle()).data;
+          const player2User = matchData.player2IsGuest
+            ? null
+            : (
+                await supabase
+                  .from('users')
+                  .select('id')
+                  .eq('email', matchData.player2Email)
+                  .maybeSingle()
+              ).data;
 
           matchPlayers.push({
             match_id: matchId,
@@ -1119,22 +1253,44 @@ Deno.serve(async (req) => {
             team: 'team2',
             position: 1,
             is_guest: matchData.player2IsGuest || false,
-            guest_name: matchData.player2IsGuest ? matchData.player2Email : null
+            guest_name: matchData.player2IsGuest ? matchData.player2Email : null,
           });
         }
       } else if (matchData.matchType === '2v2') {
         // Handle 2v2 match players
         const teamPlayers = [
-          { email: matchData.team1Player1Email, isGuest: matchData.team1Player1IsGuest, team: 'team1', position: 1 },
-          { email: matchData.team1Player2Email, isGuest: matchData.team1Player2IsGuest, team: 'team1', position: 2 },
-          { email: matchData.team2Player1Email, isGuest: matchData.team2Player1IsGuest, team: 'team2', position: 1 },
-          { email: matchData.team2Player2Email, isGuest: matchData.team2Player2IsGuest, team: 'team2', position: 2 },
+          {
+            email: matchData.team1Player1Email,
+            isGuest: matchData.team1Player1IsGuest,
+            team: 'team1',
+            position: 1,
+          },
+          {
+            email: matchData.team1Player2Email,
+            isGuest: matchData.team1Player2IsGuest,
+            team: 'team1',
+            position: 2,
+          },
+          {
+            email: matchData.team2Player1Email,
+            isGuest: matchData.team2Player1IsGuest,
+            team: 'team2',
+            position: 1,
+          },
+          {
+            email: matchData.team2Player2Email,
+            isGuest: matchData.team2Player2IsGuest,
+            team: 'team2',
+            position: 2,
+          },
         ];
 
         for (const player of teamPlayers) {
           if (player.email) {
-            const playerUser = player.isGuest ? null :
-              (await supabase.from('users').select('id').eq('email', player.email).maybeSingle()).data;
+            const playerUser = player.isGuest
+              ? null
+              : (await supabase.from('users').select('id').eq('email', player.email).maybeSingle())
+                  .data;
 
             matchPlayers.push({
               match_id: matchId,
@@ -1142,7 +1298,7 @@ Deno.serve(async (req) => {
               team: player.team,
               position: player.position,
               is_guest: player.isGuest || false,
-              guest_name: player.isGuest ? player.email : null
+              guest_name: player.isGuest ? player.email : null,
             });
           }
         }
@@ -1150,9 +1306,7 @@ Deno.serve(async (req) => {
 
       // Insert match players
       if (matchPlayers.length > 0) {
-        const { error: playersError } = await supabase
-          .from('match_players')
-          .insert(matchPlayers);
+        const { error: playersError } = await supabase.from('match_players').insert(matchPlayers);
 
         if (playersError) {
           console.error('Error inserting match players:', playersError);
@@ -1168,7 +1322,7 @@ Deno.serve(async (req) => {
         match: {
           id: matchId,
           ...matchData,
-          eloChanges
+          eloChanges,
         },
         timestamp: new Date().toISOString(),
       };
@@ -1176,40 +1330,43 @@ Deno.serve(async (req) => {
       console.log('✅ Match submitted successfully:', matchId);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in submit match endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to submit match",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to submit match',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Username lookup endpoint (for username login)
-  if ((path === '/username-lookup' || path === '/api-working/username-lookup') && req.method === 'POST') {
+  if (
+    (path === '/username-lookup' || path === '/api-working/username-lookup') &&
+    req.method === 'POST'
+  ) {
     try {
       console.log('🔍 Username lookup request received');
-      
+
       const { username } = await req.json();
-      
+
       if (!username) {
         const errorData = {
-          error: "Username required",
-          message: "Please provide a username to look up",
-          timestamp: new Date().toISOString()
+          error: 'Username required',
+          message: 'Please provide a username to look up',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1233,13 +1390,13 @@ Deno.serve(async (req) => {
       if (userError || !userData) {
         console.log('❌ Username not found:', username);
         const errorData = {
-          error: "Username not found",
+          error: 'Username not found',
           message: `No account found with username '${username}'. Please check your username and try again.`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1251,25 +1408,25 @@ Deno.serve(async (req) => {
         userId: userData.id,
         username: userData.username,
         name: userData.name,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       const response = new Response(JSON.stringify(responseData), {
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Username lookup error:', error);
       const errorData = {
-        error: "Internal server error",
-        message: "Failed to look up username",
+        error: 'Internal server error',
+        message: 'Failed to look up username',
         details: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1281,9 +1438,15 @@ Deno.serve(async (req) => {
   console.log('  Condition 1:', path === '/admin/matches');
   console.log('  Condition 2:', path === '/api-working/admin/matches');
   console.log('  Condition 3:', req.method === 'GET');
-  console.log('  Combined condition:', (path === '/admin/matches' || path === '/api-working/admin/matches') && req.method === 'GET');
+  console.log(
+    '  Combined condition:',
+    (path === '/admin/matches' || path === '/api-working/admin/matches') && req.method === 'GET'
+  );
 
-  if ((path === '/admin/matches' || path === '/api-working/admin/matches') && req.method === 'GET') {
+  if (
+    (path === '/admin/matches' || path === '/api-working/admin/matches') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 ENTERED: Admin matches endpoint called');
 
     // Get authenticated user
@@ -1292,13 +1455,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1319,13 +1482,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1339,13 +1502,13 @@ Deno.serve(async (req) => {
 
       if (currentUserError || !currentUserData?.current_group_code) {
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1353,7 +1516,8 @@ Deno.serve(async (req) => {
       // Get all matches for the user's group with player details, ELO changes, and match results
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           date,
           match_type,
@@ -1383,21 +1547,22 @@ Deno.serve(async (req) => {
             rating_type,
             change_amount
           )
-        `)
+        `
+        )
         .eq('group_code', currentUserData.current_group_code)
         .order('date', { ascending: false });
 
       if (matchesError) {
         console.error('❌ Error fetching admin matches:', matchesError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch matches data",
+          error: 'Database Error',
+          message: 'Failed to fetch matches data',
           details: matchesError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1405,13 +1570,14 @@ Deno.serve(async (req) => {
       // Transform the data to match the expected format
       const transformedMatches = (matchesData || []).map(match => {
         // Transform ELO changes into a keyed object by user ID
-        const eloChanges: Record<string, { oldRating: number; newRating: number; change: number }> = {};
+        const eloChanges: Record<string, { oldRating: number; newRating: number; change: number }> =
+          {};
         (match.elo_changes || []).forEach(change => {
           if (change.user_id) {
             eloChanges[change.user_id] = {
               oldRating: change.old_rating,
               newRating: change.new_rating,
-              change: change.change_amount
+              change: change.change_amount,
             };
           }
         });
@@ -1423,20 +1589,23 @@ Deno.serve(async (req) => {
           groupCode: match.group_code,
           recordedBy: match.recorded_by,
           winnerEmail: match.winner_email,
-          players: match.match_players?.map(player => ({
-            match_id: match.id,
-            user_id: player.user_id,
-            team: player.team,
-            position: player.position,
-            is_guest: player.is_guest,
-            guest_name: player.guest_name,
-            users: player.users ? {
-              id: player.users.id,
-              name: player.users.name,
-              email: player.users.email
-            } : null
-          })) || [],
-          eloChanges
+          players:
+            match.match_players?.map(player => ({
+              match_id: match.id,
+              user_id: player.user_id,
+              team: player.team,
+              position: player.position,
+              is_guest: player.is_guest,
+              guest_name: player.guest_name,
+              users: player.users
+                ? {
+                    id: player.users.id,
+                    name: player.users.name,
+                    email: player.users.email,
+                  }
+                : null,
+            })) || [],
+          eloChanges,
         };
       });
 
@@ -1445,29 +1614,37 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
       };
 
-      console.log('✅ Returning admin matches for group:', currentUserData.current_group_code, 'Count:', transformedMatches.length);
+      console.log(
+        '✅ Returning admin matches for group:',
+        currentUserData.current_group_code,
+        'Count:',
+        transformedMatches.length
+      );
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin matches endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch admin matches data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch admin matches data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Admin data cleanup endpoint - Identify incomplete matches
-  if ((path === '/admin/cleanup-matches' || path === '/api-working/admin/cleanup-matches') && req.method === 'POST') {
+  if (
+    (path === '/admin/cleanup-matches' || path === '/api-working/admin/cleanup-matches') &&
+    req.method === 'POST'
+  ) {
     console.log('🎯 Admin cleanup matches endpoint called');
 
     // Get authenticated user
@@ -1476,13 +1653,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return errorResponse;
     }
@@ -1496,13 +1673,13 @@ Deno.serve(async (req) => {
 
     if (userError || !userData?.is_admin) {
       const errorData = {
-        error: "Forbidden",
-        message: "Admin privileges required",
-        timestamp: new Date().toISOString()
+        error: 'Forbidden',
+        message: 'Admin privileges required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 403,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return errorResponse;
     }
@@ -1511,13 +1688,15 @@ Deno.serve(async (req) => {
       // Find matches with results but no players (incomplete data)
       const { data: incompleteMatches, error: incompleteError } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           match_type,
           created_at,
           match_results!inner(match_id),
           match_players(match_id)
-        `)
+        `
+        )
         .eq('group_code', 'ONEAXA')
         .is('winner_email', null);
 
@@ -1526,10 +1705,11 @@ Deno.serve(async (req) => {
       }
 
       // Filter to only matches with results but no players
-      const trulyIncompleteMatches = (incompleteMatches || []).filter(match =>
-        match.match_results &&
-        match.match_results.length > 0 &&
-        (!match.match_players || match.match_players.length === 0)
+      const trulyIncompleteMatches = (incompleteMatches || []).filter(
+        match =>
+          match.match_results &&
+          match.match_results.length > 0 &&
+          (!match.match_players || match.match_players.length === 0)
       );
 
       const cleanupResults = trulyIncompleteMatches.map(match => ({
@@ -1538,7 +1718,7 @@ Deno.serve(async (req) => {
         created_at: match.created_at,
         has_results: match.match_results.length > 0,
         player_count: match.match_players?.length || 0,
-        recommended_action: 'mark_as_incomplete'
+        recommended_action: 'mark_as_incomplete',
       }));
 
       const successData = {
@@ -1546,32 +1726,34 @@ Deno.serve(async (req) => {
         message: `Found ${cleanupResults.length} incomplete matches`,
         totalIncompleteMatches: cleanupResults.length,
         cleanupResults,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       const response = new Response(JSON.stringify(successData), {
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return response;
-
     } catch (error) {
       console.error('❌ Cleanup error:', error);
       const errorData = {
-        error: "Cleanup failed",
+        error: 'Cleanup failed',
         message: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return errorResponse;
     }
   }
 
   // Admin data migration endpoint - Fix winner_email for existing matches
-  if ((path === '/admin/migrate-winners' || path === '/api-working/admin/migrate-winners') && req.method === 'POST') {
+  if (
+    (path === '/admin/migrate-winners' || path === '/api-working/admin/migrate-winners') &&
+    req.method === 'POST'
+  ) {
     console.log('🎯 Admin migrate winners endpoint called');
 
     // Get authenticated user
@@ -1580,13 +1762,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1607,13 +1789,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1627,13 +1809,13 @@ Deno.serve(async (req) => {
 
       if (currentUserError || !currentUserData?.current_group_code) {
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1641,7 +1823,8 @@ Deno.serve(async (req) => {
       // Find matches that need winner_email migration (have null winner_email but have match_results)
       const { data: matchesToMigrate, error: migrationQueryError } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           winner_email,
           match_results (
@@ -1654,7 +1837,8 @@ Deno.serve(async (req) => {
               email
             )
           )
-        `)
+        `
+        )
         .eq('group_code', currentUserData.current_group_code)
         .is('winner_email', null)
         .not('match_results', 'is', null);
@@ -1662,14 +1846,14 @@ Deno.serve(async (req) => {
       if (migrationQueryError) {
         console.error('❌ Error querying matches for migration:', migrationQueryError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to query matches for migration",
+          error: 'Database Error',
+          message: 'Failed to query matches for migration',
           details: migrationQueryError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1683,7 +1867,7 @@ Deno.serve(async (req) => {
           migrationResults.push({
             matchId: match.id,
             status: 'skipped',
-            reason: 'No match results found'
+            reason: 'No match results found',
           });
           continue;
         }
@@ -1691,23 +1875,22 @@ Deno.serve(async (req) => {
         const winningTeam = match.match_results[0].winning_team;
 
         // Find ALL players from the winning team (both registered users and guests)
-        const winningTeamPlayers = match.match_players?.filter(player =>
-          player.team === winningTeam
-        ) || [];
+        const winningTeamPlayers =
+          match.match_players?.filter(player => player.team === winningTeam) || [];
 
         if (winningTeamPlayers.length === 0) {
           migrationResults.push({
             matchId: match.id,
             status: 'skipped',
             reason: 'No players found in winning team',
-            winningTeam: winningTeam
+            winningTeam: winningTeam,
           });
           continue;
         }
 
         // First try to find a registered user in the winning team
-        const registeredPlayers = winningTeamPlayers.filter(player =>
-          !player.is_guest && player.user_id
+        const registeredPlayers = winningTeamPlayers.filter(
+          player => !player.is_guest && player.user_id
         );
 
         let winnerIdentifier = null;
@@ -1717,8 +1900,8 @@ Deno.serve(async (req) => {
           winnerIdentifier = registeredPlayers[0].user_id;
         } else {
           // If no registered users, try to find a guest player
-          const guestPlayers = winningTeamPlayers.filter(player =>
-            player.is_guest && player.guest_name
+          const guestPlayers = winningTeamPlayers.filter(
+            player => player.is_guest && player.guest_name
           );
 
           if (guestPlayers.length > 0) {
@@ -1754,7 +1937,7 @@ Deno.serve(async (req) => {
               status: 'error',
               error: updateError.message,
               winnerEmail: winnerEmail,
-              winningTeam: winningTeam
+              winningTeam: winningTeam,
             });
           } else {
             migratedCount++;
@@ -1763,7 +1946,7 @@ Deno.serve(async (req) => {
               status: 'success',
               winnerEmail: winnerEmail,
               winningTeam: winningTeam,
-              playerType: registeredPlayers.length > 0 ? 'registered' : 'guest'
+              playerType: registeredPlayers.length > 0 ? 'registered' : 'guest',
             });
           }
         } else {
@@ -1772,7 +1955,7 @@ Deno.serve(async (req) => {
             status: 'skipped',
             reason: 'No suitable winner found in winning team',
             winningTeam: winningTeam,
-            playerCount: winningTeamPlayers.length
+            playerCount: winningTeamPlayers.length,
           });
         }
       }
@@ -1783,25 +1966,25 @@ Deno.serve(async (req) => {
         migratedCount,
         totalMatchesFound: matchesToMigrate?.length || 0,
         migrationResults,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       console.log(`✅ Migration completed: ${migratedCount} matches updated`);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin migrate winners endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to migrate winner data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to migrate winner data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1817,13 +2000,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1844,13 +2027,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1864,13 +2047,13 @@ Deno.serve(async (req) => {
 
       if (currentUserError || !currentUserData?.current_group_code) {
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1878,20 +2061,22 @@ Deno.serve(async (req) => {
       // Get all users in the same group
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, name, email, avatar, singles_elo, doubles_elo, singles_wins, singles_losses, doubles_wins, doubles_losses, current_group_code, is_admin, created_at, updated_at')
+        .select(
+          'id, name, email, avatar, singles_elo, doubles_elo, singles_wins, singles_losses, doubles_wins, doubles_losses, current_group_code, is_admin, created_at, updated_at'
+        )
         .eq('current_group_code', currentUserData.current_group_code);
 
       if (usersError) {
         console.error('❌ Error fetching admin users:', usersError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch users data",
+          error: 'Database Error',
+          message: 'Failed to fetch users data',
           details: usersError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1901,22 +2086,27 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
       };
 
-      console.log('✅ Returning admin users for group:', currentUserData.current_group_code, 'Count:', usersData?.length || 0);
+      console.log(
+        '✅ Returning admin users for group:',
+        currentUserData.current_group_code,
+        'Count:',
+        usersData?.length || 0
+      );
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin users endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch admin users data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch admin users data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1932,13 +2122,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -1959,13 +2149,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -1973,28 +2163,30 @@ Deno.serve(async (req) => {
       // Get all groups the user is a member of
       const { data: userGroupsData, error: userGroupsError } = await supabase
         .from('user_groups')
-        .select(`
+        .select(
+          `
           group_code,
           joined_at,
           groups (
             code,
             name
           )
-        `)
+        `
+        )
         .eq('user_id', user.id)
         .order('joined_at', { ascending: false });
 
       if (userGroupsError) {
         console.error('❌ Error fetching admin groups:', userGroupsError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch groups data",
+          error: 'Database Error',
+          message: 'Failed to fetch groups data',
           details: userGroupsError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2014,7 +2206,7 @@ Deno.serve(async (req) => {
           return {
             code: group.code,
             name: group.name,
-            memberCount: memberCount || 1
+            memberCount: memberCount || 1,
           };
         })
       );
@@ -2030,19 +2222,19 @@ Deno.serve(async (req) => {
       console.log('✅ Returning admin groups for user:', user.email, 'Groups:', validGroups.length);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin groups endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch admin groups data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch admin groups data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2054,27 +2246,34 @@ Deno.serve(async (req) => {
   console.log('  Condition 1:', path.startsWith('/admin/users/'));
   console.log('  Condition 2:', path.endsWith('/admin'));
   console.log('  Condition 3:', req.method === 'PUT');
-  console.log('  Combined condition:', (path.startsWith('/admin/users/') && path.endsWith('/admin')) && req.method === 'PUT');
+  console.log(
+    '  Combined condition:',
+    path.startsWith('/admin/users/') && path.endsWith('/admin') && req.method === 'PUT'
+  );
   console.log('  Path segments:', path.split('/'));
   console.log('  Path length:', path.split('/').length);
 
-  if (((path.startsWith('/admin/users/') && path.endsWith('/admin')) || (path.startsWith('/api-working/admin/users/') && path.endsWith('/admin'))) && req.method === 'PUT') {
+  if (
+    ((path.startsWith('/admin/users/') && path.endsWith('/admin')) ||
+      (path.startsWith('/api-working/admin/users/') && path.endsWith('/admin'))) &&
+    req.method === 'PUT'
+  ) {
     console.log('🎯 ENTERED: Admin toggle user admin status endpoint called');
     console.log('  User ID:', path.split('/')[path.split('/').length - 2]);
-    
+
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
     const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2095,13 +2294,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2125,14 +2324,14 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('❌ Error updating user admin status:', updateError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to update user admin status",
+          error: 'Database Error',
+          message: 'Failed to update user admin status',
           details: updateError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2146,19 +2345,19 @@ Deno.serve(async (req) => {
       console.log('✅ User admin status updated:', updateData);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin toggle user admin status endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to update user admin status",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to update user admin status',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2170,27 +2369,34 @@ Deno.serve(async (req) => {
   console.log('  Condition 1:', path.startsWith('/admin/users/'));
   console.log('  Condition 2:', !path.endsWith('/admin'));
   console.log('  Condition 3:', req.method === 'DELETE');
-  console.log('  Combined condition:', (path.startsWith('/admin/users/') && !path.endsWith('/admin')) && req.method === 'DELETE');
+  console.log(
+    '  Combined condition:',
+    path.startsWith('/admin/users/') && !path.endsWith('/admin') && req.method === 'DELETE'
+  );
   console.log('  Path segments:', path.split('/'));
   console.log('  Path length:', path.split('/').length);
 
-  if (((path.startsWith('/admin/users/') && !path.endsWith('/admin')) || (path.startsWith('/api-working/admin/users/') && !path.endsWith('/admin'))) && req.method === 'DELETE') {
+  if (
+    ((path.startsWith('/admin/users/') && !path.endsWith('/admin')) ||
+      (path.startsWith('/api-working/admin/users/') && !path.endsWith('/admin'))) &&
+    req.method === 'DELETE'
+  ) {
     console.log('🎯 ENTERED: Admin delete user endpoint called');
     console.log('  User ID:', path.split('/').pop());
-    
+
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
     const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2211,13 +2417,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2229,13 +2435,13 @@ Deno.serve(async (req) => {
       // Prevent self-deletion
       if (targetUserId === user.id) {
         const errorData = {
-          error: "Bad Request",
-          message: "Cannot delete your own account",
-          timestamp: new Date().toISOString()
+          error: 'Bad Request',
+          message: 'Cannot delete your own account',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2243,9 +2449,9 @@ Deno.serve(async (req) => {
       // Soft delete user (set is_deleted = true)
       const { data: deleteData, error: deleteError } = await supabase
         .from('users')
-        .update({ 
+        .update({
           is_deleted: true,
-          deleted_at: new Date().toISOString()
+          deleted_at: new Date().toISOString(),
         })
         .eq('id', targetUserId)
         .select('id, name, email')
@@ -2254,40 +2460,40 @@ Deno.serve(async (req) => {
       if (deleteError) {
         console.error('❌ Error deleting user:', deleteError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to delete user",
+          error: 'Database Error',
+          message: 'Failed to delete user',
           details: deleteError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       const data = {
         user: deleteData,
-        message: "User deleted successfully",
+        message: 'User deleted successfully',
         timestamp: new Date().toISOString(),
       };
 
       console.log('✅ User deleted:', deleteData);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin delete user endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to delete user",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to delete user',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2299,27 +2505,34 @@ Deno.serve(async (req) => {
   console.log('  Condition 1:', path.startsWith('/admin/matches/'));
   console.log('  Condition 2:', !path.endsWith('/admin'));
   console.log('  Condition 3:', req.method === 'DELETE');
-  console.log('  Combined condition:', (path.startsWith('/admin/matches/') && !path.endsWith('/admin')) && req.method === 'DELETE');
+  console.log(
+    '  Combined condition:',
+    path.startsWith('/admin/matches/') && !path.endsWith('/admin') && req.method === 'DELETE'
+  );
   console.log('  Path segments:', path.split('/'));
   console.log('  Path length:', path.split('/').length);
 
-  if (((path.startsWith('/admin/matches/') && !path.endsWith('/admin')) || (path.startsWith('/api-working/admin/matches/') && !path.endsWith('/admin'))) && req.method === 'DELETE') {
+  if (
+    ((path.startsWith('/admin/matches/') && !path.endsWith('/admin')) ||
+      (path.startsWith('/api-working/admin/matches/') && !path.endsWith('/admin'))) &&
+    req.method === 'DELETE'
+  ) {
     console.log('🎯 ENTERED: Admin delete match endpoint called');
     console.log('  Match ID:', path.split('/').pop());
-    
+
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
     const user = authHeader ? await getAuthenticatedUser(authHeader) : null;
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2340,13 +2553,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.is_admin) {
         const errorData = {
-          error: "Forbidden",
-          message: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2366,47 +2579,52 @@ Deno.serve(async (req) => {
       if (deleteError) {
         console.error('❌ Error deleting match:', deleteError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to delete match",
+          error: 'Database Error',
+          message: 'Failed to delete match',
           details: deleteError.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       const data = {
         match: deleteData,
-        message: "Match deleted successfully",
+        message: 'Match deleted successfully',
         timestamp: new Date().toISOString(),
       };
 
       console.log('✅ Match deleted:', deleteData);
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('❌ Error in admin delete match endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to delete match",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to delete match',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Profile avatar upload endpoint
-  if ((path === '/profile/avatar' || path === '/api-working/profile/avatar' || path === '/api-working/api-working/profile/avatar') && req.method === 'POST') {
+  if (
+    (path === '/profile/avatar' ||
+      path === '/api-working/profile/avatar' ||
+      path === '/api-working/api-working/profile/avatar') &&
+    req.method === 'POST'
+  ) {
     console.log('🎯 Profile avatar upload endpoint called');
 
     // Get authenticated user
@@ -2415,13 +2633,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2439,12 +2657,12 @@ Deno.serve(async (req) => {
 
       if (!file) {
         const errorData = {
-          error: "No file uploaded",
-          timestamp: new Date().toISOString()
+          error: 'No file uploaded',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2453,12 +2671,12 @@ Deno.serve(async (req) => {
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         const errorData = {
-          error: "Invalid file type. Only JPG, PNG, and WebP images are allowed.",
-          timestamp: new Date().toISOString()
+          error: 'Invalid file type. Only JPG, PNG, and WebP images are allowed.',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2467,12 +2685,12 @@ Deno.serve(async (req) => {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
         const errorData = {
-          error: "File too large. Maximum size is 5MB.",
-          timestamp: new Date().toISOString()
+          error: 'File too large. Maximum size is 5MB.',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2493,12 +2711,12 @@ Deno.serve(async (req) => {
         if (bucketError) {
           console.error('Failed to create avatars bucket:', bucketError);
           const errorData = {
-            error: "Failed to create storage bucket",
-            timestamp: new Date().toISOString()
+            error: 'Failed to create storage bucket',
+            timestamp: new Date().toISOString(),
           };
           const errorResponse = new Response(JSON.stringify(errorData), {
             status: 500,
-            headers: { "Content-Type": "application/json" }
+            headers: { 'Content-Type': 'application/json' },
           });
           return addCorsHeaders(errorResponse);
         }
@@ -2525,12 +2743,12 @@ Deno.serve(async (req) => {
       if (uploadError) {
         console.error('Failed to upload avatar:', uploadError);
         const errorData = {
-          error: "Failed to upload avatar",
-          timestamp: new Date().toISOString()
+          error: 'Failed to upload avatar',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2538,19 +2756,23 @@ Deno.serve(async (req) => {
       console.log('Avatar uploaded successfully:', uploadData.path);
 
       // Generate signed URL for the uploaded avatar (valid for 1 year)
+      // Use the actual uploaded path instead of the intended path
+      const actualFilePath = uploadData.path || filePath;
+      console.log('Creating signed URL for path:', actualFilePath);
+
       const { data: signedUrlData, error: urlError } = await supabase.storage
         .from(bucketName)
-        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+        .createSignedUrl(actualFilePath, 60 * 60 * 24 * 365); // 1 year
 
       if (urlError) {
         console.error('Failed to create signed URL:', urlError);
         const errorData = {
-          error: "Failed to create avatar URL",
-          timestamp: new Date().toISOString()
+          error: 'Failed to create avatar URL',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2570,12 +2792,12 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Failed to update user avatar in database:', updateError);
         const errorData = {
-          error: "Failed to update user profile",
-          timestamp: new Date().toISOString()
+          error: 'Failed to update user profile',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2605,25 +2827,30 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in profile avatar upload endpoint:', error);
       const errorData = {
-        error: "Internal server error while uploading avatar",
-        timestamp: new Date().toISOString()
+        error: 'Internal server error while uploading avatar',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Profile avatar delete endpoint
-  if ((path === '/profile/avatar' || path === '/api-working/profile/avatar' || path === '/api-working/api-working/profile/avatar') && req.method === 'DELETE') {
+  if (
+    (path === '/profile/avatar' ||
+      path === '/api-working/profile/avatar' ||
+      path === '/api-working/api-working/profile/avatar') &&
+    req.method === 'DELETE'
+  ) {
     console.log('🎯 Profile avatar delete endpoint called');
 
     // Get authenticated user
@@ -2632,13 +2859,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2660,12 +2887,12 @@ Deno.serve(async (req) => {
 
       if (userError || !userData) {
         const errorData = {
-          error: "User profile not found",
-          timestamp: new Date().toISOString()
+          error: 'User profile not found',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2674,10 +2901,10 @@ Deno.serve(async (req) => {
       if (!userData.avatar) {
         const data = {
           message: 'No avatar to delete',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const response = new Response(JSON.stringify(data), {
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(response);
       }
@@ -2697,12 +2924,12 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Failed to update user avatar in database:', updateError);
         const errorData = {
-          error: "Failed to delete avatar",
-          timestamp: new Date().toISOString()
+          error: 'Failed to delete avatar',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2731,25 +2958,28 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in profile avatar delete endpoint:', error);
       const errorData = {
-        error: "Internal server error",
-        timestamp: new Date().toISOString()
+        error: 'Internal server error',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Groups current icon upload endpoint (admin only)
-  if ((path === '/groups/current/icon' || path === '/api-working/groups/current/icon') && req.method === 'POST') {
+  if (
+    (path === '/groups/current/icon' || path === '/api-working/groups/current/icon') &&
+    req.method === 'POST'
+  ) {
     console.log('🎯 Groups current icon upload endpoint called');
 
     // Get authenticated user
@@ -2758,13 +2988,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -2786,36 +3016,36 @@ Deno.serve(async (req) => {
 
       if (userError || !userData) {
         const errorData = {
-          error: "User profile not found",
-          timestamp: new Date().toISOString()
+          error: 'User profile not found',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       if (!userData.current_group_code) {
         const errorData = {
-          error: "User is not in any group",
-          timestamp: new Date().toISOString()
+          error: 'User is not in any group',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       if (!userData.is_admin) {
         const errorData = {
-          error: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2826,12 +3056,12 @@ Deno.serve(async (req) => {
 
       if (!file) {
         const errorData = {
-          error: "No file uploaded",
-          timestamp: new Date().toISOString()
+          error: 'No file uploaded',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2839,12 +3069,12 @@ Deno.serve(async (req) => {
       // Validate file type
       if (!file.type.startsWith('image/')) {
         const errorData = {
-          error: "File must be an image",
-          timestamp: new Date().toISOString()
+          error: 'File must be an image',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2853,12 +3083,12 @@ Deno.serve(async (req) => {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
         const errorData = {
-          error: "File size must be less than 5MB",
-          timestamp: new Date().toISOString()
+          error: 'File size must be less than 5MB',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2879,12 +3109,12 @@ Deno.serve(async (req) => {
         if (bucketError) {
           console.error('Failed to create group icons bucket:', bucketError);
           const errorData = {
-            error: "Failed to create storage bucket",
-            timestamp: new Date().toISOString()
+            error: 'Failed to create storage bucket',
+            timestamp: new Date().toISOString(),
           };
           const errorResponse = new Response(JSON.stringify(errorData), {
             status: 500,
-            headers: { "Content-Type": "application/json" }
+            headers: { 'Content-Type': 'application/json' },
           });
           return addCorsHeaders(errorResponse);
         }
@@ -2911,12 +3141,12 @@ Deno.serve(async (req) => {
       if (uploadError) {
         console.error('Failed to upload group icon:', uploadError);
         const errorData = {
-          error: "Failed to upload image",
-          timestamp: new Date().toISOString()
+          error: 'Failed to upload image',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2931,12 +3161,12 @@ Deno.serve(async (req) => {
       if (urlError) {
         console.error('Failed to create signed URL:', urlError);
         const errorData = {
-          error: "Failed to get image URL",
-          timestamp: new Date().toISOString()
+          error: 'Failed to get image URL',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2955,12 +3185,12 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Failed to update group icon in database:', updateError);
         const errorData = {
-          error: "Failed to update group with icon",
-          timestamp: new Date().toISOString()
+          error: 'Failed to update group with icon',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -2973,25 +3203,28 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in groups current icon upload endpoint:', error);
       const errorData = {
-        error: "Internal server error while uploading group icon",
-        timestamp: new Date().toISOString()
+        error: 'Internal server error while uploading group icon',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Groups current icon delete endpoint (admin only)
-  if ((path === '/groups/current/icon' || path === '/api-working/groups/current/icon') && req.method === 'DELETE') {
+  if (
+    (path === '/groups/current/icon' || path === '/api-working/groups/current/icon') &&
+    req.method === 'DELETE'
+  ) {
     console.log('🎯 Groups current icon delete endpoint called');
 
     // Get authenticated user
@@ -3000,13 +3233,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -3028,36 +3261,36 @@ Deno.serve(async (req) => {
 
       if (userError || !userData) {
         const errorData = {
-          error: "User profile not found",
-          timestamp: new Date().toISOString()
+          error: 'User profile not found',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       if (!userData.current_group_code) {
         const errorData = {
-          error: "User is not in any group",
-          timestamp: new Date().toISOString()
+          error: 'User is not in any group',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       if (!userData.is_admin) {
         const errorData = {
-          error: "Admin privileges required",
-          timestamp: new Date().toISOString()
+          error: 'Admin privileges required',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 403,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -3071,12 +3304,12 @@ Deno.serve(async (req) => {
 
       if (groupError || !groupData) {
         const errorData = {
-          error: "Group not found",
-          timestamp: new Date().toISOString()
+          error: 'Group not found',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -3085,10 +3318,10 @@ Deno.serve(async (req) => {
       if (!groupData.icon) {
         const data = {
           message: 'No icon to delete',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         const response = new Response(JSON.stringify(data), {
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(response);
       }
@@ -3107,12 +3340,12 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Failed to update group:', updateError);
         const errorData = {
-          error: "Failed to delete group icon",
-          timestamp: new Date().toISOString()
+          error: 'Failed to delete group icon',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -3130,25 +3363,28 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in groups current icon delete endpoint:', error);
       const errorData = {
-        error: "Internal server error while deleting group icon",
-        timestamp: new Date().toISOString()
+        error: 'Internal server error while deleting group icon',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Groups current relational endpoint
-  if ((path === '/groups/current-relational' || path === '/api-working/groups/current-relational') && req.method === 'GET') {
+  if (
+    (path === '/groups/current-relational' || path === '/api-working/groups/current-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Groups current relational endpoint called');
 
     // Get authenticated user
@@ -3157,13 +3393,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -3184,13 +3420,13 @@ Deno.serve(async (req) => {
 
       if (userError || !userData?.current_group_code) {
         const errorData = {
-          error: "No Current Group",
-          message: "User does not have a current group set",
-          timestamp: new Date().toISOString()
+          error: 'No Current Group',
+          message: 'User does not have a current group set',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -3204,13 +3440,13 @@ Deno.serve(async (req) => {
 
       if (groupError || !groupData) {
         const errorData = {
-          error: "Group Not Found",
-          message: "Current group not found in database",
-          timestamp: new Date().toISOString()
+          error: 'Group Not Found',
+          message: 'Current group not found in database',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 404,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
@@ -3233,26 +3469,29 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in groups current relational endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch current group data",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch current group data',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Groups user relational endpoint
-  if ((path === '/groups/user-relational' || path === '/api-working/groups/user-relational') && req.method === 'GET') {
+  if (
+    (path === '/groups/user-relational' || path === '/api-working/groups/user-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Groups user relational endpoint called');
 
     // Get authenticated user
@@ -3261,13 +3500,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -3282,7 +3521,8 @@ Deno.serve(async (req) => {
       // Get user's groups
       const { data: userGroups, error: userGroupsError } = await supabase
         .from('user_groups')
-        .select(`
+        .select(
+          `
           group_code,
           joined_at,
           groups (
@@ -3291,32 +3531,34 @@ Deno.serve(async (req) => {
             created_at,
             updated_at
           )
-        `)
+        `
+        )
         .eq('user_id', user.id);
 
       if (userGroupsError) {
         console.error('Error fetching user groups:', userGroupsError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch user groups",
-          timestamp: new Date().toISOString()
+          error: 'Database Error',
+          message: 'Failed to fetch user groups',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       // Transform the data
-      const groups = userGroups?.map(ug => ({
-        code: ug.groups.code,
-        name: ug.groups.name,
-        memberCount: 0, // We'll calculate this separately if needed
-        joinedAt: ug.joined_at,
-        createdAt: ug.groups.created_at,
-        updatedAt: ug.groups.updated_at,
-      })) || [];
+      const groups =
+        userGroups?.map(ug => ({
+          code: ug.groups.code,
+          name: ug.groups.name,
+          memberCount: 0, // We'll calculate this separately if needed
+          joinedAt: ug.joined_at,
+          createdAt: ug.groups.created_at,
+          updatedAt: ug.groups.updated_at,
+        })) || [];
 
       const data = {
         groups,
@@ -3324,26 +3566,29 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in groups user relational endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch user groups",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch user groups',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
   }
 
   // Matches relational endpoint
-  if ((path === '/matches-relational' || path === '/api-working/matches-relational') && req.method === 'GET') {
+  if (
+    (path === '/matches-relational' || path === '/api-working/matches-relational') &&
+    req.method === 'GET'
+  ) {
     console.log('🎯 Matches relational endpoint called');
 
     // Get authenticated user
@@ -3352,13 +3597,13 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const errorData = {
-        error: "Unauthorized",
-        message: "Valid authentication required",
-        timestamp: new Date().toISOString()
+        error: 'Unauthorized',
+        message: 'Valid authentication required',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 401,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -3383,7 +3628,7 @@ Deno.serve(async (req) => {
           timestamp: new Date().toISOString(),
         };
         const response = new Response(JSON.stringify(data), {
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(response);
       }
@@ -3391,7 +3636,8 @@ Deno.serve(async (req) => {
       // Get matches for the group
       const { data: matches, error: matchesError } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           date,
           match_type,
@@ -3412,7 +3658,8 @@ Deno.serve(async (req) => {
               email
             )
           )
-        `)
+        `
+        )
         .eq('group_code', userData.current_group_code)
         .order('date', { ascending: false })
         .limit(50);
@@ -3420,43 +3667,52 @@ Deno.serve(async (req) => {
       if (matchesError) {
         console.error('Error fetching matches:', matchesError);
         const errorData = {
-          error: "Database Error",
-          message: "Failed to fetch matches",
-          timestamp: new Date().toISOString()
+          error: 'Database Error',
+          message: 'Failed to fetch matches',
+          timestamp: new Date().toISOString(),
         };
         const errorResponse = new Response(JSON.stringify(errorData), {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { 'Content-Type': 'application/json' },
         });
         return addCorsHeaders(errorResponse);
       }
 
       // Transform matches to include player details
-      const transformedMatches = matches?.map(match => {
-        const players = match.match_players || [];
-        const team1Players = players.filter(p => p.team === 'team1').sort((a, b) => a.position - b.position);
-        const team2Players = players.filter(p => p.team === 'team2').sort((a, b) => a.position - b.position);
+      const transformedMatches =
+        matches?.map(match => {
+          const players = match.match_players || [];
+          const team1Players = players
+            .filter(p => p.team === 'team1')
+            .sort((a, b) => a.position - b.position);
+          const team2Players = players
+            .filter(p => p.team === 'team2')
+            .sort((a, b) => a.position - b.position);
 
-        return {
-          id: match.id,
-          date: match.date,
-          matchType: match.match_type,
-          seriesType: match.series_type,
-          winnerEmail: match.winner_email,
-          winnerIsGuest: match.winner_is_guest,
-          createdAt: match.created_at,
-          team1: team1Players.map(p => ({
-            id: p.user_id || p.guest_name,
-            name: p.is_guest ? p.guest_name : (p.users?.name || p.users?.username || p.users?.email),
-            isGuest: p.is_guest,
-          })),
-          team2: team2Players.map(p => ({
-            id: p.user_id || p.guest_name,
-            name: p.is_guest ? p.guest_name : (p.users?.name || p.users?.username || p.users?.email),
-            isGuest: p.is_guest,
-          })),
-        };
-      }) || [];
+          return {
+            id: match.id,
+            date: match.date,
+            matchType: match.match_type,
+            seriesType: match.series_type,
+            winnerEmail: match.winner_email,
+            winnerIsGuest: match.winner_is_guest,
+            createdAt: match.created_at,
+            team1: team1Players.map(p => ({
+              id: p.user_id || p.guest_name,
+              name: p.is_guest
+                ? p.guest_name
+                : p.users?.name || p.users?.username || p.users?.email,
+              isGuest: p.is_guest,
+            })),
+            team2: team2Players.map(p => ({
+              id: p.user_id || p.guest_name,
+              name: p.is_guest
+                ? p.guest_name
+                : p.users?.name || p.users?.username || p.users?.email,
+              isGuest: p.is_guest,
+            })),
+          };
+        }) || [];
 
       const data = {
         matches: transformedMatches,
@@ -3464,19 +3720,19 @@ Deno.serve(async (req) => {
       };
 
       const response = new Response(JSON.stringify(data), {
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(response);
     } catch (error) {
       console.error('Error in matches relational endpoint:', error);
       const errorData = {
-        error: "Internal Server Error",
-        message: "Failed to fetch matches",
-        timestamp: new Date().toISOString()
+        error: 'Internal Server Error',
+        message: 'Failed to fetch matches',
+        timestamp: new Date().toISOString(),
       };
       const errorResponse = new Response(JSON.stringify(errorData), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { 'Content-Type': 'application/json' },
       });
       return addCorsHeaders(errorResponse);
     }
@@ -3490,7 +3746,7 @@ Deno.serve(async (req) => {
   console.log('  All route checks completed without match');
 
   const errorData = {
-    error: "Endpoint not found",
+    error: 'Endpoint not found',
     path: path,
     method: req.method,
     timestamp: new Date().toISOString(),
@@ -3498,16 +3754,16 @@ Deno.serve(async (req) => {
       route_checks_completed: true,
       path_stripped_correctly: true,
       possible_issues: [
-        "Route condition logic failed",
-        "Path does not match expected patterns",
-        "Method does not match route requirements"
-      ]
-    }
+        'Route condition logic failed',
+        'Path does not match expected patterns',
+        'Method does not match route requirements',
+      ],
+    },
   };
 
   const errorResponse = new Response(JSON.stringify(errorData), {
     status: 404,
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
   return addCorsHeaders(errorResponse);
 });
