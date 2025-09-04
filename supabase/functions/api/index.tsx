@@ -2,10 +2,10 @@
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-console.log("🚀 Starting Foosball Tracker API function...");
+console.log('🚀 Starting Foosball Tracker API function...');
 
 // Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -31,7 +31,7 @@ if (supabaseUrl && serviceRoleKey) {
 
 console.log('✅ Supabase client initialized');
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   console.log(`📨 ${req.method} ${req.url}`);
 
   // Handle CORS
@@ -53,15 +53,18 @@ Deno.serve(async (req) => {
 
     // Test endpoint
     if (path === '/test' && req.method === 'GET') {
-      return new Response(JSON.stringify({
-        message: 'API working',
-        timestamp: new Date().toISOString(),
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
+      return new Response(
+        JSON.stringify({
+          message: 'API working',
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
     }
 
     // User relational endpoint
@@ -78,7 +81,10 @@ Deno.serve(async (req) => {
 
       const token = authHeader.substring(7);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(token);
       if (authError || !user) {
         console.error('Auth error:', authError);
         return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -129,29 +135,32 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({
-        user: {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          username: userData.username,
-          current_group_code: userData.current_group_code,
-          is_admin: userData.is_admin,
-          avatar: userData.avatar,
-          avatarUrl: avatarUrl,
-          singles_elo: userData.singles_elo,
-          doubles_elo: userData.doubles_elo,
-          singles_wins: userData.singles_wins,
-          singles_losses: userData.singles_losses,
-          doubles_wins: userData.doubles_wins,
-          doubles_losses: userData.doubles_losses,
-          created_at: userData.created_at,
-          updated_at: userData.updated_at
-        },
-        timestamp: new Date().toISOString(),
-      }), {
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response(
+        JSON.stringify({
+          user: {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            username: userData.username,
+            current_group_code: userData.current_group_code,
+            is_admin: userData.is_admin,
+            avatar: userData.avatar,
+            avatarUrl: avatarUrl,
+            singles_elo: userData.singles_elo,
+            doubles_elo: userData.doubles_elo,
+            singles_wins: userData.singles_wins,
+            singles_losses: userData.singles_losses,
+            doubles_wins: userData.doubles_wins,
+            doubles_losses: userData.doubles_losses,
+            created_at: userData.created_at,
+            updated_at: userData.updated_at,
+          },
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
     }
 
     // Users relational endpoint
@@ -168,7 +177,10 @@ Deno.serve(async (req) => {
 
       const token = authHeader.substring(7);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(token);
       if (authError || !user) {
         console.error('Auth error:', authError);
         return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -201,7 +213,8 @@ Deno.serve(async (req) => {
 
       const { data: groupUsers, error: groupUsersError } = await supabase
         .from('user_groups')
-        .select(`
+        .select(
+          `
           user_id,
           users (
             id,
@@ -219,7 +232,8 @@ Deno.serve(async (req) => {
             created_at,
             updated_at
           )
-        `)
+        `
+        )
         .eq('group_code', userData.current_group_code);
 
       if (groupUsersError) {
@@ -231,7 +245,7 @@ Deno.serve(async (req) => {
       }
 
       // Process users with signed URLs for avatars
-      const usersPromises = groupUsers.map(async (ug) => {
+      const usersPromises = groupUsers.map(async ug => {
         const user = ug.users;
         if (!user) return null;
 
@@ -254,18 +268,21 @@ Deno.serve(async (req) => {
 
         return {
           ...user,
-          avatarUrl: avatarUrl
+          avatarUrl: avatarUrl,
         };
       });
 
       const users = (await Promise.all(usersPromises)).filter(user => user !== null);
 
-      return new Response(JSON.stringify({
-        users,
-        timestamp: new Date().toISOString(),
-      }), {
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response(
+        JSON.stringify({
+          users,
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
     }
 
     // Groups current relational endpoint
@@ -282,7 +299,10 @@ Deno.serve(async (req) => {
 
       const token = authHeader.substring(7);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(token);
       if (authError || !user) {
         console.error('Auth error:', authError);
         return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -339,19 +359,122 @@ Deno.serve(async (req) => {
         .select('*', { count: 'exact', head: true })
         .eq('group_code', userData.current_group_code);
 
-      return new Response(JSON.stringify({
-        group: {
-          code: groupData.code,
-          name: groupData.name,
-          icon: groupData.icon,
-          memberCount: memberCount || 0,
-          created_at: groupData.created_at,
-          updated_at: groupData.updated_at
-        },
-        timestamp: new Date().toISOString(),
-      }), {
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response(
+        JSON.stringify({
+          group: {
+            code: groupData.code,
+            name: groupData.name,
+            icon: groupData.icon,
+            memberCount: memberCount || 0,
+            created_at: groupData.created_at,
+            updated_at: groupData.updated_at,
+          },
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
+
+    // Groups user relational endpoint
+    if (path === '/groups/user-relational' && req.method === 'GET') {
+      console.log('🎯 Groups user relational endpoint called');
+
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      const token = authHeader.substring(7);
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        console.error('Auth error:', authError);
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      try {
+        // Get user's groups from user_groups table
+        const { data: userGroups, error: ugError } = await supabase
+          .from('user_groups')
+          .select('group_code, joined_at')
+          .eq('user_id', user.id);
+
+        if (ugError) {
+          console.error('Database error getting user groups:', ugError);
+          return new Response(JSON.stringify({ error: 'Database error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
+        if (!userGroups || userGroups.length === 0) {
+          return new Response(JSON.stringify({ groups: [] }), {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
+        const groupCodes = userGroups.map(ug => ug.group_code);
+
+        // Get group details
+        const { data: groups, error: groupsError } = await supabase
+          .from('groups')
+          .select('*')
+          .in('code', groupCodes);
+
+        if (groupsError) {
+          console.error('Database error getting groups:', groupsError);
+          return new Response(JSON.stringify({ error: 'Database error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
+        // Get member counts for each group
+        const groupsWithCounts = await Promise.all(
+          (groups || []).map(async group => {
+            const { count: memberCount } = await supabase
+              .from('user_groups')
+              .select('*', { count: 'exact', head: true })
+              .eq('group_code', group.code);
+
+            return {
+              code: group.code,
+              name: group.name,
+              icon: group.icon,
+              memberCount: memberCount || 0,
+              created_at: group.created_at,
+              updated_at: group.updated_at,
+            };
+          })
+        );
+
+        return new Response(
+          JSON.stringify({
+            groups: groupsWithCounts,
+            timestamp: new Date().toISOString(),
+          }),
+          {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          }
+        );
+      } catch (error) {
+        console.error('Error in /groups/user-relational:', error);
+        return new Response(JSON.stringify({ error: 'Internal server error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
     }
 
     // Matches relational endpoint
@@ -368,7 +491,10 @@ Deno.serve(async (req) => {
 
       const token = authHeader.substring(7);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(token);
       if (authError || !user) {
         console.error('Auth error:', authError);
         return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -401,7 +527,8 @@ Deno.serve(async (req) => {
 
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           date,
           group_code,
@@ -428,7 +555,8 @@ Deno.serve(async (req) => {
             game_number,
             winning_team
           )
-        `)
+        `
+        )
         .eq('group_code', userData.current_group_code)
         .order('created_at', { ascending: false });
 
@@ -451,23 +579,27 @@ Deno.serve(async (req) => {
         winner_email: match.winner_email,
         winner_is_guest: match.winner_is_guest,
         created_at: match.created_at,
-        players: match.match_players?.map(mp => ({
-          user_id: mp.user_id,
-          team: mp.team,
-          position: mp.position,
-          is_guest: mp.is_guest,
-          guest_name: mp.guest_name,
-          users: mp.users
-        })) || [],
-        match_results: match.match_results || []
+        players:
+          match.match_players?.map(mp => ({
+            user_id: mp.user_id,
+            team: mp.team,
+            position: mp.position,
+            is_guest: mp.is_guest,
+            guest_name: mp.guest_name,
+            users: mp.users,
+          })) || [],
+        match_results: match.match_results || [],
       }));
 
-      return new Response(JSON.stringify({
-        matches,
-        timestamp: new Date().toISOString(),
-      }), {
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response(
+        JSON.stringify({
+          matches,
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
     }
 
     // Profile avatar endpoint
@@ -484,7 +616,10 @@ Deno.serve(async (req) => {
 
       const token = authHeader.substring(7);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser(token);
       if (authError || !user) {
         console.error('Auth error:', authError);
         return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -540,12 +675,15 @@ Deno.serve(async (req) => {
             });
           }
 
-          return new Response(JSON.stringify({
-            message: 'Avatar deleted successfully',
-            timestamp: new Date().toISOString(),
-          }), {
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          });
+          return new Response(
+            JSON.stringify({
+              message: 'Avatar deleted successfully',
+              timestamp: new Date().toISOString(),
+            }),
+            {
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            }
+          );
         } catch (error) {
           console.error('Avatar delete error:', error);
           return new Response(JSON.stringify({ error: 'Failed to delete avatar' }), {
@@ -560,10 +698,13 @@ Deno.serve(async (req) => {
         try {
           const contentType = req.headers.get('content-type') || '';
           if (!contentType.includes('multipart/form-data')) {
-            return new Response(JSON.stringify({ error: 'Content-Type must be multipart/form-data' }), {
-              status: 400,
-              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-            });
+            return new Response(
+              JSON.stringify({ error: 'Content-Type must be multipart/form-data' }),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+              }
+            );
           }
 
           // Parse multipart form data
@@ -602,7 +743,7 @@ Deno.serve(async (req) => {
             .from('make-171cbf6f-avatars')
             .upload(fileName, file, {
               cacheControl: '3600',
-              upsert: false
+              upsert: false,
             });
 
           if (uploadError) {
@@ -622,9 +763,7 @@ Deno.serve(async (req) => {
           if (updateError) {
             console.error('Database update error:', updateError);
             // Try to clean up the uploaded file
-            await supabase.storage
-              .from('make-171cbf6f-avatars')
-              .remove([fileName]);
+            await supabase.storage.from('make-171cbf6f-avatars').remove([fileName]);
 
             return new Response(JSON.stringify({ error: 'Failed to update avatar' }), {
               status: 500,
@@ -632,13 +771,16 @@ Deno.serve(async (req) => {
             });
           }
 
-          return new Response(JSON.stringify({
-            message: 'Avatar uploaded successfully',
-            avatar: fileName,
-            timestamp: new Date().toISOString(),
-          }), {
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          });
+          return new Response(
+            JSON.stringify({
+              message: 'Avatar uploaded successfully',
+              avatar: fileName,
+              timestamp: new Date().toISOString(),
+            }),
+            {
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            }
+          );
         } catch (error) {
           console.error('Avatar upload error:', error);
           return new Response(JSON.stringify({ error: 'Failed to upload avatar' }), {
@@ -655,22 +797,27 @@ Deno.serve(async (req) => {
     }
 
     // Not found
-    return new Response(JSON.stringify({
-      error: 'Endpoint not found',
-      path: path,
-      method: req.method
-    }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
-
+    return new Response(
+      JSON.stringify({
+        error: 'Endpoint not found',
+        path: path,
+        method: req.method,
+      }),
+      {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      }
+    );
   } catch (error) {
     console.error('API error:', error);
-    return new Response(JSON.stringify({
-      error: error.message || 'Internal server error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: error.message || 'Internal server error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      }
+    );
   }
 });
